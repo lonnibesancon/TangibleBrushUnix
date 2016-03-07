@@ -13,8 +13,8 @@
 int main()
 {
 
-	//udp_server server(8888);
-	//server.listen();
+	udp_server server(8888);
+	server.listen();
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		LOGE("Unable to initialize SDL: %s", SDL_GetError());
@@ -81,7 +81,7 @@ int main()
 		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 400), Quaternion(Vector3::unitX(), -M_PI/4)*Quaternion(Vector3::unitZ(), t)),
+		app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 380), Quaternion(Vector3::unitX(), -M_PI/4)*Quaternion(Vector3::unitZ(), t)),
 		                 // Matrix4::identity()
 		                 Matrix4::makeTransform(Vector3(0, 0, 400))
 		);
@@ -91,7 +91,7 @@ int main()
 		app->getSettings()->sliceType = SLICE_CAMERA;
 		app->getSettings()->showSlice = true;
 		app->getSettings()->clipDist = t2;
-		LOGD("%f", t2);
+		//LOGD("%f", t2);
 
 		app->render();
 

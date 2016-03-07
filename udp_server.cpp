@@ -1,11 +1,13 @@
 #include "udp_server.h"
+#include <arpa/inet.h>
+#include <sys/socket.h>
+#include <fcntl.h>
+#include <sstream>
+#include "util/linear_math.h"
+#include <iostream>
 #include <stdio.h>
 #include <string>
 #include <stdlib.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <cstring>
-#include <unistd.h> 
 
 
 udp_server::udp_server(){
@@ -23,7 +25,7 @@ udp_server::udp_server(int p){
 }
 
 udp_server::~udp_server(){
-	close(sock);
+	//close(sock);
 }
 
 
@@ -34,9 +36,11 @@ void udp_server::initSocket(){
 		std::cerr << "Socket" << std::endl ;
 	}
 
-	int flags = fcntl(sock, F_GETFL);
-	flags |= O_NONBLOCK;
-	fcntl(sock, F_SETFL, flags);
+
+	//To make non-blocking ;) 
+	//int flags = fcntl(sock, F_GETFL);
+	//flags |= O_NONBLOCK;
+	//fcntl(sock, F_SETFL, flags);
 
 	// zero out the structure
 	memset((char *) &si_me, 0, sizeof(si_me));
@@ -55,25 +59,54 @@ void udp_server::initSocket(){
 void udp_server::listen(){
 	while(1)
     {
-        printf("Waiting for data...");
+        //rintf("Waiting for data...");
         fflush(stdout);
-         
+        memset(buf,'\0', BUFLEN);
+
         //try to receive some data, this is a blocking call
         if ((recv_len = recvfrom(sock, buf, BUFLEN, 0, (struct sockaddr *) &si_other, &slen)) == -1)
         {
-        	std::cerr << "Received" << std::endl ;
+        	//std::cerr << "Received" << std::endl ;
         }
          
         //print details of the client/peer and the data received
-        printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
-        printf("Data: %s\n" , buf);
-         
-        //now reply the client with the same data
-        if (sendto(sock, buf, recv_len, 0, (struct sockaddr*) &si_other, slen) == -1)
-        {
-            std::cerr << "Send" << std::endl ;
-        }
+        std::string msg = buf ;
+		std::stringstream ss(msg);
+		int i = 0 ;
+		std::string tok;
+		//double allvalues[NUMBEROFITEMSINMESSAGE];
+		float oMatrix[16];
+		float pMatrix[16];
+		float seed[3];
+		
 
-        std::cout << "test" << std::endl ;
+		//std::cout << "Message = " << msg << std::endl ;
+		getline(ss, tok, ';');
+		do{
+		//	std::cout << "i = " << i << " -> " << tok << std::endl ;
+			oMatrix[i] = std::stod(tok.c_str());
+			i++ ;
+		}while(getline(ss, tok, ';') && i < 16);
+		//std::cout << "Object Matrix Constructed " << std::endl ;
+
+		do{
+		//	std::cout << "i = " << i << " -> " << tok << std::endl ;
+			pMatrix[i] = std::stod(tok.c_str());
+			i++ ;
+		}while(getline(ss, tok, ';') && i < 32);
+
+		//std::cout << "Plane Matrix Constructed " << std::endl ;
+		do{
+			//std::cout << "i = " << i << " -> " << tok << std::endl ;
+			seed[i] = std::stod(tok.c_str());
+			i++ ;
+		}while(getline(ss, tok, ';') && i < 35);
+
+		//std::cout << "Seed Point Constructed " << std::endl ;
+
+		Matrix4 objectMatrix(oMatrix) ;
+		Matrix4 planeMatrix(pMatrix) ;
+		Vector3 seedPoint(seed) ;
+
     }
 }

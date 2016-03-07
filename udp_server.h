@@ -8,8 +8,12 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <fcntl.h>
+#include <sstream>
+#include "util/linear_math.h"
+#include <cstring>
 
-#define BUFLEN 512 
+#define BUFLEN 512
+#define NUMBEROFITEMSINMESSAGE 35
 
 class udp_server{
 	
