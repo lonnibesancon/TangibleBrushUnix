@@ -8,9 +8,14 @@
 #include <SDL2/SDL_opengles2.h>
 
 #include "fluids_app.h"
+#include "udp_server.h"
 
 int main()
 {
+
+	//udp_server server(8888);
+	//server.listen();
+
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		LOGE("Unable to initialize SDL: %s", SDL_GetError());
 		SDL_Quit();
