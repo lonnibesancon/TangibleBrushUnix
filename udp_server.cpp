@@ -34,6 +34,10 @@ void udp_server::initSocket(){
 		std::cerr << "Socket" << std::endl ;
 	}
 
+	int flags = fcntl(sock, F_GETFL);
+	flags |= O_NONBLOCK;
+	fcntl(sock, F_SETFL, flags);
+
 	// zero out the structure
 	memset((char *) &si_me, 0, sizeof(si_me));
 
@@ -69,5 +73,7 @@ void udp_server::listen(){
         {
             std::cerr << "Send" << std::endl ;
         }
+
+        std::cout << "test" << std::endl ;
     }
 }

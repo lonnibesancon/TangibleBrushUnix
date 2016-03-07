@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <fcntl.h>
 
 #define BUFLEN 512 
 
