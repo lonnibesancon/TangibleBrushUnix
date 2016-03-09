@@ -11,6 +11,7 @@
 #include <sstream>
 #include "util/linear_math.h"
 #include <cstring>
+#include "global.h"
 
 #define BUFLEN 512
 #define NUMBEROFITEMSINMESSAGE 35
@@ -24,15 +25,26 @@ public:
 	socklen_t slen ;
 	int recv_len ;
 	char buf[BUFLEN] ;
+	bool hasDataChanged = false ;
+	std::string previousMessage ;
+
 
 	udp_server();
 	udp_server(int p);
 	~udp_server();
 
-	void listen();
+	//static void* launch_listen(void* args);
+	void listen(void);
+	Matrix4 getDataMatrix();
+	Matrix4 getSliceMatrix();
+	Vector3 getSeedPoint();
 
 private: 
 	void initSocket();
+	Matrix4 dataMatrix ;
+	Matrix4 sliceMatrix ;
+	Vector3 seedPoint ;
+
 
 };
 

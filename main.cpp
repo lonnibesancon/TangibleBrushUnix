@@ -10,12 +10,15 @@
 #include "fluids_app.h"
 #include "udp_server.h"
 
+#include <pthread.h>
+#include <thread>
+
+
 int main()
 {
 
-	//udp_server server(8888);
+	udp_server server(8500);
 	//server.listen();
-
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		LOGE("Unable to initialize SDL: %s", SDL_GetError());
 		SDL_Quit();
@@ -28,7 +31,7 @@ int main()
 	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
 	// Request double buffering and a depth buffer
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
@@ -77,20 +80,32 @@ int main()
 	float t = 0;
 	float t2 = 0;
 
+	//Thread creation
+	std::thread th(&udp_server::listen,&server);
+	//th.join();
+
+	Matrix4 dataMatrix ;
+	Matrix4 sliceMatrix ;
+	Vector3 seedPoint ;
 	while (true) {
 		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 380), Quaternion(Vector3::unitX(), -M_PI/4)*Quaternion(Vector3::unitZ(), t)),
+		dataMatrix = server.getDataMatrix();
+		sliceMatrix= server.getSliceMatrix();
+		seedPoint = server.getSeedPoint();
+		app->setMatrices(dataMatrix,sliceMatrix);
+		/*app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 380), Quaternion(Vector3::unitX(), -M_PI/4)*Quaternion(Vector3::unitZ(), t)),
 		                 // Matrix4::identity()
-		                 Matrix4::makeTransform(Vector3(0, 0, 400))
-		);
+		                 Matrix4::makeTransform(Vector3(0, 0, 400)));*/
+		
 		t += 0.005;
 		// t2 = 400+std::cos(t)*200;
 		t2 = 360;
-		app->getSettings()->sliceType = SLICE_CAMERA;
+		app->getSettings()->sliceType = SLICE_STYLUS;
+		//app->getSettings()->sliceType = SLICE_CAMERA;
 		app->getSettings()->showSlice = true;
 		app->getSettings()->clipDist = t2;
+		
 		//LOGD("%f", t2);
 
 		app->render();
