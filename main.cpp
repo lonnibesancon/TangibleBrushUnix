@@ -13,8 +13,8 @@
 int main()
 {
 
-	udp_server server(8888);
-	server.listen();
+	//udp_server server(8888);
+	//server.listen();
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
 		LOGE("Unable to initialize SDL: %s", SDL_GetError());

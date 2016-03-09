@@ -85,7 +85,7 @@ namespace {
 		"#endif\n"
 
 		// "#extension GL_EXT_texture_array : require\n"
-		"#extension GL_OES_texture_3D : require\n"
+		"//#extension GL_OES_texture_3D : require\n"
 		"varying mediump vec3 v_texCoord;\n"
 		// "uniform lowp sampler2DArray texture;\n"
 		"uniform lowp sampler3D texture;\n"
