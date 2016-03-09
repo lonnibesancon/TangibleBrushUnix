@@ -42,15 +42,29 @@ udp_server::~udp_server(){
 
 Matrix4 udp_server::getDataMatrix(){
 	//std::cout << "Get Data Matrix " << std::endl ;
+
 	hasDataChanged = false ;
-	return dataMatrix ;
+	
+	Matrix4 m ;
+	synchronized(dataMatrix){
+		m = dataMatrix ;
+	}
+	return m ;
 }
 
 Matrix4 udp_server::getSliceMatrix(){
+	Matrix4 m ;
+	synchronized(sliceMatrix){
+		m = sliceMatrix ;
+	}
 	return sliceMatrix;
 }
 
 Vector3 udp_server::getSeedPoint(){
+	Vector3 v ;
+	synchronized(seedPoint){
+		v = seedPoint ;
+	}
 	return udp_server::seedPoint ;
 }
 
@@ -117,29 +131,38 @@ void udp_server::listen(){
 			oMatrix[i] = std::stod(tok.c_str());
 			i++ ;
 		}while(getline(ss, tok, ';') && i < 16);
-		std::cout << "Object Matrix Constructed " << std::endl ;
-		std::cout << "Remaining Line = " << ss << std::endl ;
-		sleep(2);
+		//std::cout << "Object Matrix Constructed " << std::endl ;
+		//std::cout << "Remaining Line = " << ss << std::endl ;
+		//sleep(2);
 		do{
 		//	std::cout << "i = " << i << " -> " << tok << std::endl ;
-			pMatrix[i] = std::stod(tok.c_str());
+			pMatrix[i-16] = std::stod(tok.c_str());
 			i++ ;
 		}while(getline(ss, tok, ';') && i < 32);
-
-		std::cout << "Plane Matrix Constructed " << std::endl ;
-		sleep(2);
+		for(int i = 0 ; i < 16 ; i++){
+			std::cout << "pmatrix " << i << " = " << pMatrix[i] << std::endl ;
+		}
+		//std::cout << "Plane Matrix Constructed " << std::endl ;
+		//sleep(2);
 		do{
 			//std::cout << "i = " << i << " -> " << tok << std::endl ;
-			seed[i] = std::stod(tok.c_str());
+			seed[i-32] = std::stod(tok.c_str());
 			i++ ;
 		}while(getline(ss, tok, ';') && i < 35);
-		sleep(2);
-		std::cout << "Seed Point Constructed " << std::endl ;
-
-		dataMatrix = Matrix4(oMatrix) ;
-		sliceMatrix = Matrix4(pMatrix) ;
-		seedPoint = Vector3(seed) ;
+		
+		//sleep(2);
+		//std::cout << "Seed Point Constructed " << std::endl ;
+		synchronized(dataMatrix){
+			dataMatrix = Matrix4(oMatrix) ;
+		}
+		synchronized(sliceMatrix){
+			sliceMatrix = Matrix4(pMatrix) ;
+		}
+		synchronized(seedPoint){
+			seedPoint = Vector3(seed) ;
+		}
 		hasDataChanged = true ;
+	
 
     	}
 	return NULL ;

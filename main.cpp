@@ -84,8 +84,8 @@ int main()
 	std::thread th(&udp_server::listen,&server);
 	//th.join();
 
-	Matrix4 dataMatrix ;
-	Matrix4 sliceMatrix ;
+	Matrix4 dataMatrix = Matrix4::makeTransform(Vector3(0, 0, 400), Quaternion(Vector3::unitX(), -M_PI/4)) ;
+	Matrix4 sliceMatrix = Matrix4::makeTransform(Vector3(0, 0, 400)) ;
 	Vector3 seedPoint ;
 	while (true) {
 		glClearColor(0, 0, 0, 1);

@@ -41,9 +41,9 @@ public:
 
 private: 
 	void initSocket();
-	Matrix4 dataMatrix ;
-	Matrix4 sliceMatrix ;
-	Vector3 seedPoint ;
+	Synchronized<Matrix4> dataMatrix ;
+	Synchronized<Matrix4> sliceMatrix ;
+	Synchronized<Vector3> seedPoint ;
 
 
 };
