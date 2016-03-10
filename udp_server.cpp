@@ -68,6 +68,11 @@ Vector3 udp_server::getSeedPoint(){
 	return udp_server::seedPoint ;
 }
 
+int udp_server::getDataSet(){
+	hasDataSetChanged = false ;
+	return dataset ;
+}
+
 
 void udp_server::initSocket(){
 	//create a UDP socket
@@ -117,14 +122,18 @@ void udp_server::listen(){
 		//print details of the client/peer and the data received
 		std::string msg = buf ;
 		std::stringstream ss(msg);
-		int i = 0 ;
+		int i = 1 ;	//First we parse the dataset
 		std::string tok;
 		//double allvalues[NUMBEROFITEMSINMESSAGE];
 		float oMatrix[16];
 		float pMatrix[16];
 		float seed[3];
+		int datast = -1 ;
 		
 		std::cout << "Message = " << msg << std::endl ;
+		getline(ss, tok, ';');
+		datast = std::stoi(tok.c_str());
+
 		getline(ss, tok, ';');
 		do{
 			//std::cout << "i = " << i << " -> " << tok << std::endl ;
@@ -160,6 +169,10 @@ void udp_server::listen(){
 		}
 		synchronized(seedPoint){
 			seedPoint = Vector3(seed) ;
+		}
+		if(dataset!= datast){
+			dataset = datast ;
+			hasDataSetChanged = true ;
 		}
 		hasDataChanged = true ;
 	

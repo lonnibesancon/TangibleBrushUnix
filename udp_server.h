@@ -26,6 +26,7 @@ public:
 	int recv_len ;
 	char buf[BUFLEN] ;
 	bool hasDataChanged = false ;
+	bool hasDataSetChanged = false ;
 	std::string previousMessage ;
 
 
@@ -38,12 +39,14 @@ public:
 	Matrix4 getDataMatrix();
 	Matrix4 getSliceMatrix();
 	Vector3 getSeedPoint();
+	int getDataSet();
 
 private: 
 	void initSocket();
 	Synchronized<Matrix4> dataMatrix ;
 	Synchronized<Matrix4> sliceMatrix ;
 	Synchronized<Vector3> seedPoint ;
+	int dataset = 1 ;
 
 
 };

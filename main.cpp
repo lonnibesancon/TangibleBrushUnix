@@ -12,7 +12,12 @@
 
 #include <pthread.h>
 #include <thread>
+#include "definitions.h"
 
+
+void loadDataSet(std::unique_ptr<FluidMechanics> app, int dataset){
+	return ;
+}
 
 int main()
 {
@@ -90,6 +95,21 @@ int main()
 	while (true) {
 		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		if(server.hasDataSetChanged ){
+			int dataset = server.getDataSet();
+			if(dataset == ftle){
+				app->loadDataSet("data/ftlelog.vtk");
+			}
+			else if(dataset == ironProt){
+				app->loadDataSet("data/ironProt.vtk");
+			}
+			else if(dataset == head){
+				app->loadDataSet("data/head.vti");
+			}
+			else if(dataset == velocity){
+				app->loadDataSet("data/Velocities.vtk");
+			}
+		}
 		dataMatrix = server.getDataMatrix();
 		sliceMatrix= server.getSliceMatrix();
 		seedPoint = server.getSeedPoint();
