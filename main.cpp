@@ -95,7 +95,7 @@ int main()
 	while (true) {
 		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		/*if(server.hasDataSetChanged ){
+		if(server.hasDataSetChanged ){
 			int dataset = server.getDataSet();
 			if(dataset == ftle){
 				app->loadDataSet("data/ftlelog.vtk");
@@ -109,7 +109,7 @@ int main()
 			else if(dataset == velocity){
 				app->loadDataSet("data/Velocities.vtk");
 			}
-		}*/
+		}
 		dataMatrix = server.getDataMatrix();
 		sliceMatrix= server.getSliceMatrix();
 		seedPoint = server.getSeedPoint();
