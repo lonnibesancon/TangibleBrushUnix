@@ -21,6 +21,7 @@ udp_server::udp_server(){
 	dataMatrix = Matrix4::makeTransform(Vector3(0, 0, 400), Quaternion(Vector3::unitX(), -M_PI/4)*Quaternion(Vector3::unitZ(), 0));//,Matrix4::makeTransform(Vector3(0, 0, 400)));
 	sliceMatrix = Matrix4::makeTransform(Vector3(0, 0, 400));
 	seedPoint = Vector3(-1,-1,-1);
+	zoomingFactor = 1 ;
 }
 
 udp_server::udp_server(int p){
@@ -34,6 +35,7 @@ udp_server::udp_server(int p){
 	dataMatrix = Matrix4::makeTransform(Vector3(0, 0, 400), Quaternion(Vector3::unitX(), -M_PI/4)*Quaternion(Vector3::unitZ(), 0));//,Matrix4::makeTransform(Vector3(0, 0, 400)));
 	sliceMatrix = Matrix4::makeTransform(Vector3(0, 0, 400));
 	seedPoint = Vector3(-1,-1,-1);
+	zoomingFactor = 1 ;
 }
 
 udp_server::~udp_server(){
@@ -71,6 +73,10 @@ Vector3 udp_server::getSeedPoint(){
 int udp_server::getDataSet(){
 	hasDataSetChanged = false ;
 	return dataset ;
+}
+
+int udp_server::getZoomFactor(){
+	return zoomingFactor ;
 }
 
 
@@ -122,7 +128,7 @@ void udp_server::listen(){
 		//print details of the client/peer and the data received
 		std::string msg = buf ;
 		std::stringstream ss(msg);
-		int i = 1 ;	//First we parse the dataset
+		int i = 2 ;	//First we parse the dataset and then the zooming factor
 		std::string tok;
 		//double allvalues[NUMBEROFITEMSINMESSAGE];
 		float oMatrix[16];
@@ -131,23 +137,31 @@ void udp_server::listen(){
 		int datast = -1 ;
 		
 		std::cout << "Message = " << msg << std::endl ;
+		
+		//First we set the dataset
 		getline(ss, tok, ';');
 		datast = std::stoi(tok.c_str());
 
+		//Then the zooming Factor
+		getline(ss, tok, ';');
+		zoomingFactor = std::stoi(tok.c_str());
+
+
+		//Finally the matrices and seeding point
 		getline(ss, tok, ';');
 		do{
 			//std::cout << "i = " << i << " -> " << tok << std::endl ;
-			oMatrix[i] = std::stod(tok.c_str());
+			oMatrix[i-2] = std::stod(tok.c_str());
 			i++ ;
-		}while(getline(ss, tok, ';') && i < 16);
+		}while(getline(ss, tok, ';') && i < 18);
 		//std::cout << "Object Matrix Constructed " << std::endl ;
 		//std::cout << "Remaining Line = " << ss << std::endl ;
 		//sleep(2);
 		do{
 		//	std::cout << "i = " << i << " -> " << tok << std::endl ;
-			pMatrix[i-16] = std::stod(tok.c_str());
+			pMatrix[i-18] = std::stod(tok.c_str());
 			i++ ;
-		}while(getline(ss, tok, ';') && i < 32);
+		}while(getline(ss, tok, ';') && i < 34);
 		for(int i = 0 ; i < 16 ; i++){
 			std::cout << "pmatrix " << i << " = " << pMatrix[i] << std::endl ;
 		}
@@ -155,17 +169,19 @@ void udp_server::listen(){
 		//sleep(2);
 		do{
 			//std::cout << "i = " << i << " -> " << tok << std::endl ;
-			seed[i-32] = std::stod(tok.c_str());
+			seed[i-34] = std::stod(tok.c_str());
 			i++ ;
-		}while(getline(ss, tok, ';') && i < 35);
+		}while(getline(ss, tok, ';') && i < 37);
 		
 		//sleep(2);
 		//std::cout << "Seed Point Constructed " << std::endl ;
 		synchronized(dataMatrix){
 			dataMatrix = Matrix4(oMatrix) ;
+			printAny(dataMatrix, "dataMatrix = ");
 		}
 		synchronized(sliceMatrix){
 			sliceMatrix = Matrix4(pMatrix) ;
+			printAny(sliceMatrix, "sliceMatrix = ");
 		}
 		synchronized(seedPoint){
 			seedPoint = Vector3(seed) ;

@@ -40,6 +40,7 @@ public:
 	Matrix4 getSliceMatrix();
 	Vector3 getSeedPoint();
 	int getDataSet();
+	int getZoomFactor();
 
 private: 
 	void initSocket();
@@ -47,6 +48,7 @@ private:
 	Synchronized<Matrix4> sliceMatrix ;
 	Synchronized<Vector3> seedPoint ;
 	int dataset = 1 ;
+	int zoomingFactor ;
 
 
 };
