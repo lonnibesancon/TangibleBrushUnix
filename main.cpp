@@ -14,10 +14,13 @@
 #include <thread>
 #include "definitions.h"
 
+#include <signal.h>
+
 
 void loadDataSet(std::unique_ptr<FluidMechanics> app, int dataset){
 	return ;
 }
+
 
 int main()
 {
@@ -92,7 +95,31 @@ int main()
 	Matrix4 dataMatrix = Matrix4::makeTransform(Vector3(0, 0, 400), Quaternion(Vector3::unitX(), -M_PI/4)) ;
 	Matrix4 sliceMatrix = Matrix4::makeTransform(Vector3(0, 0, 400)) ;
 	Vector3 seedPoint ;
-	while (true) {
+
+
+	struct sigaction action;
+	sigaction(SIGINT, NULL, &action);
+	SDL_Init(SDL_INIT_EVERYTHING);
+	sigaction(SIGINT, &action, NULL);
+	SDL_Event event;
+	bool quit = false ;
+	while (!quit) {
+		SDL_PollEvent(&event);
+		switch(event.type)
+	    {
+	        case SDL_WINDOWEVENT: // Événement de la fenêtre
+	            if ( event.window.event == SDL_WINDOWEVENT_CLOSE ) 
+	            {
+	                quit = true ;
+	            }
+	            break;
+	        case SDL_KEYUP: 
+	            if ( event.key.keysym.sym == SDLK_ESCAPE ) 
+	            {
+	                quit = true ;
+	            }
+	            break;
+	    }
 		glClearColor(0, 0, 0, 1);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		if(server.hasDataSetChanged ){
