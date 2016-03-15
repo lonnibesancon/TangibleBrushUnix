@@ -79,6 +79,26 @@ int udp_server::getZoomFactor(){
 	return zoomingFactor ;
 }
 
+bool udp_server::getShowVolume(){
+	return this->showVolume ;
+}
+
+bool udp_server::getShowSurface(){
+	return this->showSurface ;
+}
+
+bool udp_server::getShowStylus(){
+	return this->showStylus ;
+}
+
+bool udp_server::getShowSlice(){
+	return this->showSlice ;
+}
+
+bool udp_server::getShowOutline(){
+	return this->showOutline ;
+}
+
 
 void udp_server::initSocket(){
 	//create a UDP socket
@@ -128,13 +148,17 @@ void udp_server::listen(){
 		//print details of the client/peer and the data received
 		std::string msg = buf ;
 		std::stringstream ss(msg);
-		int i = 2 ;	//First we parse the dataset and then the zooming factor
+		
 		std::string tok;
+		int nbOfElementsToParseFirst = 7 ;
+		int i = nbOfElementsToParseFirst ;	
 		//double allvalues[NUMBEROFITEMSINMESSAGE];
 		float oMatrix[16];
 		float pMatrix[16];
 		float seed[3];
 		int datast = -1 ;
+
+		int tmpbool = -1 ;
 		
 		std::cout << "Message = " << msg << std::endl ;
 		
@@ -146,35 +170,56 @@ void udp_server::listen(){
 		getline(ss, tok, ';');
 		zoomingFactor = std::stoi(tok.c_str());
 
+		//Get the booleans
+		getline(ss, tok, ';');
+		tmpbool = std::stoi(tok.c_str());
+		showVolume = (tmpbool == 0 )? false : true ;
+		getline(ss, tok, ';');
+		tmpbool = std::stoi(tok.c_str());
+		showSurface = (tmpbool == 0 )? false : true ;
+		getline(ss, tok, ';');
+		tmpbool = std::stoi(tok.c_str());
+		showStylus = (tmpbool == 0 )? false : true ;
+		getline(ss, tok, ';');
+		tmpbool = std::stoi(tok.c_str());
+		showSlice = (tmpbool == 0 )? false : true ;
+		getline(ss, tok, ';');
+		tmpbool = std::stoi(tok.c_str());
+		showOutline = (tmpbool == 0 )? false : true ;
 
 		//Finally the matrices and seeding point
 		getline(ss, tok, ';');
 		do{
 			//std::cout << "i = " << i << " -> " << tok << std::endl ;
-			oMatrix[i-2] = std::stod(tok.c_str());
+			oMatrix[i-nbOfElementsToParseFirst] = std::stod(tok.c_str());
 			i++ ;
-		}while(getline(ss, tok, ';') && i < 18);
+		}while(getline(ss, tok, ';') && i < 16+nbOfElementsToParseFirst );
 		//std::cout << "Object Matrix Constructed " << std::endl ;
 		//std::cout << "Remaining Line = " << ss << std::endl ;
 		//sleep(2);
+
+
 		do{
 		//	std::cout << "i = " << i << " -> " << tok << std::endl ;
-			pMatrix[i-18] = std::stod(tok.c_str());
+			pMatrix[i-nbOfElementsToParseFirst-16] = std::stod(tok.c_str());
 			i++ ;
-		}while(getline(ss, tok, ';') && i < 34);
+		}while(getline(ss, tok, ';') && i < 32+nbOfElementsToParseFirst );
 		for(int i = 0 ; i < 16 ; i++){
 			std::cout << "pmatrix " << i << " = " << pMatrix[i] << std::endl ;
 		}
 		//std::cout << "Plane Matrix Constructed " << std::endl ;
 		//sleep(2);
+		
+
 		do{
 			//std::cout << "i = " << i << " -> " << tok << std::endl ;
-			seed[i-34] = std::stod(tok.c_str());
+			seed[i-32-nbOfElementsToParseFirst] = std::stod(tok.c_str());
 			i++ ;
-		}while(getline(ss, tok, ';') && i < 37);
-		
+		}while(getline(ss, tok, ';') && i < 35+nbOfElementsToParseFirst );
 		//sleep(2);
 		//std::cout << "Seed Point Constructed " << std::endl ;
+
+
 		synchronized(dataMatrix){
 			dataMatrix = Matrix4(oMatrix) ;
 			printAny(dataMatrix, "dataMatrix = ");

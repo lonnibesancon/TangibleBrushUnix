@@ -151,7 +151,8 @@ int main()
 		t2 = 360;
 		app->getSettings()->sliceType = SLICE_STYLUS;
 		//app->getSettings()->sliceType = SLICE_CAMERA;
-		app->getSettings()->showSlice = true;
+		//app->getSettings()->showSlice = true;
+		app->getSettings()->showSlice = server.getShowSlice();
 		app->getSettings()->clipDist = t2;
 		app->getSettings()->zoomFactor = server.getZoomFactor();
 		

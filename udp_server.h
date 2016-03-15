@@ -19,14 +19,18 @@
 class udp_server{
 	
 public:
+	
 	int port ;
 	struct sockaddr_in si_me, si_other ;
 	int sock ;
 	socklen_t slen ;
 	int recv_len ;
 	char buf[BUFLEN] ;
-	bool hasDataChanged = false ;
-	bool hasDataSetChanged = false ;
+	bool hasDataChanged 	= false ;
+	bool hasDataSetChanged 	= false ;
+
+	
+
 	std::string previousMessage ;
 
 
@@ -39,16 +43,31 @@ public:
 	Matrix4 getDataMatrix();
 	Matrix4 getSliceMatrix();
 	Vector3 getSeedPoint();
+
 	int getDataSet();
 	int getZoomFactor();
 
-private: 
+	bool getShowVolume();
+	bool getShowSurface();
+	bool getShowStylus();
+	bool getShowSlice();
+	bool getShowOutline();
+
+
+private:
+
 	void initSocket();
 	Synchronized<Matrix4> dataMatrix ;
 	Synchronized<Matrix4> sliceMatrix ;
 	Synchronized<Vector3> seedPoint ;
-	int dataset = 1 ;
-	int zoomingFactor ;
+	int dataset 		= 1 ;
+	int zoomingFactor 	= 1 ;
+
+	bool showVolume 	= true ;
+	bool showSurface 	= true ;
+	bool showStylus 	= true ;
+	bool showSlice 		= true ;
+	bool showOutline 	= true ;
 
 
 };
