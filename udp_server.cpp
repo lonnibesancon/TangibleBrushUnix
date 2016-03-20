@@ -160,7 +160,7 @@ void udp_server::listen(){
 
 		int tmpbool = -1 ;
 		
-		std::cout << "Message = " << msg << std::endl ;
+		//std::cout << "Message = " << msg << std::endl ;
 		
 		//First we set the dataset
 		getline(ss, tok, ';');
@@ -204,9 +204,6 @@ void udp_server::listen(){
 			pMatrix[i-nbOfElementsToParseFirst-16] = std::stod(tok.c_str());
 			i++ ;
 		}while(getline(ss, tok, ';') && i < 32+nbOfElementsToParseFirst );
-		for(int i = 0 ; i < 16 ; i++){
-			std::cout << "pmatrix " << i << " = " << pMatrix[i] << std::endl ;
-		}
 		//std::cout << "Plane Matrix Constructed " << std::endl ;
 		//sleep(2);
 		

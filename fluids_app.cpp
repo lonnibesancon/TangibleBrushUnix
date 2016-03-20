@@ -1169,6 +1169,24 @@ void FluidMechanics::Impl::renderObjects()
 	}
 
 
+	printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
+		std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
+		synchronized (particles) {
+		for (Particle& p : particles) {
+			if (!p.valid)
+				continue;
+			integrateParticleMotion(p);
+			if (!p.valid || p.delayMs > 0)
+				continue;
+			Vector3 pos = p.pos;
+			pos -= Vector3(dataDim[0]/2, dataDim[1]/2, dataDim[2]/2) * dataSpacing;
+			// particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.3f)));
+			// particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.2f)));
+			particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.15f)));
+		}
+	}
+
+
 	return;
 
 	// Stylus (paddle?) z-buffer occlusion
@@ -1451,6 +1469,9 @@ void FluidMechanics::Impl::renderObjects()
 
 	// LOGD("render 4");
 
+		
+
+
 	if (state->tangibleVisible) {
 		Matrix4 mm;
 		synchronized(state->modelMatrix) {
@@ -1491,6 +1512,10 @@ void FluidMechanics::Impl::renderObjects()
 		}
 
 		// Render particles
+		printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
+		printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
+		printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
+		std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
 		synchronized (particles) {
 			for (Particle& p : particles) {
 				if (!p.valid)

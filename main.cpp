@@ -94,7 +94,8 @@ int main()
 
 	Matrix4 dataMatrix = Matrix4::makeTransform(Vector3(0, 0, 400), Quaternion(Vector3::unitX(), -M_PI/4)) ;
 	Matrix4 sliceMatrix = Matrix4::makeTransform(Vector3(0, 0, 400)) ;
-	Vector3 seedPoint ;
+	Vector3 seedPoint(-10000.0,-10000.0,-10000.0);
+	Vector3 prevSeedPoint(-10000.0,-10000.0,-10000.0);
 
 
 	struct sigaction action;
@@ -134,7 +135,8 @@ int main()
 				app->loadDataSet("data/head.vti");
 			}
 			else if(dataset == velocity){
-				app->loadDataSet("data/Velocities7.vtk");
+				app->loadDataSet("data/ftlelog.vtk");
+				app->loadVelocityDataSet("data/Velocities7.vtk");
 			}
 		}
 		dataMatrix = server.getDataMatrix();
@@ -155,6 +157,11 @@ int main()
 		app->getSettings()->showSlice = server.getShowSlice();
 		app->getSettings()->clipDist = t2;
 		app->getSettings()->zoomFactor = server.getZoomFactor();
+		if(prevSeedPoint != seedPoint){
+			app->setSeedPoint(seedPoint.x, seedPoint.y, seedPoint.z);
+			prevSeedPoint = seedPoint ;
+			app->releaseParticles();
+		}
 		
 		//LOGD("%f", t2);
 
