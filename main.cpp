@@ -134,7 +134,7 @@ int main()
 				app->loadDataSet("data/head.vti");
 			}
 			else if(dataset == velocity){
-				app->loadDataSet("data/Velocities.vtk");
+				app->loadDataSet("data/Velocities7.vtk");
 			}
 		}
 		dataMatrix = server.getDataMatrix();
