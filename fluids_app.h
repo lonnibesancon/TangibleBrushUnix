@@ -28,6 +28,8 @@ public:
 	void buttonPressed();
 	float buttonReleased();
 
+	void setSeedPoint(float x, float y, float z);
+
 	struct Settings;
 	struct State;
 

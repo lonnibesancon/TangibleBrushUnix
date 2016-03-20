@@ -71,6 +71,7 @@ struct FluidMechanics::Impl
 	Vector3 dataCoordsToPos(const Vector3& dataCoordsToPos);
 
 	void updateSurfacePreview();
+	void setSeedPoint(float x, float y, float z);
 
 	FluidMechanics* app;
 	SettingsPtr settings;
@@ -111,6 +112,8 @@ struct FluidMechanics::Impl
 	MeshPtr particleSphere, cylinder;
 	LinesPtr lines;
 
+	Vector3 seedPoint;
+
 	vtkSmartPointer<vtkProbeFilter> probeFilter;
 
 	Synchronized<Vector3> effectorIntersection;
@@ -128,6 +131,7 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 	particleSphere = LoaderOBJ::load(baseDir + "/sphere.obj");
 	cylinder = LoaderOBJ::load(baseDir + "/cylinder.obj");
 	lines.reset(new Lines);
+	seedPoint = Vector3(-10000.0,-10000.0,-10000.0);
 
 	for (Particle& p : particles)
 		p.valid = false;
@@ -171,6 +175,12 @@ vtkSmartPointer<vtkImageData> FluidMechanics::Impl::loadTypedDataSet(const std::
 	data->DeepCopy(reader->GetOutputDataObject(0));
 
 	return data;
+}
+
+void FluidMechanics::Impl::setSeedPoint(float x, float y, float z){
+	seedPoint.x = x;
+	seedPoint.y = y;
+	seedPoint.z = z;
 }
 
 bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
@@ -353,6 +363,56 @@ float FluidMechanics::Impl::buttonReleased()
 
 void FluidMechanics::Impl::releaseParticles()
 {
+	/*if (!velocityData || !state->tangibleVisible || !state->stylusVisible || 
+		(interactionMode!=seedPointTangible && interactionMode!=seedPointTouch && 
+		interactionMode != seedPointHybrid )){
+
+		LOGD("Cannot place Seed");
+		seedPointPlacement = false ;
+		return;
+	}*/
+		
+	//LOGD("Conditions met to place particles");
+	Matrix4 smm;
+	synchronized (state->stylusModelMatrix) {
+		smm = state->stylusModelMatrix;
+	}
+	//LOGD("Got stylus Model Matrix");
+	//const float size = 0.5f * (stylusEffectorDist + std::max(dataSpacing.x*dataDim[0], std::max(dataSpacing.y*dataDim[1], dataSpacing.z*dataDim[2])));
+	//Vector3 dataPos = posToDataCoords(smm * Matrix4::makeTransform(Vector3(-size, 0, 0)*settings->zoomFactor) * Vector3::zero());
+	Vector3 tmp = Vector3(-10000.0,-10000.0,-10000.0);
+	if(seedPoint == tmp){
+		return ;	
+	}
+	Vector3 dataPos = posToDataCoords(seedPoint) ;
+	if (dataPos.x < 0 || dataPos.y < 0 || dataPos.z < 0
+	   || dataPos.x >= dataDim[0] || dataPos.y >= dataDim[1] || dataPos.z >= dataDim[2])
+	{
+		LOGD("outside bounds");
+		//seedPointPlacement = false ;
+		return;
+	}
+	LOGD("Coords correct");
+	DataCoords coords(dataPos.x, dataPos.y, dataPos.z);
+
+	clock_gettime(CLOCK_REALTIME, &particleStartTime);
+
+	int delay = 0;
+	LOGD("Starting Particle Computation");
+	synchronized (particles) {
+		for (Particle& p : particles) {
+			p.pos = Vector3(coords.x, coords.y, coords.z) + particleJitter();
+			p.lastTime = particleStartTime;
+			p.delayMs = delay;
+			delay += particleReleaseDuration/particles.size();
+			p.stallMs = 0;
+			p.valid = true;
+		}
+	}
+}
+
+/*void FluidMechanics::Impl::releaseParticles()
+{
 	if (!velocityData || !state->tangibleVisible || !state->stylusVisible)
 		return;
 
@@ -412,7 +472,7 @@ void FluidMechanics::Impl::releaseParticles()
 			p.valid = true;
 		}
 	}
-}
+}*/
 
 void FluidMechanics::Impl::integrateParticleMotion(Particle& p)
 {
@@ -1767,6 +1827,10 @@ float FluidMechanics::buttonReleased()
 void FluidMechanics::rebind()
 {
 	impl->rebind();
+}
+
+void FluidMechanics::setSeedPoint(float x, float y, float z){
+	impl->setSeedPoint(x,y,z);
 }
 
 void FluidMechanics::setMatrices(const Matrix4& volumeMatrix, const Matrix4& stylusMatrix)
