@@ -24,7 +24,8 @@ void loadDataSet(std::unique_ptr<FluidMechanics> app, int dataset){
 
 int main()
 {
-
+	
+	bool realFullScreen = false ;
 	udp_server server(8500);
 	//server.listen();
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -60,6 +61,8 @@ int main()
 		return EXIT_FAILURE;
 	}
 
+
+
 	SDL_GLContext context = SDL_GL_CreateContext(window);
 	if (!context) {
 		LOGE("Unable to create context: %s", SDL_GetError());
@@ -73,8 +76,6 @@ int main()
 	LOGD("OpenGL version: %s", glGetString(GL_VERSION));
 	LOGD("GLSL version: %s", glGetString(GL_SHADING_LANGUAGE_VERSION));
 	// LOGD("OpenGL extensions: %s", glGetString(GL_EXTENSIONS));
-
-	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	std::unique_ptr<FluidMechanics> app(new FluidMechanics("data"));
 	app->rebind();
@@ -119,10 +120,16 @@ int main()
 	            {
 	                quit = true ;
 	            }
+				if(event.key.keysym.sym == SDLK_f){
+					realFullScreen = !realFullScreen ;
+					if(realFullScreen)
+						SDL_SetWindowBordered(window, SDL_FALSE);
+					else
+						SDL_SetWindowBordered(window, SDL_TRUE);
+				}
 	            break;
 	    }
-		glClearColor(0, 0, 0, 1);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 		if(server.hasDataSetChanged ){
 			int dataset = server.getDataSet();
 			if(dataset == ftle){
@@ -135,12 +142,17 @@ int main()
 				app->loadDataSet("data/head.vti");
 			}
 			else if(dataset == velocity){
-				app->loadDataSet("data/ftlelog.vtk");
+				app->loadDataSet("data/FTLE7.vtk");
 				app->loadVelocityDataSet("data/Velocities7.vtk");
 			}
 		}
 		dataMatrix = server.getDataMatrix();
 		sliceMatrix = server.getSliceMatrix();
+LOGD("dataMatrix = %s", Utility::toString(dataMatrix).c_str());
+LOGD("sliceMatrix = %s", Utility::toString(sliceMatrix).c_str());
+LOGD("server.getZoomFactor() = %f", server.getZoomFactor());
+
+		app->getSettings()->zoomFactor = server.getZoomFactor();
 		//sliceMatrix = dataMatrix * sliceMatrix ;
 		seedPoint = server.getSeedPoint();
 		app->setMatrices(dataMatrix,sliceMatrix);
@@ -156,7 +168,7 @@ int main()
 		//app->getSettings()->showSlice = true;
 		app->getSettings()->showSlice = server.getShowSlice();
 		app->getSettings()->clipDist = t2;
-		app->getSettings()->zoomFactor = server.getZoomFactor();
+
 		if(prevSeedPoint != seedPoint){
 			app->setSeedPoint(seedPoint.x, seedPoint.y, seedPoint.z);
 			prevSeedPoint = seedPoint ;

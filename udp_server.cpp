@@ -75,7 +75,7 @@ int udp_server::getDataSet(){
 	return dataset ;
 }
 
-int udp_server::getZoomFactor(){
+float udp_server::getZoomFactor(){
 	return zoomingFactor ;
 }
 
@@ -160,7 +160,7 @@ void udp_server::listen(){
 
 		int tmpbool = -1 ;
 		
-		//std::cout << "Message = " << msg << std::endl ;
+		std::cout << "Message = " << msg << std::endl ;
 		
 		//First we set the dataset
 		getline(ss, tok, ';');
@@ -168,7 +168,7 @@ void udp_server::listen(){
 
 		//Then the zooming Factor
 		getline(ss, tok, ';');
-		zoomingFactor = std::stoi(tok.c_str());
+		zoomingFactor = std::stod(tok.c_str());
 
 		//Get the booleans
 		getline(ss, tok, ';');

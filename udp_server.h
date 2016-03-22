@@ -45,7 +45,7 @@ public:
 	Vector3 getSeedPoint();
 
 	int getDataSet();
-	int getZoomFactor();
+	float getZoomFactor();
 
 	bool getShowVolume();
 	bool getShowSurface();
@@ -61,7 +61,7 @@ private:
 	Synchronized<Matrix4> sliceMatrix ;
 	Synchronized<Vector3> seedPoint ;
 	int dataset 		= 1 ;
-	int zoomingFactor 	= 1 ;
+	float zoomingFactor 	= 1 ;
 
 	bool showVolume 	= true ;
 	bool showSurface 	= true ;

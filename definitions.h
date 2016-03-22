@@ -1,9 +1,9 @@
 #ifndef DEFINITIONS
 #define DEFINITIONS
 	
-	#define ftle		1
-	#define ironProt	2
-	#define head		3
-	#define velocity 	4
+	#define ftle		0
+	#define ironProt	1
+	#define head		2
+	#define velocity 	3
 
 #endif

@@ -26,7 +26,7 @@ namespace {
 	const GLsizei numPoints = sizeof(texturedQuadBuffer)/bufferStride;
 
 	// const unsigned int horizSize = 128, vertSize = 128;
-	const unsigned int horizSize = 256, vertSize = 256;
+	const unsigned int horizSize = 256*4, vertSize = 256*4;
 	// const unsigned int horizSize = 1280, vertSize = 736; // screenWidth/screenHeight
 
 	const char* vertexShader =

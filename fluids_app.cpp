@@ -527,7 +527,8 @@ void FluidMechanics::Impl::integrateParticleMotion(Particle& p)
 		// Vector3 vel(v[0], v[1], v[2]);
 		Vector3 vel(v[1], v[0], v[2]); // XXX: workaround for a wrong data orientation
 
-		if (!vel.isNull()) {
+		//if (!vel.isNull()) {
+		if (vel.length() > 0.001f) {
 			p.pos += vel * particleSpeed;
 		} else {
 			// LOGD("particle stopped");
@@ -1076,6 +1077,17 @@ void FluidMechanics::Impl::updateSlicePlanes()
 // (GL context)
 void FluidMechanics::Impl::renderObjects()
 {
+/*LOGD("dataMatrix = %s", Utility::toString(state->modelMatrix).c_str());
+LOGD("sliceMatrix = %s", Utility::toString(state->sliceModelMatrix).c_str());
+LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
+
+	glClearColor(0, 0, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glViewport(0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
+
+
+
 	const Matrix4 proj = app->getProjMatrix();
 
 	glEnable(GL_DEPTH_TEST);
@@ -1085,6 +1097,14 @@ void FluidMechanics::Impl::renderObjects()
 	synchronized(state->modelMatrix) {
 		mm = state->modelMatrix;
 	}
+
+	// Apply the zoom factor
+	mm = mm * Matrix4::makeTransform(
+		Vector3::zero(),
+		Quaternion::identity(),
+		Vector3(settings->zoomFactor)
+	);
+
 	glDisable(GL_BLEND);
 	synchronized_if(isosurface) {
 		glDepthMask(true);
@@ -1097,7 +1117,7 @@ void FluidMechanics::Impl::renderObjects()
 	glDisable(GL_CULL_FACE);
 	glDepthMask(true); // requires "discard" in the shader where alpha == 0
 
-	if (settings->clipDist > 0.0f) {
+	/*if (settings->clipDist > 0.0f) {
 		// Set a depth value for the slicing plane
 		Matrix4 trans = Matrix4::identity();
 		// trans[3][2] = app->getDepthValue(settings->clipDist); // relative to trans[3][3], which is 1.0
@@ -1109,6 +1129,30 @@ void FluidMechanics::Impl::renderObjects()
 		synchronized(slice) {
 			slice->setOpaque(false);
 			slice->render(app->getOrthoProjMatrix(), trans);
+		}
+	}*/
+
+
+	Matrix4 s2mm;
+	synchronized(state->sliceModelMatrix) {
+		s2mm = state->sliceModelMatrix;
+	}
+
+
+	bool exists = false;
+	synchronized (particles) {
+		for (Particle& p : particles) {
+			if (p.valid) {
+				exists = true;
+				break;
+			}
+		}
+	}
+
+	if (!exists) {
+		synchronized(slice) {
+			slice->setOpaque(false);
+			slice->render(proj, s2mm);
 		}
 	}
 
@@ -1148,26 +1192,6 @@ void FluidMechanics::Impl::renderObjects()
 		}
 	}
 
-	glEnable(GL_DEPTH_TEST);
-	synchronized_if(volume) {
-		// glDepthMask(false);
-		glDepthMask(true);
-		glEnable(GL_BLEND);
-		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
-		// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
-		glDisable(GL_CULL_FACE);
-		volume->render(proj, mm);
-	}
-	synchronized_if(outline) {
-		glDepthMask(true);
-		glLineWidth(2.0f);
-		outline->setColor(Vector3(1.0f, 0, 0));
-		outline->render(proj, mm*Matrix4::makeTransform(
-			                Vector3::zero(),
-			                Quaternion::identity(),
-			                Vector3(1.01f)));
-	}
-
 
 	printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
 		std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
@@ -1184,6 +1208,43 @@ void FluidMechanics::Impl::renderObjects()
 			// particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.2f)));
 			particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.15f)));
 		}
+	}
+
+
+	glEnable(GL_DEPTH_TEST);
+	synchronized_if(volume) {
+		// glDepthMask(false);
+		glDepthMask(true);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
+		// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
+		glDisable(GL_CULL_FACE);
+
+		volume->setOpacity(exists ? 0.025 : 1.0);
+		if (exists) volume->clearClipPlane();
+		volume->render(proj, mm);
+	}
+	synchronized_if(outline) {
+		glDepthMask(true);
+		glLineWidth(2.0f);
+		outline->setColor(Vector3(1.0f, 0, 0));
+		outline->render(proj, mm*Matrix4::makeTransform(
+			                Vector3::zero(),
+			                Quaternion::identity(),
+			                Vector3(1.01f)));
+	}
+
+
+
+	glViewport( SCREEN_WIDTH/2, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+		//glClearColor(0, 0, 0, 1);
+		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+	synchronized(slice) {
+		slice->setOpaque(false);
+		slice->render(app->getOrthoProjMatrix(), Matrix4::identity());
 	}
 
 
@@ -1807,7 +1868,7 @@ FluidMechanics::FluidMechanics(const std::string& baseDir)
 	impl->state = std::static_pointer_cast<FluidMechanics::State>(state);
 
 	// Create a perspective projection matrix
-	projMatrix = Matrix4::perspective(35.0f, float(SCREEN_WIDTH)/SCREEN_HEIGHT, 50.0f, 2500.0f);
+	projMatrix = Matrix4::perspective(35.0f, float(SCREEN_WIDTH/2)/SCREEN_HEIGHT, 50.0f, 2500.0f);
 	projMatrix[1][1] *= -1;
 	projMatrix[2][2] *= -1;
 	projMatrix[2][3] *= -1;
@@ -1816,7 +1877,8 @@ FluidMechanics::FluidMechanics(const std::string& baseDir)
 	projFarClipDist  =  projMatrix[3][2] / (1-projMatrix[2][2]); // 2500.0f
 
 	// Create an orthographic projection matrix
-	orthoProjMatrix = Matrix4::ortho(-1.0f, 1.0f, -1.0f, 1.0f, 1.0f, -1.0f);
+	//orthoProjMatrix = Matrix4::ortho(-1.0f*2, 1.0f*2, -1.0f, 1.0f, 1.0f, -1.0f);
+	orthoProjMatrix = Matrix4::ortho(-1.0, 3.0, -1.0f, 1.0f, 1.0f, -1.0f);
 }
 
 FluidMechanics::~FluidMechanics()
@@ -1871,4 +1933,4 @@ void FluidMechanics::render()
 void FluidMechanics::updateSurfacePreview()
 {
 	impl->updateSurfacePreview();
-}
+} 
