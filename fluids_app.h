@@ -88,7 +88,10 @@ struct FluidMechanics::Settings
 	   sliceType(SLICE_CAMERA),
 	   clipDist(defaultClipDist),
 	   surfacePercentage(0.13), // XXX: hardcoded testing value
-	   surfacePreview(false)
+	   surfacePreview(false),
+	   considerX(1),
+	   considerY(1),
+	   considerZ(1)
 	{}
 
 	static constexpr float nativeZoomFactor = 2.0f; // global zoom multiplier
@@ -100,6 +103,9 @@ struct FluidMechanics::Settings
 	float clipDist; // if clipDist == 0, the clip plane is disabled
 	double surfacePercentage;
 	bool surfacePreview;
+	short considerX = 1 ;
+	short considerY = 1 ;
+	short considerZ = 1 ;
 };
 
 // ======================================================================

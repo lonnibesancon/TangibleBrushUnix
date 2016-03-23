@@ -99,6 +99,18 @@ bool udp_server::getShowOutline(){
 	return this->showOutline ;
 }
 
+short udp_server::getConsiderX(){
+	return this->considerX;
+}
+
+short udp_server::getConsiderY(){
+	return this->considerY;
+}
+
+short udp_server::getConsiderZ(){
+	return this->considerZ;
+}
+
 
 void udp_server::initSocket(){
 	//create a UDP socket
@@ -160,7 +172,7 @@ void udp_server::listen(){
 
 		int tmpbool = -1 ;
 		
-		std::cout << "Message = " << msg << std::endl ;
+		//std::cout << "Message = " << msg << std::endl ;
 		
 		//First we set the dataset
 		getline(ss, tok, ';');
@@ -219,11 +231,11 @@ void udp_server::listen(){
 
 		synchronized(dataMatrix){
 			dataMatrix = Matrix4(oMatrix) ;
-			printAny(dataMatrix, "dataMatrix = ");
+			//printAny(dataMatrix, "dataMatrix = ");
 		}
 		synchronized(sliceMatrix){
 			sliceMatrix = Matrix4(pMatrix) ;
-			printAny(sliceMatrix, "sliceMatrix = ");
+			//printAny(sliceMatrix, "sliceMatrix = ");
 		}
 		synchronized(seedPoint){
 			seedPoint = Vector3(seed) ;
@@ -232,8 +244,25 @@ void udp_server::listen(){
 			dataset = datast ;
 			hasDataSetChanged = true ;
 		}
+		
+		//Now for the display only part: constrains on axis + what to show
+		int consider = -1 ;
+		//We don't need to use getline again, it was stored in the last do-while loop		getline(ss, tok, ';');
+		std::cout << "SS ======" << tok.c_str() << std::endl ;
+		consider = std::stoi(tok.c_str());
+		this->considerX = consider ;
+		getline(ss, tok, ';');
+		std::cout << "SS ======" << tok.c_str() << std::endl ;
+		consider = std::stoi(tok.c_str());
+		this->considerY = consider ;
+		getline(ss, tok, ';');
+		std::cout << "SS ======" << tok.c_str() << std::endl ;
+		consider = std::stoi(tok.c_str());
+		this->considerZ = consider ;
+		
+		
 		hasDataChanged = true ;
-	
+		
 
     	}
 	return NULL ;

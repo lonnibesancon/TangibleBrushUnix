@@ -1193,8 +1193,8 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 	}
 
 
-	printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
-		std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
+	//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
+		//std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
 		synchronized (particles) {
 		for (Particle& p : particles) {
 			if (!p.valid)
@@ -1573,10 +1573,10 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 		}
 
 		// Render particles
-		printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
-		printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
-		printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
-		std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
+		//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
+		//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
+		//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
+		//std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
 		synchronized (particles) {
 			for (Particle& p : particles) {
 				if (!p.valid)
@@ -1594,6 +1594,7 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 
 		// NOTE: must be rendered before "slice" (because of
 		// transparency sorting)
+		std::cout << "Show Slice = " << settings->showSlice << " state->clipAxis = " << state->clipAxis << "   state->lockedClipAxis  " << state->lockedClipAxis << std::endl ; 
 		if (settings->showSlice && state->clipAxis != CLIP_NONE && state->lockedClipAxis == CLIP_NONE) {
 			Vector3 scale;
 			Vector3 color;
@@ -1856,6 +1857,22 @@ void FluidMechanics::Impl::updateSurfacePreview()
 			isosurfaceLow->setPercentage(settings->surfacePercentage);
 		}
 	}
+	
+	if(settings->considerX+settings->considerY+settings->considerZ == 3){
+		state->clipAxis = CLIP_NONE ;
+	}
+
+	else if(settings->considerX == 1 ){
+		state->clipAxis = CLIP_AXIS_X ;
+	}
+	else if(settings->considerY == 1 ){
+		state->clipAxis = CLIP_AXIS_Y ;
+	}
+	else if(settings->considerZ == 1 ){
+		state->clipAxis = CLIP_AXIS_Z ;
+	}
+	
+	std::cout<< "-------->Updated SURFACE PREVIEW" << std::endl ;
 }
 
 FluidMechanics::FluidMechanics(const std::string& baseDir)

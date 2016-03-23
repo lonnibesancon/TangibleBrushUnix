@@ -28,6 +28,7 @@ public:
 	char buf[BUFLEN] ;
 	bool hasDataChanged 	= false ;
 	bool hasDataSetChanged 	= false ;
+	
 
 	
 
@@ -52,6 +53,10 @@ public:
 	bool getShowStylus();
 	bool getShowSlice();
 	bool getShowOutline();
+	
+	short getConsiderX();
+	short getConsiderY();
+	short getConsiderZ();
 
 
 private:
@@ -68,6 +73,10 @@ private:
 	bool showStylus 	= true ;
 	bool showSlice 		= true ;
 	bool showOutline 	= true ;
+
+	short considerX = 1 ;
+	short considerY = 1 ;
+	short considerZ = 1 ;
 
 
 };

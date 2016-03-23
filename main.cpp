@@ -148,9 +148,9 @@ int main()
 		}
 		dataMatrix = server.getDataMatrix();
 		sliceMatrix = server.getSliceMatrix();
-LOGD("dataMatrix = %s", Utility::toString(dataMatrix).c_str());
-LOGD("sliceMatrix = %s", Utility::toString(sliceMatrix).c_str());
-LOGD("server.getZoomFactor() = %f", server.getZoomFactor());
+		//LOGD("dataMatrix = %s", Utility::toString(dataMatrix).c_str());
+		//LOGD("sliceMatrix = %s", Utility::toString(sliceMatrix).c_str());
+		//LOGD("server.getZoomFactor() = %f", server.getZoomFactor());
 
 		app->getSettings()->zoomFactor = server.getZoomFactor();
 		//sliceMatrix = dataMatrix * sliceMatrix ;
@@ -174,6 +174,10 @@ LOGD("server.getZoomFactor() = %f", server.getZoomFactor());
 			prevSeedPoint = seedPoint ;
 			app->releaseParticles();
 		}
+		
+		app->getSettings()->considerX = server.getConsiderX();
+		app->getSettings()->considerY = server.getConsiderY();
+		app->getSettings()->considerZ = server.getConsiderZ();
 		
 		//LOGD("%f", t2);
 
