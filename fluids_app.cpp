@@ -72,6 +72,7 @@ struct FluidMechanics::Impl
 
 	void updateSurfacePreview();
 	void setSeedPoint(float x, float y, float z);
+	void resetParticles();
 
 	FluidMechanics* app;
 	SettingsPtr settings;
@@ -358,6 +359,14 @@ float FluidMechanics::Impl::buttonReleased()
 	} catch (const std::exception& e) {
 		LOGD("Exception: %s", e.what());
 		return 0.0f;
+	}
+}
+
+void FluidMechanics::Impl::resetParticles(){
+	for (Particle& p : particles) {
+			p.pos = Vector3(0, 0, 0);
+			p.stallMs = 0;
+			p.valid = false;
 	}
 }
 
@@ -1935,6 +1944,10 @@ void FluidMechanics::rebind()
 
 void FluidMechanics::setSeedPoint(float x, float y, float z){
 	impl->setSeedPoint(x,y,z);
+}
+
+void FluidMechanics::resetParticles(){
+	impl->resetParticles();
 }
 
 void FluidMechanics::setMatrices(const Matrix4& volumeMatrix, const Matrix4& stylusMatrix)

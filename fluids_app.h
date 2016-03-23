@@ -24,6 +24,7 @@ public:
 	void updateSurfacePreview(); // must be called after updating the isosurface value in Settings
 
 	void releaseParticles();
+	void resetParticles();
 
 	void buttonPressed();
 	float buttonReleased();

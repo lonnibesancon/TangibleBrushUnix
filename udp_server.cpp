@@ -172,7 +172,7 @@ void udp_server::listen(){
 
 		int tmpbool = -1 ;
 		
-		//std::cout << "Message = " << msg << std::endl ;
+		std::cout << "Message = " << msg << std::endl ;
 		
 		//First we set the dataset
 		getline(ss, tok, ';');

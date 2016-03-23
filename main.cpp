@@ -80,7 +80,7 @@ int main()
 	std::unique_ptr<FluidMechanics> app(new FluidMechanics("data"));
 	app->rebind();
 
-	app->loadDataSet("data/ftlelog.vtk");
+	app->loadDataSet("data/head.vti");
 	app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 400), Quaternion(Vector3::unitX(), -M_PI/4)),
 	                 // Matrix4::identity()
 	                 Matrix4::makeTransform(Vector3(0, 0, 400))
@@ -170,6 +170,10 @@ int main()
 		app->getSettings()->clipDist = t2;
 
 		if(prevSeedPoint != seedPoint){
+			if(seedPoint == Vector3(-1000000,-1000000,-1000000) || seedPoint == Vector3(-1,-1,-1)){
+				std::cout << "Reset Particles" << std::endl ;
+				app->resetParticles();
+			}
 			app->setSeedPoint(seedPoint.x, seedPoint.y, seedPoint.z);
 			prevSeedPoint = seedPoint ;
 			app->releaseParticles();
