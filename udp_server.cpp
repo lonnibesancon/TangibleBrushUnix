@@ -160,111 +160,110 @@ void udp_server::listen(){
 		//print details of the client/peer and the data received
 		std::string msg = buf ;
 		std::stringstream ss(msg);
-		
-		std::string tok;
-		int nbOfElementsToParseFirst = 7 ;
-		int i = nbOfElementsToParseFirst ;	
-		//double allvalues[NUMBEROFITEMSINMESSAGE];
-		float oMatrix[16];
-		float pMatrix[16];
-		float seed[3];
-		int datast = -1 ;
-
-		int tmpbool = -1 ;
-		
 		std::cout << "Message = " << msg << std::endl ;
-		
-		//First we set the dataset
-		getline(ss, tok, ';');
-		datast = std::stoi(tok.c_str());
 
-		//Then the zooming Factor
-		getline(ss, tok, ';');
-		zoomingFactor = std::stod(tok.c_str());
+		if(msg[0] == '1')
+		{
+			std::string tok;
+			int nbOfElementsToParseFirst = 7 ;
+			int i = nbOfElementsToParseFirst ;	
+			//double allvalues[NUMBEROFITEMSINMESSAGE];
+			float oMatrix[16];
+			float pMatrix[16];
+			float seed[3];
+			int datast = -1 ;
 
-		//Get the booleans
-		getline(ss, tok, ';');
-		tmpbool = std::stoi(tok.c_str());
-		showVolume = (tmpbool == 0 )? false : true ;
-		getline(ss, tok, ';');
-		tmpbool = std::stoi(tok.c_str());
-		showSurface = (tmpbool == 0 )? false : true ;
-		getline(ss, tok, ';');
-		tmpbool = std::stoi(tok.c_str());
-		showStylus = (tmpbool == 0 )? false : true ;
-		getline(ss, tok, ';');
-		tmpbool = std::stoi(tok.c_str());
-		showSlice = (tmpbool == 0 )? false : true ;
-		getline(ss, tok, ';');
-		tmpbool = std::stoi(tok.c_str());
-		showOutline = (tmpbool == 0 )? false : true ;
+			int tmpbool = -1 ;
+			
+			//First we set the dataset
+			getline(ss, tok, ';');
+			datast = std::stoi(tok.c_str());
 
-		//Finally the matrices and seeding point
-		getline(ss, tok, ';');
-		do{
-			//std::cout << "i = " << i << " -> " << tok << std::endl ;
-			oMatrix[i-nbOfElementsToParseFirst] = std::stod(tok.c_str());
-			i++ ;
-		}while(getline(ss, tok, ';') && i < 16+nbOfElementsToParseFirst );
-		//std::cout << "Object Matrix Constructed " << std::endl ;
-		//std::cout << "Remaining Line = " << ss << std::endl ;
-		//sleep(2);
+			//Then the zooming Factor
+			getline(ss, tok, ';');
+			zoomingFactor = std::stod(tok.c_str());
 
+			//Get the booleans
+			getline(ss, tok, ';');
+			tmpbool = std::stoi(tok.c_str());
+			showVolume = (tmpbool == 0 )? false : true ;
+			getline(ss, tok, ';');
+			tmpbool = std::stoi(tok.c_str());
+			showSurface = (tmpbool == 0 )? false : true ;
+			getline(ss, tok, ';');
+			tmpbool = std::stoi(tok.c_str());
+			showStylus = (tmpbool == 0 )? false : true ;
+			getline(ss, tok, ';');
+			tmpbool = std::stoi(tok.c_str());
+			showSlice = (tmpbool == 0 )? false : true ;
+			getline(ss, tok, ';');
+			tmpbool = std::stoi(tok.c_str());
+			showOutline = (tmpbool == 0 )? false : true ;
 
-		do{
-		//	std::cout << "i = " << i << " -> " << tok << std::endl ;
-			pMatrix[i-nbOfElementsToParseFirst-16] = std::stod(tok.c_str());
-			i++ ;
-		}while(getline(ss, tok, ';') && i < 32+nbOfElementsToParseFirst );
-		//std::cout << "Plane Matrix Constructed " << std::endl ;
-		//sleep(2);
-		
-
-		do{
-			//std::cout << "i = " << i << " -> " << tok << std::endl ;
-			seed[i-32-nbOfElementsToParseFirst] = std::stod(tok.c_str());
-			i++ ;
-		}while(getline(ss, tok, ';') && i < 35+nbOfElementsToParseFirst );
-		//sleep(2);
-		//std::cout << "Seed Point Constructed " << std::endl ;
+			//Finally the matrices and seeding point
+			getline(ss, tok, ';');
+			do{
+				//std::cout << "i = " << i << " -> " << tok << std::endl ;
+				oMatrix[i-nbOfElementsToParseFirst] = std::stod(tok.c_str());
+				i++ ;
+			}while(getline(ss, tok, ';') && i < 16+nbOfElementsToParseFirst );
+			//std::cout << "Object Matrix Constructed " << std::endl ;
+			//std::cout << "Remaining Line = " << ss << std::endl ;
+			//sleep(2);
 
 
-		synchronized(dataMatrix){
-			dataMatrix = Matrix4(oMatrix) ;
-			//printAny(dataMatrix, "dataMatrix = ");
+			do{
+			//	std::cout << "i = " << i << " -> " << tok << std::endl ;
+				pMatrix[i-nbOfElementsToParseFirst-16] = std::stod(tok.c_str());
+				i++ ;
+			}while(getline(ss, tok, ';') && i < 32+nbOfElementsToParseFirst );
+			//std::cout << "Plane Matrix Constructed " << std::endl ;
+			//sleep(2);
+			
+
+			do{
+				//std::cout << "i = " << i << " -> " << tok << std::endl ;
+				seed[i-32-nbOfElementsToParseFirst] = std::stod(tok.c_str());
+				i++ ;
+			}while(getline(ss, tok, ';') && i < 35+nbOfElementsToParseFirst );
+			//sleep(2);
+			//std::cout << "Seed Point Constructed " << std::endl ;
+
+
+			synchronized(dataMatrix){
+				dataMatrix = Matrix4(oMatrix) ;
+				//printAny(dataMatrix, "dataMatrix = ");
+			}
+			synchronized(sliceMatrix){
+				sliceMatrix = Matrix4(pMatrix) ;
+				//printAny(sliceMatrix, "sliceMatrix = ");
+			}
+			synchronized(seedPoint){
+				seedPoint = Vector3(seed) ;
+			}
+			if(dataset!= datast){
+				dataset = datast ;
+				hasDataSetChanged = true ;
+			}
+			
+			//Now for the display only part: constrains on axis + what to show
+			int consider = -1 ;
+			//We don't need to use getline again, it was stored in the last do-while loop		getline(ss, tok, ';');
+			std::cout << "SS ======" << tok.c_str() << std::endl ;
+			consider = std::stoi(tok.c_str());
+			this->considerX = consider ;
+			getline(ss, tok, ';');
+			std::cout << "SS ======" << tok.c_str() << std::endl ;
+			consider = std::stoi(tok.c_str());
+			this->considerY = consider ;
+			getline(ss, tok, ';');
+			std::cout << "SS ======" << tok.c_str() << std::endl ;
+			consider = std::stoi(tok.c_str());
+			this->considerZ = consider ;
+			
+			
+			hasDataChanged = true ;
 		}
-		synchronized(sliceMatrix){
-			sliceMatrix = Matrix4(pMatrix) ;
-			//printAny(sliceMatrix, "sliceMatrix = ");
-		}
-		synchronized(seedPoint){
-			seedPoint = Vector3(seed) ;
-		}
-		if(dataset!= datast){
-			dataset = datast ;
-			hasDataSetChanged = true ;
-		}
-		
-		//Now for the display only part: constrains on axis + what to show
-		int consider = -1 ;
-		//We don't need to use getline again, it was stored in the last do-while loop		getline(ss, tok, ';');
-		std::cout << "SS ======" << tok.c_str() << std::endl ;
-		consider = std::stoi(tok.c_str());
-		this->considerX = consider ;
-		getline(ss, tok, ';');
-		std::cout << "SS ======" << tok.c_str() << std::endl ;
-		consider = std::stoi(tok.c_str());
-		this->considerY = consider ;
-		getline(ss, tok, ';');
-		std::cout << "SS ======" << tok.c_str() << std::endl ;
-		consider = std::stoi(tok.c_str());
-		this->considerZ = consider ;
-		
-		
-		hasDataChanged = true ;
-		
-
-    	}
+	}
 	return NULL ;
-	
 }
