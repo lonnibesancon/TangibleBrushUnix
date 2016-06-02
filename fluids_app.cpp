@@ -1107,11 +1107,12 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 
 
 	//Show rectangles
+	glEnable(GL_DEPTH_TEST);
+	glClear(GL_DEPTH_BUFFER_BIT);
 	Rectangle r(1.0, 1.0);
 	if(settings->showSelection)
 	{
 		glEnable(GL_STENCIL_TEST);
-		glDisable(GL_DEPTH_TEST);
 		glStencilFunc(GL_ALWAYS, 1, 0xFF); // Set any stencil to 1
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 		glStencilMask(0xFF); // Write to stencil buffer
@@ -1120,16 +1121,12 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 		for(uint32_t i=0; i < selectionMatrix.size(); i++)
 		{
 			Vector3 diff = selectionPoint[i] - firstPoint;
-			diff = proj.inverse() * diff;
 			r.setSize(diff.x, diff.y);
 			r.render(proj, selectionMatrix[i]);
 		}
 		glStencilFunc(GL_EQUAL, 1, 0xFF); // Pass test if stencil value is 1
 		glStencilMask(0x00); // Don't write anything to stencil buffer
 	}
-
-	glEnable(GL_DEPTH_TEST);
-	glClear(GL_DEPTH_BUFFER_BIT);
 
 	// XXX: test
 	Matrix4 mm;

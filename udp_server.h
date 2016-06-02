@@ -82,8 +82,6 @@ private:
 	short considerX = 1 ;
 	short considerY = 1 ;
 	short considerZ = 1 ;
-
-
 };
 
 #endif

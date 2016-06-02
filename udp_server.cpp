@@ -188,14 +188,14 @@ void udp_server::listen(){
 			{
 				std::string tok;
 				float matrix[16];
-				float firstPoint[2];
-				float lastPoint[2];
+				float firstPoint[3];
+				float lastPoint[3];
 
 				//Useless one
 				getline(ss, tok, ';');
 
 				//get first point;
-				for(uint32_t i=0; i < 2; i++)
+				for(uint32_t i=0; i < 3; i++)
 				{
 					getline(ss, tok, ';');
 					firstPoint[i] = std::stof(tok.c_str());
@@ -209,7 +209,7 @@ void udp_server::listen(){
 				}
 
 				//Then the last point
-				for(uint32_t i=0; i < 2; i++)
+				for(uint32_t i=0; i < 3; i++)
 				{
 					getline(ss, tok, ';');
 					lastPoint[i] = std::stof(tok);
@@ -222,12 +222,12 @@ void udp_server::listen(){
 
 				synchronized(selectionStartPoint)
 				{
-					selectionStartPoint = Vector3(firstPoint[0], firstPoint[1], 0.0);
+					selectionStartPoint = Vector3(firstPoint[0], firstPoint[1], firstPoint[2]);
 				}
 
 				synchronized(selectionPoint)
 				{
-					selectionPoint.push_back(Vector3(lastPoint[0], lastPoint[1], 0.0));
+					selectionPoint.push_back(Vector3(lastPoint[0], lastPoint[1], lastPoint[2]));
 				}
 				hasSelectionSet = true;
 			}
