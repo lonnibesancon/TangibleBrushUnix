@@ -10,6 +10,7 @@
 #include "loaders/loader_obj.h"
 #include "rendering/mesh.h"
 #include "rendering/lines.h"
+#include "rendering/rectangle.h"
 
 #include <array>
 #include <map>
@@ -122,6 +123,10 @@ struct FluidMechanics::Impl
 	bool effectorIntersectionValid;
 
 	bool buttonIsPressed;
+
+	Vector3 firstPoint;
+	std::vector<Matrix4> selectionMatrix;
+	std::vector<Vector3> selectionPoint;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -1092,14 +1097,39 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	glViewport(0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
 
-
+	settings->showSlice = false;
+	settings->showSurface = false;
+	settings->zoomFactor = 1.0;
 
 	const Matrix4 proj = app->getProjMatrix();
 
+
+	//Show rectangles
+	Rectangle r(1.0, 1.0);
+	if(settings->showSelection)
+	{
+		glEnable(GL_STENCIL_TEST);
+		glDisable(GL_DEPTH_TEST);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF); // Set any stencil to 1
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		glStencilMask(0xFF); // Write to stencil buffer
+		glClear(GL_STENCIL_BUFFER_BIT);
+
+		for(uint32_t i=0; i < selectionMatrix.size(); i++)
+		{
+			Vector3 diff = selectionPoint[i] - firstPoint;
+			diff = proj.inverse() * diff;
+			r.setSize(diff.x, diff.y);
+			r.render(proj, selectionMatrix[i]);
+		}
+		glStencilFunc(GL_EQUAL, 1, 0xFF); // Pass test if stencil value is 1
+		glStencilMask(0x00); // Don't write anything to stencil buffer
+	}
+
 	glEnable(GL_DEPTH_TEST);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	// XXX: test
 	Matrix4 mm;
@@ -1114,19 +1144,21 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 		Vector3(settings->zoomFactor)
 	);
 
+	
 	glDisable(GL_BLEND);
 	synchronized_if(isosurface) {
 		glDepthMask(true);
 		glDisable(GL_CULL_FACE);
 		isosurface->render(proj, mm);
 	}
+	
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
 	glDepthMask(true); // requires "discard" in the shader where alpha == 0
 
-	/*if (settings->clipDist > 0.0f) {
+	if (settings->clipDist > 0.0f) {
 		// Set a depth value for the slicing plane
 		Matrix4 trans = Matrix4::identity();
 		// trans[3][2] = app->getDepthValue(settings->clipDist); // relative to trans[3][3], which is 1.0
@@ -1139,7 +1171,7 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 			slice->setOpaque(false);
 			slice->render(app->getOrthoProjMatrix(), trans);
 		}
-	}*/
+	}
 
 
 	Matrix4 s2mm;
@@ -1204,6 +1236,7 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 
 	//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
 		//std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
+		
 		synchronized (particles) {
 		for (Particle& p : particles) {
 			if (!p.valid)
@@ -1219,8 +1252,9 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 		}
 	}
 
-
 	glEnable(GL_DEPTH_TEST);
+
+	
 	synchronized_if(volume) {
 		// glDepthMask(false);
 		glDepthMask(true);
@@ -1242,7 +1276,7 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 			                Quaternion::identity(),
 			                Vector3(1.01f)));
 	}
-
+	
 
 
 	glViewport( SCREEN_WIDTH/2, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -1257,6 +1291,8 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 	}
 
 
+	if(settings->showSelection)
+		glDisable(GL_STENCIL_TEST);
 	return;
 
 	// Stylus (paddle?) z-buffer occlusion
@@ -1315,34 +1351,7 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 							                 Vector3(0.01f, 0.01f, 0.017f)*2
 						                 ));
 					}
-				// } else {
-				// 	cube->render(proj, state->stylusModelMatrix
-				// 	             * Matrix4::makeTransform(
-				// 		             Vector3(11.0, 0, 18.0),
-				// 		             Quaternion::identity(),
-				// 		             Vector3(57, 40, 3)/2
-				// 	             ));
-				// 	cube->render(proj, state->stylusModelMatrix
-				// 	             * Matrix4::makeTransform(
-				// 		             Vector3(11.0, 0, -18.0),
-				// 		             Quaternion::identity(),
-				// 		             Vector3(57, 40, 3)/2
-				// 	             ));
-				// 	cube->render(proj, state->stylusModelMatrix
-				// 	             * Matrix4::makeTransform(
-				// 		             Vector3(11.0, 18.0, 0.0),
-				// 		             Quaternion(Vector3::unitX(), -M_PI/2),
-				// 		             Vector3(57, 40, 3)/2
-				// 	             ));
-				// 	cube->render(proj, state->stylusModelMatrix
-				// 	             * Matrix4::makeTransform(
-				// 		             Vector3(11.0, -18.0, 0.0),
-				// 		             Quaternion(Vector3::unitX(), M_PI/2),
-				// 		             Vector3(57, 40, 3)/2
-				// 	             ));
-				// }
 			}
-		// }
 
 		glColorMask(true, true, true, true);
 	}
@@ -1412,31 +1421,6 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 		}
 #else
 		if (settings->sliceType == SLICE_STYLUS) {
-			// // Effector
-			// static const Matrix4 transform1 = Matrix4::makeTransform(
-			// 	Vector3(0, 0, 0), // (after scaling)
-			// 	Quaternion::identity(),
-			// 	Vector3(10.0f)
-			// );
-			// cube->setColor(Vector3(1.0f));
-			// // LOGD("render 1");
-			// cube->render(proj, smm*transform1);
-			// // LOGD("render 1 success");
-			// // cube->render(qcarProjMatrix, smm*transform1);
-			//
-			// // Handle
-			// static const Matrix4 transform2 = Matrix4::makeTransform(
-			// 	// Vector3((130/*+105*/)*0.5f, 0, 0), // (after scaling)
-			// 	Vector3((130+25)*0.5f, 0, 0), // (after scaling)
-			// 	Quaternion::identity(),
-			// 	// Vector3((130/*+105*/)*0.5f, 5.0f, 5.0f)
-			// 	Vector3((130+25)*0.5f, 5.0f, 5.0f)
-			// );
-			// cube->setColor(Vector3(0.7f));
-			// // LOGD("render 2");
-			// cube->render(proj, smm*transform2);
-			// // LOGD("render 2 success");
-			// // cube->render(qcarProjMatrix, smm*transform2);
 
 		} else {
 		const float size = 0.5f * (stylusEffectorDist + std::max(dataSpacing.x*dataDim[0], std::max(dataSpacing.y*dataDim[1], dataSpacing.z*dataDim[2])));
@@ -1517,21 +1501,6 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 				cube->render(proj, mm*Matrix4::makeTransform(mm.inverse()*effectorPos*Vector3(1,1,0)+Vector3(0,0,0.5*dataDim[2]*dataSpacing.y*settings->zoomFactor), Quaternion::identity(), Vector3(2, 2, 0.25)));
 			}
 
-#if 0
-			synchronized (effectorIntersection) {
-				if (effectorIntersectionValid) {
-					// Effector intersection
-					const Matrix4 transform4 = Matrix4::makeTransform(
-						effectorIntersection,
-						Quaternion::identity(),
-						// Vector3::unitZ().rotationTo(effectorIntersectionNormal),
-						Vector3(3.0f * settings->zoomFactor)
-					);
-					// cube->render(proj, smm*transform4);
-					cube->render(proj, transform4);
-				}
-			}
-#endif
 		}
 		}
 #endif
@@ -1586,7 +1555,7 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 		//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
 		//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
 		//std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
-		synchronized (particles) {
+    		synchronized (particles) {
 			for (Particle& p : particles) {
 				if (!p.valid)
 					continue;
@@ -1600,6 +1569,10 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 				particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.15f)));
 			}
 		}
+
+
+		//Print rectangles
+
 
 		// NOTE: must be rendered before "slice" (because of
 		// transparency sorting)
@@ -1964,3 +1937,28 @@ void FluidMechanics::updateSurfacePreview()
 {
 	impl->updateSurfacePreview();
 } 
+
+void FluidMechanics::setSelectionMatrix(std::vector<Matrix4>& selectionMatrix)
+{
+	impl->selectionMatrix.clear();
+	for(uint32_t i=impl->selectionMatrix.size(); i < selectionMatrix.size(); i++)
+		impl->selectionMatrix.push_back(Matrix4(selectionMatrix[i].data_));
+}
+
+void FluidMechanics::setSelectionPoint(std::vector<Vector3>& selectionPoint)
+{
+	impl->selectionPoint.clear();
+	for(uint32_t i=impl->selectionPoint.size(); i < selectionPoint.size(); i++)
+		impl->selectionPoint.push_back(selectionPoint[i]);
+}
+
+void FluidMechanics::setFirstPoint(Vector3& startPoint)
+{
+	impl->firstPoint = startPoint;
+}
+
+void FluidMechanics::clearSelection()
+{
+	impl->selectionMatrix.clear();
+	impl->selectionPoint.clear();
+}

@@ -3,7 +3,6 @@
 
 #include "global.h"
 
-
 class FluidMechanics
 {
 public:
@@ -41,6 +40,10 @@ public:
 	SettingsPtr getSettings() const { return settings; }
 	StateConstPtr getState() const { return state; }
 
+	void setFirstPoint(Vector3& firstPoint);
+	void setSelectionPoint(std::vector<Vector3>& selectionPoint);
+	void setSelectionMatrix(std::vector<Matrix4>& selectionMatrix);
+	void clearSelection();
 private:
 	unsigned int getScreenWidth() const { return SCREEN_WIDTH; }
 	unsigned int getScreenHeight() const { return SCREEN_HEIGHT; }
@@ -92,7 +95,8 @@ struct FluidMechanics::Settings
 	   surfacePreview(false),
 	   considerX(1),
 	   considerY(1),
-	   considerZ(1)
+	   considerZ(1),
+	   showSelection(false)
 	{}
 
 	static constexpr float nativeZoomFactor = 2.0f; // global zoom multiplier
@@ -107,6 +111,7 @@ struct FluidMechanics::Settings
 	short considerX = 1 ;
 	short considerY = 1 ;
 	short considerZ = 1 ;
+	bool showSelection;
 };
 
 // ======================================================================

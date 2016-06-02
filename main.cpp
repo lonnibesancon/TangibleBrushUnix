@@ -85,7 +85,7 @@ int main()
 	                 // Matrix4::identity()
 	                 Matrix4::makeTransform(Vector3(0, 0, 400))
 					 );
-
+  
 	float t = 0;
 	float t2 = 0;
 
@@ -146,6 +146,35 @@ int main()
 				app->loadVelocityDataSet("data/Velocities7.vtk");
 			}
 		}
+
+		if(server.hasSelectionClear)
+		{
+			app->getSettings()->showSelection = false;
+			app->clearSelection();
+			server.hasSelectionClear = false;
+		}
+
+		if(server.hasSelectionSet)
+		{
+			synchronized(server.selectionMatrix)
+			{
+				app->setSelectionMatrix(server.selectionMatrix);
+			}
+
+			synchronized(server.selectionPoint)
+			{
+				app->setSelectionPoint(server.selectionPoint);
+			}
+
+			synchronized(server.selectionStartPoint)
+			{
+				app->setFirstPoint(server.selectionStartPoint);
+			}
+
+			app->getSettings()->showSelection = true;
+			server.hasSelectionSet = false;
+		}
+
 		dataMatrix = server.getDataMatrix();
 		sliceMatrix = server.getSliceMatrix();
 		//LOGD("dataMatrix = %s", Utility::toString(dataMatrix).c_str());

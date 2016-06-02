@@ -162,7 +162,78 @@ void udp_server::listen(){
 		std::stringstream ss(msg);
 		std::cout << "Message = " << msg << std::endl ;
 
-		if(msg[0] == '1')
+		if(msg[0] == ' ')
+		{}
+
+		else if(msg[0] == '3' && msg.size() == 1)
+		{
+			if(!hasSelectionClear)
+			{
+				synchronized(selectionMatrix)
+				{
+					selectionMatrix.clear();
+				}
+
+				synchronized(selectionPoint)
+				{
+					selectionPoint.clear();
+				}
+				hasSelectionClear = true;
+			}
+		}
+
+		else if(msg[0] == '2' && msg[1] == ';')
+		{
+			if(!hasSelectionSet)
+			{
+				std::string tok;
+				float matrix[16];
+				float firstPoint[2];
+				float lastPoint[2];
+
+				//Useless one
+				getline(ss, tok, ';');
+
+				//get first point;
+				for(uint32_t i=0; i < 2; i++)
+				{
+					getline(ss, tok, ';');
+					firstPoint[i] = std::stof(tok.c_str());
+				}
+
+				//Then get the matrix
+				for(uint32_t i=0; i < 16; i++)
+				{
+					getline(ss, tok, ';');
+					matrix[i] = std::stof(tok.c_str());
+				}
+
+				//Then the last point
+				for(uint32_t i=0; i < 2; i++)
+				{
+					getline(ss, tok, ';');
+					lastPoint[i] = std::stof(tok);
+				}
+
+				synchronized(selectionMatrix)
+				{
+					selectionMatrix.push_back(Matrix4(matrix));
+				}
+
+				synchronized(selectionStartPoint)
+				{
+					selectionStartPoint = Vector3(firstPoint[0], firstPoint[1], 0.0);
+				}
+
+				synchronized(selectionPoint)
+				{
+					selectionPoint.push_back(Vector3(lastPoint[0], lastPoint[1], 0.0));
+				}
+				hasSelectionSet = true;
+			}
+		}
+
+		else
 		{
 			std::string tok;
 			int nbOfElementsToParseFirst = 7 ;

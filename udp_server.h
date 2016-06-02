@@ -28,6 +28,8 @@ public:
 	char buf[BUFLEN] ;
 	bool hasDataChanged 	= false ;
 	bool hasDataSetChanged 	= false ;
+	bool hasSelectionSet    = false;
+	bool hasSelectionClear  = true;
 	
 
 	
@@ -58,13 +60,16 @@ public:
 	short getConsiderY();
 	short getConsiderZ();
 
-
+	Synchronized<Vector3>     selectionStartPoint;
+	Synchronized<std::vector<Matrix4>> selectionMatrix;
+	Synchronized<std::vector<Vector3>> selectionPoint;
 private:
 
 	void initSocket();
 	Synchronized<Matrix4> dataMatrix ;
 	Synchronized<Matrix4> sliceMatrix ;
 	Synchronized<Vector3> seedPoint ;
+
 	int dataset 		= 1 ;
 	float zoomingFactor 	= 1 ;
 
