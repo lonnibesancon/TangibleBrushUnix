@@ -67,6 +67,8 @@ struct FluidMechanics::Impl
 	bool computeCameraClipPlane(Vector3& point, Vector3& normal);
 	bool computeAxisClipPlane(Vector3& point, Vector3& normal);
 	bool computeStylusClipPlane(Vector3& point, Vector3& normal);
+	void showParticules();
+	void showSelection();
 
 	Vector3 posToDataCoords(const Vector3& pos); // "pos" is in eye coordinates
 	Vector3 dataCoordsToPos(const Vector3& dataCoordsToPos);
@@ -1088,8 +1090,7 @@ void FluidMechanics::Impl::updateSlicePlanes()
 	}
 }
 
-// (GL context)
-void FluidMechanics::Impl::renderObjects()
+void FluidMechanics::Impl::showParticules()
 {
 /*LOGD("dataMatrix = %s", Utility::toString(state->modelMatrix).c_str());
 LOGD("sliceMatrix = %s", Utility::toString(state->sliceModelMatrix).c_str());
@@ -1124,6 +1125,7 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 			r.setSize(diff.x, diff.y);
 			r.render(proj, selectionMatrix[i]);
 		}
+
 		glStencilFunc(GL_EQUAL, 1, 0xFF); // Pass test if stencil value is 1
 		glStencilMask(0x00); // Don't write anything to stencil buffer
 	}
@@ -1175,7 +1177,6 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 	synchronized(state->sliceModelMatrix) {
 		s2mm = state->sliceModelMatrix;
 	}
-
 
 	bool exists = false;
 	synchronized (particles) {
@@ -1230,7 +1231,6 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 		}
 	}
 
-
 	//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
 		//std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
 		
@@ -1251,7 +1251,6 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 
 	glEnable(GL_DEPTH_TEST);
 
-	
 	synchronized_if(volume) {
 		// glDepthMask(false);
 		glDepthMask(true);
@@ -1264,6 +1263,7 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 		if (exists) volume->clearClipPlane();
 		volume->render(proj, mm);
 	}
+
 	synchronized_if(outline) {
 		glDepthMask(true);
 		glLineWidth(2.0f);
@@ -1273,8 +1273,6 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 			                Quaternion::identity(),
 			                Vector3(1.01f)));
 	}
-	
-
 
 	glViewport( SCREEN_WIDTH/2, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -1291,268 +1289,56 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 	if(settings->showSelection)
 		glDisable(GL_STENCIL_TEST);
 	return;
+}
 
-	// Stylus (paddle?) z-buffer occlusion
-	// TODO: correct occlusion shape for the real *stylus*
-	if (state->stylusVisible && cube /*&& (settings->sliceType != SLICE_STYLUS || slice->isEmpty())*/) {
-		glColorMask(false, false, false, false);
-		glDepthMask(true);
+void FluidMechanics::Impl::showSelection()
+{
+	glClearColor(0, 0, 0, 1);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
 
-		// if (qcarVisible) {
-		// 	static const Matrix4 transform = Matrix4::makeTransform(
-		// 		Vector3::zero(),
-		// 		Quaternion::identity(),
-		// 		Vector3(63, 63, 3)/2
-		// 	);
-		//
-		// 	synchronized (state->stylusModelMatrix) {
-		// 		cube->render(proj, state->stylusModelMatrix*transform);
-		// 	}
-		// } else {
-		// 	bool isRfduinoStylus = false;
-		// 	try {
-		// 		std::string curMarkerFileName = stylus.getMarkers().at(stylus.getCurrentMarkerID()).patternFileName;
-		// 		isRfduinoStylus = (curMarkerFileName == "14.patt" || curMarkerFileName == "24.patt" || curMarkerFileName == "26.patt");
-		// 	} catch (...) {
-		// 		// ...
-		// 	}
+	settings->showSlice = false;
+	settings->showSurface = false;
+	settings->zoomFactor = 1.0;
 
-			synchronized (state->stylusModelMatrix) {
-				// if (!isRfduinoStylus) {
-					cube->render(proj, state->stylusModelMatrix
-					             * Matrix4::makeTransform(
-						             Vector3(10.0, 0, 10.0),
-						             Quaternion::identity(),
-						             Vector3(59, 40, 3)/2
-					             ));
-					cube->render(proj, state->stylusModelMatrix
-					             * Matrix4::makeTransform(
-						             Vector3(10.0, -10.0, -5.0),
-						             // Quaternion(Vector3::unitX(),  2.146),
-						             Quaternion(Vector3::unitX(),  2.09),
-						             Vector3(59, 40, 3)/2
-					             ));
-					cube->render(proj, state->stylusModelMatrix
-					             * Matrix4::makeTransform(
-						             Vector3(10.0, 10.0, -5.0),
-						             // Quaternion(Vector3::unitX(), -2.146),
-						             Quaternion(Vector3::unitX(), -2.09),
-						             Vector3(59, 40, 3)/2
-					             ));
-					// Handle
-					if (cylinder) {
-						cylinder->render(proj, state->stylusModelMatrix
-						                 * Matrix4::makeTransform(
-							                 Vector3(75.0, 0.0, 0.0),
-							                 Quaternion(Vector3::unitY(), M_PI/2),
-							                 Vector3(0.01f, 0.01f, 0.017f)*2
-						                 ));
-					}
-			}
+	const Matrix4 proj = app->getProjMatrix();
+	glEnable(GL_DEPTH_TEST);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
-		glColorMask(true, true, true, true);
+	// XXX: test
+	Matrix4 mm;
+	synchronized(state->modelMatrix) {
+		mm = state->modelMatrix;
 	}
 
-	if (settings->showStylus && state->stylusVisible && cube) {
-		glDepthMask(true);
-		glEnable(GL_CULL_FACE);
+	// Apply the zoom factor
+	mm = mm * Matrix4::makeTransform(
+		Vector3::zero(),
+		Quaternion::identity(),
+		Vector3(settings->zoomFactor)
+	);
 
-		Matrix4 smm;
-		synchronized(state->stylusModelMatrix) {
-			smm = state->stylusModelMatrix;
-		}
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glDisable(GL_CULL_FACE);
+	glDepthMask(true); // requires "discard" in the shader where alpha == 0
 
-#ifndef NEW_STYLUS_RENDER
-		// Effector
-		static const Matrix4 transform1 = Matrix4::makeTransform(
-			Vector3(0, 0, 0), // (after scaling)
-			Quaternion::identity(),
-			Vector3(10.0f)
-		);
-		cube->setColor(Vector3(1.0f));
-		// LOGD("render 1");
-		cube->render(proj, smm*transform1);
-		// LOGD("render 1 success");
-		// cube->render(qcarProjMatrix, mm*transform1);
-
-		// Handle
-		static const Matrix4 transform2 = Matrix4::makeTransform(
-			// Vector3((130/*+105*/)*0.5f, 0, 0), // (after scaling)
-			Vector3((130+25)*0.5f, 0, 0), // (after scaling)
-			Quaternion::identity(),
-			// Vector3((130/*+105*/)*0.5f, 5.0f, 5.0f)
-			Vector3((130+25)*0.5f, 5.0f, 5.0f)
-		);
-		cube->setColor(Vector3(0.7f));
-		// LOGD("render 2");
-		cube->render(proj, smm*transform2);
-		// LOGD("render 2 success");
-		// cube->render(qcarProjMatrix, mm*transform2);
-
-		if (state->tangibleVisible) { // <-- because of posToDataCoords()
-			// Effector 2
-			const float size = 0.5f * (stylusEffectorDist + std::max(dataSpacing.x*dataDim[0], std::max(dataSpacing.y*dataDim[1], dataSpacing.z*dataDim[2])));
-			Vector3 dataPos = posToDataCoords(smm * Matrix4::makeTransform(Vector3(-size, 0, 0)*settings->zoomFactor) * Vector3::zero());
-			if (dataPos.x >= 0 && dataPos.y >= 0 && dataPos.z >= 0
-			    && dataPos.x < dataDim[0] && dataPos.y < dataDim[1] && dataPos.z < dataDim[2])
-			{
-				cube->setColor(Vector3(0.5f));
-				// cube->setOpacity(1.0f);
-			} else {
-				cube->setColor(Vector3(1, 0.5, 0.5));
-				// cube->setOpacity(0.5f);
-			}
-
-			const Matrix4 transform3 = Matrix4::makeTransform(
-				Vector3(-size, 0, 0) * settings->zoomFactor,
-				Quaternion::identity(),
-				Vector3(2.0f * settings->zoomFactor)
-				// Vector3(0.3f * settings->zoomFactor)
-			);
-
-			// LOGD("render 3");
-			cube->render(proj, smm*transform3);
-			// cube->render(qcarProjMatrix, mm*transform3);
-			// particleSphere->render(proj, mm*transform3);
-			// LOGD("render 3 success");
-		}
-#else
-		if (settings->sliceType == SLICE_STYLUS) {
-
-		} else {
-		const float size = 0.5f * (stylusEffectorDist + std::max(dataSpacing.x*dataDim[0], std::max(dataSpacing.y*dataDim[1], dataSpacing.z*dataDim[2])));
-
-		// Handle
-		const Matrix4 transform2 = Matrix4::makeTransform(
-			// Vector3((130/*+105*/)*0.5f, 0, 0), // (after scaling)
-			Vector3(-size*0.5*settings->zoomFactor, 0, 0), // (after scaling)
-			Quaternion::identity(),
-			// Vector3((130/*+105*/)*0.5f, 5.0f, 5.0f)
-			Vector3(size*0.5*settings->zoomFactor, 2.0f, 2.0f)
-		);
-
-		if (!state->tangibleVisible) {
-		// if (!state->tangibleVisible || settings->sliceType == SLICE_STYLUS) {
-			// Handle
-			cube->setColor(Vector3(0.7f));
-			cube->render(proj, smm*transform2);
-
-		// if (state->tangibleVisible) { // <-- because of posToDataCoords()
-		} else { // <-- because of posToDataCoords()
-			Vector3 effectorPos = smm * Matrix4::makeTransform(Vector3(-size, 0, 0)*settings->zoomFactor) * Vector3::zero();
-			Vector3 dataPos = posToDataCoords(effectorPos);
-			const bool insideVolume = (dataPos.x >= 0 && dataPos.y >= 0 && dataPos.z >= 0
-				&& dataPos.x < dataDim[0]*dataSpacing.x && dataPos.y < dataDim[1]*dataSpacing.y && dataPos.z < dataDim[2]*dataSpacing.z);
-			if (insideVolume) {
-				// cube->setColor(Vector3(0.5f));
-				// cube->setColor(!mousePressed ? Vector3(0.5f) : Vector3(0.5f, 1.0f, 0.5f));
-				cube->setColor(Vector3(0.5f));
-				// cube->setOpacity(1.0f);
-			} else {
-				cube->setColor(Vector3(1, 0.5, 0.5));
-				// cube->setOpacity(0.5f);
-			}
-
-			// Handle
-			cube->render(proj, smm*transform2);
-
-			// Effector 2
-			const Matrix4 transform3 = Matrix4::makeTransform(
-				Vector3(-size, 0, 0) * settings->zoomFactor,
-				Quaternion::identity(),
-				// Vector3(2.0f * settings->zoomFactor)
-				Vector3(2.5f * settings->zoomFactor)
-				// Vector3(0.3f * settings->zoomFactor)
-			);
-
-			// LOGD("render 3");
-			cube->render(proj, smm*transform3);
-			// cube->render(qcarProjMatrix, smm*transform3);
-			// particleSphere->render(proj, smm*transform3);
-			// LOGD("render 3 success");
-
-			cube->setColor(Vector3(0.5f));
-
-			if (insideVolume && settings->showCrossingLines) {
-				// Show crossing axes to help the user locate
-				// the effector position in the data
-				Matrix4 mm;
-				synchronized(state->modelMatrix) {
-					mm = state->modelMatrix;
-				}
-
-				glLineWidth(2.0f);
-				axisCube->setColor(Vector3(1.0f));
-				// axisCube->setColor(mousePressed ? Vector3(1.0f) : Vector3(0.7f));
-
-				axisCube->render(proj, mm*Matrix4::makeTransform(mm.inverse()*effectorPos*Vector3(0,1,1), Quaternion::identity(), Vector3(0.5*dataDim[0]*dataSpacing.x*settings->zoomFactor, 0, 0)));
-				cube->render(proj, mm*Matrix4::makeTransform(mm.inverse()*effectorPos*Vector3(0,1,1)-Vector3(0.5*dataDim[0]*dataSpacing.x*settings->zoomFactor,0,0), Quaternion::identity(), Vector3(0.25, 2, 2)));
-				cube->render(proj, mm*Matrix4::makeTransform(mm.inverse()*effectorPos*Vector3(0,1,1)+Vector3(0.5*dataDim[0]*dataSpacing.x*settings->zoomFactor,0,0), Quaternion::identity(), Vector3(0.25, 2, 2)));
-
-				axisCube->render(proj, mm*Matrix4::makeTransform(mm.inverse()*effectorPos*Vector3(1,0,1), Quaternion::identity(), Vector3(0, 0.5*dataDim[1]*dataSpacing.y*settings->zoomFactor, 0)));
-				cube->render(proj, mm*Matrix4::makeTransform(mm.inverse()*effectorPos*Vector3(1,0,1)-Vector3(0,0.5*dataDim[1]*dataSpacing.y*settings->zoomFactor,0), Quaternion::identity(), Vector3(2, 0.25, 2)));
-				cube->render(proj, mm*Matrix4::makeTransform(mm.inverse()*effectorPos*Vector3(1,0,1)+Vector3(0,0.5*dataDim[1]*dataSpacing.y*settings->zoomFactor,0), Quaternion::identity(), Vector3(2, 0.25, 2)));
-
-				axisCube->render(proj, mm*Matrix4::makeTransform(mm.inverse()*effectorPos*Vector3(1,1,0), Quaternion::identity(), Vector3(0, 0, 0.5*dataDim[2]*dataSpacing.z*settings->zoomFactor)));
-				cube->render(proj, mm*Matrix4::makeTransform(mm.inverse()*effectorPos*Vector3(1,1,0)-Vector3(0,0,0.5*dataDim[2]*dataSpacing.y*settings->zoomFactor), Quaternion::identity(), Vector3(2, 2, 0.25)));
-				cube->render(proj, mm*Matrix4::makeTransform(mm.inverse()*effectorPos*Vector3(1,1,0)+Vector3(0,0,0.5*dataDim[2]*dataSpacing.y*settings->zoomFactor), Quaternion::identity(), Vector3(2, 2, 0.25)));
-			}
-
-		}
-		}
-#endif
-	}
-
-	// LOGD("render 4");
-
-		
-
-
-	if (state->tangibleVisible) {
-		Matrix4 mm;
-		synchronized(state->modelMatrix) {
-			mm = state->modelMatrix;
-		}
-
-		// Apply the zoom factor
-		mm = mm * Matrix4::makeTransform(
-			Vector3::zero(),
-			Quaternion::identity(),
-			Vector3(settings->zoomFactor)
-		);
-
-		synchronized_if(outline) {
-			glDepthMask(true);
-			glLineWidth(2.0f);
-			outline->setColor(!velocityData ? Vector3(1.0f, 0, 0) : Vector3(0, 1.0f, 0));
-			outline->render(proj, mm);
-		}
-
-		// Render the surface
-		if (settings->showSurface) {
-			glDisable(GL_CULL_FACE);
-			glDisable(GL_BLEND);
-			glDepthMask(true);
-
-			if (!settings->surfacePreview || !isosurfaceLow) {
-				synchronized_if(isosurface) {
-					isosurface->render(proj, mm);
-				}
-			}
-
-			if (settings->surfacePreview) {
-				synchronized_if(isosurfaceLow) {
-					isosurfaceLow->render(proj, mm);
+	for(uint32_t i=0; i < selectionMatrix.size(); i++)
+	{
+		bool exists = false;
+		synchronized (particles) {
+			for (Particle& p : particles) {
+				if (p.valid) {
+					exists = true;
+					break;
 				}
 			}
 		}
 
-		// Render particles
 		//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
-		//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
-		//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
-		//std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
-    		synchronized (particles) {
+			//std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
+			
+			synchronized (particles) {
 			for (Particle& p : particles) {
 				if (!p.valid)
 					continue;
@@ -1561,268 +1347,36 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 					continue;
 				Vector3 pos = p.pos;
 				pos -= Vector3(dataDim[0]/2, dataDim[1]/2, dataDim[2]/2) * dataSpacing;
-				// particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.3f)));
-				// particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.2f)));
+
+				Vector3 testPos = mm * selectionMatrix[i].inverse() * pos;
 				particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.15f)));
 			}
 		}
 
-
-		//Print rectangles
-
-
-		// NOTE: must be rendered before "slice" (because of
-		// transparency sorting)
-		std::cout << "Show Slice = " << settings->showSlice << " state->clipAxis = " << state->clipAxis << "   state->lockedClipAxis  " << state->lockedClipAxis << std::endl ; 
-		if (settings->showSlice && state->clipAxis != CLIP_NONE && state->lockedClipAxis == CLIP_NONE) {
-			Vector3 scale;
-			Vector3 color;
-			switch (state->clipAxis) {
-				case CLIP_AXIS_X: case CLIP_NEG_AXIS_X: scale = Vector3(150, 0, 0); color = Vector3(1, 0, 0); break;
-				case CLIP_AXIS_Y: case CLIP_NEG_AXIS_Y: scale = Vector3(0, 150, 0); color = Vector3(0, 1, 0); break;
-				case CLIP_AXIS_Z: case CLIP_NEG_AXIS_Z: scale = Vector3(0, 0, 150); color = Vector3(0, 0, 1); break;
-				case CLIP_NONE: android_assert(false);
-			}
-
-			const Matrix4 trans = Matrix4::makeTransform(
-				Vector3::zero(),
-				Quaternion::identity(),
-				scale
-			);
-
+		synchronized_if(volume) {
+			// glDepthMask(false);
 			glDepthMask(true);
-			glLineWidth(5.0f);
-			axisCube->setColor(color);
-			axisCube->render(proj, mm*trans);
-		}
-
-		// FIXME: slight misalignment error?
-		// const float sliceDot = (settings->showSlice ? sliceNormal.dot(Vector3::unitZ()) : 0);
-
-		// Render the volume
-		if (settings->showVolume) {// && sliceDot <= 0) {
-			synchronized_if(volume) {
-				glDepthMask(false);
-				glEnable(GL_BLEND);
-				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
-				// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
-				glDisable(GL_CULL_FACE);
-				volume->render(proj, mm);
-			}
-		}
-
-		if (slice && settings->showSlice) {
 			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
+			// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
 			glDisable(GL_CULL_FACE);
-			glDepthMask(true); // requires "discard" in the shader where alpha == 0
 
-			switch (settings->sliceType) {
-				case SLICE_CAMERA: {
-					if (settings->clipDist > 0.0f) {
-						// Set a depth value for the slicing plane
-						Matrix4 trans = Matrix4::identity();
-						// trans[3][2] = app->getDepthValue(settings->clipDist); // relative to trans[3][3], which is 1.0
-						trans[3][2] = app->getDepthValue(sliceDepth);
-						// LOGD("%s", Utility::toString(trans).c_str());
-
-						trans[1][1] *= -1; // flip the texture vertically, because of "orthoProjMatrix"
-
-						synchronized(slice) {
-							slice->setOpaque(false);
-							slice->render(app->getOrthoProjMatrix(), trans);
-						}
-					}
-
-					break;
-				}
-
-				case SLICE_AXIS:
-				case SLICE_STYLUS: {
-					if (settings->sliceType != SLICE_STYLUS || state->stylusVisible) {
-						Matrix4 s2mm;
-						synchronized(state->sliceModelMatrix) {
-							s2mm = state->sliceModelMatrix;
-						}
-
-						synchronized(slice) {
-							slice->setOpaque(settings->sliceType == SLICE_STYLUS || slice->isEmpty());
-							slice->render(proj, s2mm);
-						}
-
-#if 0
-						synchronized(slicePoints) {
-							// for (const Vector3& pt : slicePoints) {
-							// 	// LOGD("pt = %s", Utility::toString(pt).c_str());
-							// 	const Matrix4 transform1 = Matrix4::makeTransform(
-							// 		// Vector3(0, 0, 0), // (after scaling)
-							// 		pt,
-							// 		Quaternion::identity(),
-							// 		Vector3(10.0f)
-							// 	);
-							// 	cube->setColor(Vector3(1.0f));
-							// 	cube->setOpacity(1.0f);
-							// 	// cube->render(proj, Matrix4::makeTransform(pt)*transform1);
-							// 	cube->render(proj, transform1);
-							// }
-							// // LOGD("============");
-							if (!slicePoints.empty()) {
-								// Vector3 center = Vector3::zero();
-								// for (const Vector3& pt : slicePoints) {
-								// 	center += pt;
-								// }
-								// center /= slicePoints.size();
-
-								// std::vector<Vector3> lineVec;
-								// std::map<unsigned int, std::map<unsigned int, float>> graph;
-								// for (unsigned int i = 0; i < slicePoints.size(); ++i) {
-								// 	for (unsigned int j = 0; j < slicePoints.size(); ++j) {
-								// 		if (i == j) // || (graph.count(j) && graph.at(j).count(i)))
-								// 			continue;
-								// 		const Vector3 pt1 = slicePoints.at(i);
-								// 		const Vector3 pt2 = slicePoints.at(j);
-								// 		graph[i][j] = (pt2 - pt1).normalized().dot((center - pt1).normalized());
-								// 	}
-								// }
-
-								// for (const auto& pair : graph) {
-								// 	typedef std::pair<unsigned int, float> PairT;
-								// 	std::vector<PairT> dots;
-								// 	for (const auto& pair2 : pair.second) {
-								// 		dots.push_back(PairT(pair2.first, pair2.second));
-								// 	}
-								// 	// Get the two edges with the lowest dot products relative to "center"
-								// 	std::sort(dots.begin(), dots.end(), [](const PairT& a, const PairT& b) { return a.second < b.second; });
-								// 	dots.resize(2);
-								// 	for (const auto& pair3 : dots) {
-								// 		lineVec.push_back(slicePoints.at(pair.first));
-								// 		lineVec.push_back(slicePoints.at(pair3.first));
-								// 	}
-								// }
-
-
-
-								std::vector<Vector3> lineVec;
-								// std::set<std::pair<unsigned int, unsigned int>> pairs;
-								// struct LineStruct { Vector3 p1, p2; float dist; };
-								// std::map<std::pair<unsigned int, unsigned int>, LineStruct> pairs;
-								std::map<unsigned int, std::map<unsigned int, float>> graph;
-								for (unsigned int i = 0; i < slicePoints.size(); ++i) {
-									for (unsigned int j = 0; j < slicePoints.size(); ++j) {
-										// std::pair<unsigned int, unsigned int> pair(i, j);
-										// if (i == j || pairs.count(pair))
-										if (i == j || (graph.count(j) && graph.at(j).count(i)))
-											continue;
-										const Vector3 pt1 = slicePoints.at(i);
-										const Vector3 pt2 = slicePoints.at(j);
-										const Vector3 dpt1 = posToDataCoords(pt1);
-										const Vector3 dpt2 = posToDataCoords(pt2);
-										static const float epsilon = 0.1f;
-										if (std::abs(dpt1.x-dpt2.x) < epsilon || std::abs(dpt1.y-dpt2.y) < epsilon || std::abs(dpt1.z-dpt2.z) < epsilon) {
-										// float dot = (pt2 - pt1).normalized().dot((center - pt1).normalized());
-										// LOGD("dot = %f", dot);
-										// if (dot < 0.9f) {
-											lineVec.push_back(pt1);
-											lineVec.push_back(pt2);
-										}
-											// pairs.insert(pair);
-											// graph[i][j] = pt1.distance(pt2);
-										// }
-									}
-								}
-								// // for (auto& pair : graph) {
-								// // 	// if (pair.second.size() <= 2) {
-								// // 	// 	for (auto& pair3 : pair.second) {
-								// // 	// 		lineVec.push_back(slicePoints.at(pair.first));
-								// // 	// 		lineVec.push_back(slicePoints.at(pair3.first));
-								// // 	// 	}
-								// // 	// 	continue;
-								// // 	// }
-								// // 	typedef std::pair<unsigned int, float> PairT;
-								// // 	std::vector<PairT> dists;
-								// // 	for (auto& pair2 : pair.second) {
-								// // 		dists.push_back(PairT(pair2.first, pair2.second));
-								// // 	}
-								// // 	// std::sort(dists.begin(), dists.end(), std::lower<float>());
-								// // 	std::sort(dists.begin(), dists.end(), [](const PairT& a, const PairT& b) { return a.second < b.second; });
-								// // 	dists.resize(2);
-								// // 	for (auto& pair3 : dists) {
-								// // 		lineVec.push_back(slicePoints.at(pair.first));
-								// // 		lineVec.push_back(slicePoints.at(pair3.first));
-								// // 	}
-								// // }
-								lines->setLines(lineVec);
-								// glLineWidth(1.0f);
-								glLineWidth(2.0f);
-								lines->setColor(Vector3(0, 1, 0));
-								lines->render(proj, Matrix4::identity());
-							}
-						}
-#endif
-					}
-
-					break;
-				}
-			}
+			volume->setOpacity(exists ? 0.025 : 1.0);
+			if (exists) volume->clearClipPlane();
+			volume->renderSelection(proj, mm, firstPoint, selectionPoint[i], selectionMatrix[i].inverse());
 		}
-
-		// // Render the volume after the slicing plane when the plane
-		// // normal is facing the screen
-		// if (settings->showVolume && sliceDot > 0) {
-		// 	synchronized_if(volume) {
-		// 		glDepthMask(false);
-		// 		glEnable(GL_BLEND);
-		// 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
-		// 		// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
-		// 		glDisable(GL_CULL_FACE);
-		// 		volume->render(proj, mm);
-		// 	}
-		// }
 	}
+	return;
+}
 
-	// // XXX: debug
-	// if (!settings->showVolume && !settings->showSurface) {
-	// 	glEnable(GL_CULL_FACE);
-	// 	synchronized(tangible) {
-	// 		for (const auto& pair : tangible.getMarkers()) {
-	// 			if (!pair.second.isVisible())
-	// 				continue;
-	//
-	// 			// LOGD("marker %2d (main=%d) err=%f cf=%f", pair.first, pair.second.isMain, pair.second.err, pair.second.cf);
-	//
-	// 			// Center the cube on its native, and scale it up
-	// 			const Matrix4 transform = Matrix4::makeTransform(
-	// 				Vector3(0, 0, 0.5f), // (after scaling)
-	// 				Quaternion::identity(),
-	// 				Vector3(20.0f, 20.0f, 1.0f) * (pair.second.width/51.0)
-	// 			);
-	//
-	// 			if (pair.first == tangible.getCurrentMarkerID())
-	// 				cube->setColor(Vector3(0.25f, 1.0f, 0.25f));
-	// 			else if (pair.second.dubious)
-	// 				cube->setColor(Vector3(1.0f, 0.25f, 0.25f));
-	// 			else
-	// 				cube->setColor(Vector3(0.25f, 0.25f, 1.0f));
-	//
-	// 			cube->render(proj, pair.second.transform*transform);
-	//
-	// 			// LOGD("modelMatrix for marker %d = %s", pair.first, Utility::toString(pair.second.transform).c_str());
-	// 		}
-	// 		// LOGD("==========");
-	// 	}
-	// }
-
-	// if (qcarVisible) {
-	// 	synchronized (qcarModelMatrix) {
-	// 		const Matrix4 transform = Matrix4::makeTransform(
-	// 			Vector3(0, 0, 0.5f), // (after scaling)
-	// 			Quaternion::identity(),
-	// 			Vector3(30.0f, 30.0f, 30.0f)
-	// 		);
-
-	// 		cube->render(proj, qcarModelMatrix*transform);
-	// 	}
-	// }
+// (GL context)
+void FluidMechanics::Impl::renderObjects()
+{
+//	if(!settings->showSelection)
+	//	showParticules();
+//	else
+		showSelection();
+	return;
 }
 
 void FluidMechanics::Impl::updateSurfacePreview()
@@ -1850,7 +1404,6 @@ void FluidMechanics::Impl::updateSurfacePreview()
 	else if(settings->considerZ == 1 ){
 		state->clipAxis = CLIP_AXIS_Z ;
 	}
-	
 	std::cout<< "-------->Updated SURFACE PREVIEW" << std::endl ;
 }
 

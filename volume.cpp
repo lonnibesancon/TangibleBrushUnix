@@ -42,14 +42,17 @@ namespace {
 		"uniform lowp ivec3 dimensions;\n" // (dimX,dimY,dimZ)
 		"uniform lowp vec3 spacing;\n"
 		"uniform lowp vec3 invert;\n" // != 0 when planes are flipped
+		"varying highp vec4 v_pos;\n"
 		"attribute highp vec3 vertex;\n"
 		"attribute mediump vec3 texCoord;\n"
 		"varying mediump vec3 v_texCoord;\n"
 
 		"uniform highp vec4 clipPlane;\n"
 		"varying highp float v_clipDist;\n"
+		"varying highp vec3 v_posNotModified;\n"
 
 		"void main() {\n"
+		"  v_posNotModified = vertex;\n"
 		// "  if (invert == 0)\n"
 		// "    v_texCoord = texCoord;\n"
 		// "  else\n"
@@ -61,6 +64,7 @@ namespace {
 		"  gl_Position = projection * viewSpacePos;\n"
 
 		"  v_clipDist = dot(viewSpacePos.xyz, clipPlane.xyz) + clipPlane.w;\n"
+		"  v_pos = gl_Position;\n"
 
 		"}";
 
@@ -91,6 +95,14 @@ namespace {
 		"uniform lowp sampler3D texture;\n"
 		"uniform lowp float opacity;\n"
 
+		"uniform highp vec3 uFirstPos;\n"
+		"uniform highp vec3 uLastPos;\n"
+		"uniform highp mat4 selectionMat;\n"
+		"uniform lowp bool selectionMode;\n"
+		"uniform highp mat4 modelView;\n"
+		"varying highp vec3 v_posNotModified;\n"
+		"varying highp vec4 v_pos;\n"
+
 		"varying highp float v_clipDist;\n"
 
 		// // "Jet" color map (http://www.metastine.com/?p=7)
@@ -106,10 +118,13 @@ namespace {
 		// "  return clamp(vec3(min(a,b), min(c,d), min(e,f)), 0.0, 1.0);\n"
 		// "}\n"
 		"void main() {\n"
-
-		"#ifndef FAST\n"
-		"if (v_clipDist > 0.0) discard;\n"
-		"#endif\n"
+		//Selection !
+		"  if(selectionMode)\n"
+		"  {\n"
+		"     vec4 testPos = modelView * selectionMat * vec4(v_posNotModified*vec3(1.0, 1.0, 1.0), 1.0);\n"
+		//"     vec4 testPos = v_pos; \n"
+	    "	  if(!(testPos.x > uFirstPos.x && testPos.x < uLastPos.x && testPos.y > uFirstPos.y && testPos.y < uLastPos.y && testPos.z < 1.0 && testPos.z > -1.0)) discard; \n"
+		"  }\n"
 
 		// "  lowp float value = texture2DArray(texture, v_texCoord).a;\n"
 		// "  gl_FragColor = vec4(colormap(value), 0.03+0.3*value);\n"
@@ -720,6 +735,148 @@ void Volume::render(const Matrix4& projectionMatrix, const Matrix4& modelViewMat
 	glUniform4fv(mClipPlaneUniform, 1, mClipEq);
 	glUniform3f(mSpacingUniform, mSpacing.x, mSpacing.y, mSpacing.z);
 	glUniform1f(mOpacityUniform, mOpacity);
+	//For the selection
+	glUniform1i(mMaterial->getUniform("selectionMode"), false);
+
+	int dimVec[3];
+	dimVec[0] = mDimensions[0];
+	dimVec[1] = mDimensions[1];
+	dimVec[2] = mDimensions[2];
+
+	// glActiveTexture(GL_TEXTURE0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D/*_OES*/, mTextureHandle);
+
+	Matrix3 normalMatrix = modelViewMatrix.inverse().transpose().get3x3Matrix();
+
+	float xDot = (normalMatrix*Vector3::unitX()).normalized().dot(Vector3::unitZ());
+	float yDot = (normalMatrix*Vector3::unitY()).normalized().dot(Vector3::unitZ());
+	// // Reduce the weight of the vertical axis, since it looks
+	// // worse than other axis when viewed from an average angle
+	// float zDot = (normalMatrix*Vector3::unitZ()).normalized().dot(Vector3::unitZ())*0.995;
+	float zDot = (normalMatrix*Vector3::unitZ()).normalized().dot(Vector3::unitZ());
+
+	// LOGD("xDot = %f, yDot = %f, zDot = %f", xDot, yDot, zDot);
+	static const Matrix4 xInv = Matrix4::makeTransform(Vector3::zero(), Quaternion::identity(), Vector3(-1.0, 1.0, 1.0));
+	static const Matrix4 yInv = Matrix4::makeTransform(Vector3::zero(), Quaternion::identity(), Vector3(1.0, -1.0, 1.0));
+	static const Matrix4 zInv = Matrix4::makeTransform(Vector3::zero(), Quaternion::identity(), Vector3(1.0, 1.0, -1.0));
+
+	// Display the planes whose normal is closest to the screen normal
+	// http://prosjekt.ffi.no/unik-4660/lectures04/chapters/Voxel1.html
+	if (std::abs(xDot) > std::abs(yDot) && std::abs(xDot) > std::abs(zDot)) {
+		// LOGD("largest: xDot (%f)", xDot);
+		// dimVec[3] = mTexturesX.size();
+		// dimVec[3] = mDimensions[0];
+		glUniform3iv(mDimensionsUniform, 1, dimVec);
+		if (xDot < 0) {
+			glUniformMatrix4fv(mModelViewUniform, 1, false, modelViewMatrix.data_);
+			// glUniform1i(mInvertUniform, 0);
+			glUniform3f(mInvertUniform, 0, 0, 0);
+		} else {
+			glUniformMatrix4fv(mModelViewUniform, 1, false, (modelViewMatrix * xInv).data_);
+			// glUniform1i(mInvertUniform, 1);
+			glUniform3f(mInvertUniform, 1, 0, 0);
+		}
+		// X planes
+		android_assert(mIndexBufferX != 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBufferX);
+		// android_assert(mTextureXHandle != 0);
+		// glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, mTextureXHandle);
+		glDrawElements(GL_TRIANGLES, mIndicesX.size(), GL_UNSIGNED_SHORT, nullptr);
+
+	} else if (std::abs(yDot) > std::abs(xDot) && std::abs(yDot) > std::abs(zDot)) {
+		// LOGD("largest: yDot (%f)", yDot);
+		// dimVec[3] = mTexturesY.size();
+		// dimVec[3] = mDimensions[1];
+		glUniform3iv(mDimensionsUniform, 1, dimVec);
+		if (yDot < 0) {
+			glUniformMatrix4fv(mModelViewUniform, 1, false, modelViewMatrix.data_);
+			// glUniform1i(mInvertUniform, 0);
+			glUniform3f(mInvertUniform, 0, 0, 0);
+		} else {
+			glUniformMatrix4fv(mModelViewUniform, 1, false, (modelViewMatrix * yInv).data_);
+			// glUniform1i(mInvertUniform, 1);
+			glUniform3f(mInvertUniform, 0, 1, 0);
+		}
+		// Y planes
+		android_assert(mIndexBufferY != 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBufferY);
+		// android_assert(mTextureYHandle != 0);
+		// glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, mTextureYHandle);
+		glDrawElements(GL_TRIANGLES, mIndicesY.size(), GL_UNSIGNED_SHORT, nullptr);
+
+	} else {
+		// LOGD("largest: zDot (%f)", zDot);
+		// dimVec[3] = mTexturesZ.size();
+		// dimVec[3] = mDimensions[2];
+		glUniform3iv(mDimensionsUniform, 1, dimVec);
+		if (zDot < 0) {
+			glUniformMatrix4fv(mModelViewUniform, 1, false, modelViewMatrix.data_);
+			// glUniform1i(mInvertUniform, 0);
+			glUniform3f(mInvertUniform, 0, 0, 0);
+		} else {
+			glUniformMatrix4fv(mModelViewUniform, 1, false, (modelViewMatrix * zInv).data_);
+			// glUniform1i(mInvertUniform, 1);
+			glUniform3f(mInvertUniform, 0, 0, 1);
+		}
+		// Z planes
+		android_assert(mIndexBufferZ != 0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBufferZ);
+		// android_assert(mTextureZHandle != 0);
+		// glBindTexture(GL_TEXTURE_2D_ARRAY_EXT, mTextureZHandle);
+		glDrawElements(GL_TRIANGLES, mIndicesZ.size(), GL_UNSIGNED_SHORT, nullptr);
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	glDisableVertexAttribArray(mVertexAttrib);
+	glDisableVertexAttribArray(mTexCoordAttrib);
+}
+
+// (GL context)
+void Volume::renderSelection(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix, Vector3& firstPos, Vector3& lastPos, const Matrix4& invSelectionMatrix)
+{
+	synchronized (staleTexturesList) {
+		if (!staleTexturesList.empty()) {
+			LOGD("freeing %ld texture(s)", staleTexturesList.size());
+			for (GLuint texture : staleTexturesList)
+				glDeleteTextures(1, &texture);
+			staleTexturesList.clear();
+		}
+	}
+
+	if (!mBound)
+		bind();
+
+	switchMaterial(hasClipPlane() ? mMaterialClip : mMaterialFast);
+	android_assert(mMaterial);
+
+	// Vertices
+	android_assert(mVertexBuffer != 0);
+	glBindBuffer(GL_ARRAY_BUFFER, mVertexBuffer);
+	android_assert(mVertexAttrib != -1);
+	glVertexAttribPointer(mVertexAttrib, 3, GL_FLOAT, false, 0, nullptr);
+	glEnableVertexAttribArray(mVertexAttrib);
+
+	// Texture coordinates
+	android_assert(mTexCoordBuffer != 0);
+	glBindBuffer(GL_ARRAY_BUFFER, mTexCoordBuffer);
+	android_assert(mTexCoordAttrib != -1);
+	glVertexAttribPointer(mTexCoordAttrib, 3, GL_FLOAT, false, 0, nullptr);
+	glEnableVertexAttribArray(mTexCoordAttrib);
+
+	// Uniforms
+	glUseProgram(mMaterial->getHandle());
+	glUniformMatrix4fv(mProjectionUniform, 1, false, projectionMatrix.data_);
+	glUniform4fv(mClipPlaneUniform, 1, mClipEq);
+	glUniform3f(mSpacingUniform, mSpacing.x, mSpacing.y, mSpacing.z);
+	glUniform1f(mOpacityUniform, mOpacity);
+	//For the selection
+	glUniform1i(mMaterial->getUniform("selectionMode"), true);
+	glUniform3f(mMaterial->getUniform("uFirstPos"), firstPos.x, firstPos.y, firstPos.z);
+	glUniform3f(mMaterial->getUniform("uLastPos"), lastPos.x, lastPos.y, lastPos.z);
+	glUniformMatrix4fv(mMaterial->getUniform("selectionMat"), 1, false, invSelectionMatrix.data_);
 
 	int dimVec[3];
 	dimVec[0] = mDimensions[0];

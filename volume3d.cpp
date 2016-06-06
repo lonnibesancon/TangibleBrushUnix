@@ -117,6 +117,7 @@ namespace {
 		"varying highp vec3 v_entryPoint;\n"
 		// "varying highp vec4 v_exitPoint;\n"
 		"varying highp vec4 v_pos;\n"
+		"varying highp vec4 v_posNotModified;\n"
 
 		"void main() {\n"
 

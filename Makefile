@@ -16,7 +16,7 @@ ARCH=$(shell uname -m | sed 's/x86_//;s/i[3-6]86/32/')
 VER=$(shell lsb_release -sr)
 $(info OS= $(OS))
 
-FLAGS = -O0 -fpermissive -Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-deprecated -pedantic -ggdb
+FLAGS = -O0 -fpermissive -Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-deprecated -pedantic -ggdb -g
 CFLAGS = -std=c99
 CXXFLAGS = -std=c++0x
 
@@ -44,7 +44,7 @@ all: $(OUTPUT)
 
 $(OUTPUT): $(OBJECTS)
 	$(QUIET)$(LD_O) $@
-	$(VERBOSE)$(CXX) $^ $(LDFLAGS) -o $@
+	$(VERBOSE)$(CXX) $^ $(LDFLAGS) $(FLAGS) -o $@
 
 %.o: %.cpp
 	$(QUIET)$(CPP_O) $@
