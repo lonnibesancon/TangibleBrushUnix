@@ -1103,11 +1103,14 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 	settings->showSurface = false;
 	settings->zoomFactor = 1.0;
 
-	const Matrix4 proj = app->getProjMatrix();
+	const Matrix4 proj = Matrix4::identity();
+	
+	if(selectionMatrix.size() > 0)
+		proj = selectionMatrix[selectionMatrix.size()-1];
+	else 
+		proj = app->getProjMatrix();
 
-	//Show rectangles
 	glEnable(GL_DEPTH_TEST);
-	glClear(GL_DEPTH_BUFFER_BIT);
 
 	// XXX: test
 	Matrix4 mm;
@@ -1257,13 +1260,15 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 
 void FluidMechanics::Impl::showSelection()
 {
+	if(!settings->showSelection)
+		return;
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	settings->showSlice = false;
 	settings->showSurface = false;
 	settings->zoomFactor = 1.0;
 
-	const Matrix4 proj = app->getProjMatrix();
+
 	glEnable(GL_DEPTH_TEST);
 
 	// XXX: test
@@ -1283,6 +1288,7 @@ void FluidMechanics::Impl::showSelection()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
 	glDepthMask(true); // requires "discard" in the shader where alpha == 0
+	const Matrix4 proj = app->getProjMatrix();
 
 	for(uint32_t i=0; i < selectionMatrix.size(); i++)
 	{
@@ -1296,24 +1302,6 @@ void FluidMechanics::Impl::showSelection()
 			}
 		}
 
-		//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
-			//std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
-			
-			synchronized (particles) {
-			for (Particle& p : particles) {
-				if (!p.valid)
-					continue;
-				integrateParticleMotion(p);
-				if (!p.valid || p.delayMs > 0)
-					continue;
-				Vector3 pos = p.pos;
-				pos -= Vector3(dataDim[0]/2, dataDim[1]/2, dataDim[2]/2) * dataSpacing;
-
-				Vector3 testPos = mm * selectionMatrix[i].inverse() * pos;
-				particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.15f)));
-			}
-		}
-
 		synchronized_if(volume) {
 			// glDepthMask(false);
 			glDepthMask(true);
@@ -1324,7 +1312,8 @@ void FluidMechanics::Impl::showSelection()
 
 			volume->setOpacity(exists ? 0.025 : 1.0);
 			if (exists) volume->clearClipPlane();
-			volume->renderSelection(proj, mm, firstPoint, selectionPoint[i], selectionMatrix[i].inverse());
+	
+			volume->renderSelection(proj, mm, firstPoint, selectionPoint[i], selectionMatrix[i]);
 		}
 	}
 	return;
@@ -1337,6 +1326,7 @@ void FluidMechanics::Impl::renderObjects()
 	showParticules();
 	glViewport(SCREEN_WIDTH/2, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
 	showSelection();
+	printf("draw ! \n");
 	return;
 }
 
@@ -1452,14 +1442,14 @@ void FluidMechanics::updateSurfacePreview()
 void FluidMechanics::setSelectionMatrix(std::vector<Matrix4>& selectionMatrix)
 {
 	impl->selectionMatrix.clear();
-	for(uint32_t i=impl->selectionMatrix.size(); i < selectionMatrix.size(); i++)
+	for(uint32_t i=0; i < selectionMatrix.size(); i++)
 		impl->selectionMatrix.push_back(Matrix4(selectionMatrix[i].data_));
 }
 
 void FluidMechanics::setSelectionPoint(std::vector<Vector3>& selectionPoint)
 {
 	impl->selectionPoint.clear();
-	for(uint32_t i=impl->selectionPoint.size(); i < selectionPoint.size(); i++)
+	for(uint32_t i=0; i < selectionPoint.size(); i++)
 		impl->selectionPoint.push_back(selectionPoint[i]);
 }
 

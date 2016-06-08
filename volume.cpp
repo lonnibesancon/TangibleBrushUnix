@@ -49,10 +49,9 @@ namespace {
 
 		"uniform highp vec4 clipPlane;\n"
 		"varying highp float v_clipDist;\n"
-		"varying highp vec3 v_posNotModified;\n"
+		"varying highp vec4 v_posNotModified;\n"
 
 		"void main() {\n"
-		"  v_posNotModified = vertex;\n"
 		// "  if (invert == 0)\n"
 		// "    v_texCoord = texCoord;\n"
 		// "  else\n"
@@ -61,6 +60,8 @@ namespace {
 		// "  mediump vec3 scale = vec3(float(dimensions.x), float(dimensions.y), float(dimensions.z));\n"
 		"  mediump vec3 scale = vec3(float(dimensions.x), float(dimensions.y), float(dimensions.z)) * spacing;\n"
 		"  highp vec4 viewSpacePos = modelView * vec4(scale * (vertex * vec3(1.0, 1.0, -1.0)), 1.0);\n"
+
+		"  v_posNotModified = viewSpacePos;\n"
 		"  gl_Position = projection * viewSpacePos;\n"
 
 		"  v_clipDist = dot(viewSpacePos.xyz, clipPlane.xyz) + clipPlane.w;\n"
@@ -96,11 +97,12 @@ namespace {
 		"uniform lowp float opacity;\n"
 
 		"uniform highp vec3 uFirstPos;\n"
+		"uniform highp mat4 projection;\n"
 		"uniform highp vec3 uLastPos;\n"
 		"uniform highp mat4 selectionMat;\n"
 		"uniform lowp bool selectionMode;\n"
 		"uniform highp mat4 modelView;\n"
-		"varying highp vec3 v_posNotModified;\n"
+		"varying highp vec4 v_posNotModified;\n"
 		"varying highp vec4 v_pos;\n"
 
 		"varying highp float v_clipDist;\n"
@@ -121,9 +123,9 @@ namespace {
 		//Selection !
 		"  if(selectionMode)\n"
 		"  {\n"
-		"     vec4 testPos = selectionMat * modelView * vec4(v_posNotModified*vec3(1.0, 1.0, -1.0), 1.0);\n"
+		"     vec4 testPos = selectionMat * v_posNotModified;\n"
 		//"     vec4 testPos = v_pos; \n"
-	    "	  if(!(testPos.x > uFirstPos.x && testPos.x < uLastPos.x && testPos.y > uFirstPos.y && testPos.y < uLastPos.y && testPos.z < 1.0 && testPos.z > -1.0)) discard; \n"
+	    "	  if(testPos.x < 400*uFirstPos.x || testPos.x > 400*uLastPos.x || testPos.y < 400*uFirstPos.y || testPos.y > 400*uLastPos.y || testPos.z > 10.0 || testPos.z < -10.0) discard; \n"
 		"  }\n"
 
 		// "  lowp float value = texture2DArray(texture, v_texCoord).a;\n"
