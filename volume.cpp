@@ -121,7 +121,7 @@ namespace {
 		//Selection !
 		"  if(selectionMode)\n"
 		"  {\n"
-		"     vec4 testPos = modelView * selectionMat * vec4(v_posNotModified*vec3(1.0, 1.0, 1.0), 1.0);\n"
+		"     vec4 testPos = selectionMat * modelView * vec4(v_posNotModified*vec3(1.0, 1.0, -1.0), 1.0);\n"
 		//"     vec4 testPos = v_pos; \n"
 	    "	  if(!(testPos.x > uFirstPos.x && testPos.x < uLastPos.x && testPos.y > uFirstPos.y && testPos.y < uLastPos.y && testPos.z < 1.0 && testPos.z > -1.0)) discard; \n"
 		"  }\n"

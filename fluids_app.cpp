@@ -1098,7 +1098,6 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
 
 	settings->showSlice = false;
 	settings->showSurface = false;
@@ -1106,29 +1105,9 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 
 	const Matrix4 proj = app->getProjMatrix();
 
-
 	//Show rectangles
 	glEnable(GL_DEPTH_TEST);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	Rectangle r(1.0, 1.0);
-	if(settings->showSelection)
-	{
-		glEnable(GL_STENCIL_TEST);
-		glStencilFunc(GL_ALWAYS, 1, 0xFF); // Set any stencil to 1
-		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-		glStencilMask(0xFF); // Write to stencil buffer
-		glClear(GL_STENCIL_BUFFER_BIT);
-
-		for(uint32_t i=0; i < selectionMatrix.size(); i++)
-		{
-			Vector3 diff = selectionPoint[i] - firstPoint;
-			r.setSize(diff.x, diff.y);
-			r.render(proj, selectionMatrix[i]);
-		}
-
-		glStencilFunc(GL_EQUAL, 1, 0xFF); // Pass test if stencil value is 1
-		glStencilMask(0x00); // Don't write anything to stencil buffer
-	}
 
 	// XXX: test
 	Matrix4 mm;
@@ -1273,29 +1252,12 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 			                Quaternion::identity(),
 			                Vector3(1.01f)));
 	}
-
-	glViewport( SCREEN_WIDTH/2, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-		//glClearColor(0, 0, 0, 1);
-		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-	synchronized(slice) {
-		slice->setOpaque(false);
-		slice->render(app->getOrthoProjMatrix(), Matrix4::identity());
-	}
-
-
-	if(settings->showSelection)
-		glDisable(GL_STENCIL_TEST);
 	return;
 }
 
 void FluidMechanics::Impl::showSelection()
 {
-	glClearColor(0, 0, 0, 1);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glViewport(0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	settings->showSlice = false;
 	settings->showSurface = false;
@@ -1303,7 +1265,6 @@ void FluidMechanics::Impl::showSelection()
 
 	const Matrix4 proj = app->getProjMatrix();
 	glEnable(GL_DEPTH_TEST);
-	glClear(GL_DEPTH_BUFFER_BIT);
 
 	// XXX: test
 	Matrix4 mm;
@@ -1372,10 +1333,10 @@ void FluidMechanics::Impl::showSelection()
 // (GL context)
 void FluidMechanics::Impl::renderObjects()
 {
-//	if(!settings->showSelection)
-	//	showParticules();
-//	else
-		showSelection();
+	glViewport(0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
+	showParticules();
+	glViewport(SCREEN_WIDTH/2, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
+	showSelection();
 	return;
 }
 
