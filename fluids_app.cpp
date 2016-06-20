@@ -129,6 +129,7 @@ struct FluidMechanics::Impl
 	Vector3 firstPoint;
 	std::vector<Matrix4> selectionMatrix;
 	std::vector<Vector3> selectionPoint;
+	Matrix4 oldDataMatrix;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -1103,12 +1104,12 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 	settings->showSurface = false;
 	settings->zoomFactor = 1.0;
 
-	const Matrix4 proj = Matrix4::identity();
+	const Matrix4 proj = app->getProjMatrix();
 	
-	if(selectionMatrix.size() > 0)
-		proj = selectionMatrix[selectionMatrix.size()-1];
-	else 
-		proj = app->getProjMatrix();
+	//if(selectionMatrix.size() > 0)
+	//	proj = selectionMatrix[selectionMatrix.size()-1];
+	//else 
+		//proj = app->getProjMatrix();
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -1301,19 +1302,27 @@ void FluidMechanics::Impl::showSelection()
 				}
 			}
 		}
+		
+		synchronized_if(isosurface) 
+		{
+			glDisable(GL_BLEND);
+			glDepthMask(true);
+			glDisable(GL_CULL_FACE);
+		//	isosurface->renderSelection(proj, mm, firstPoint, selectionPoint[i], selectionMatrix[i]);
+		}
 
 		synchronized_if(volume) {
-			// glDepthMask(false);
 			glDepthMask(true);
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
 			// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
+			glDisable(GL_DEPTH_TEST);
 			glDisable(GL_CULL_FACE);
 
 			volume->setOpacity(exists ? 0.025 : 1.0);
 			if (exists) volume->clearClipPlane();
 	
-			volume->renderSelection(proj, mm, firstPoint, selectionPoint[i], selectionMatrix[i]);
+			volume->renderSelection(proj, mm, firstPoint, selectionPoint[i], selectionMatrix[i], oldDataMatrix);
 		}
 	}
 	return;
@@ -1326,7 +1335,7 @@ void FluidMechanics::Impl::renderObjects()
 	showParticules();
 	glViewport(SCREEN_WIDTH/2, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
 	showSelection();
-	printf("draw ! \n");
+
 	return;
 }
 
@@ -1368,7 +1377,7 @@ FluidMechanics::FluidMechanics(const std::string& baseDir)
 	impl->state = std::static_pointer_cast<FluidMechanics::State>(state);
 
 	// Create a perspective projection matrix
-	projMatrix = Matrix4::perspective(35.0f, float(SCREEN_WIDTH/2)/SCREEN_HEIGHT, 50.0f, 2500.0f);
+	projMatrix = Matrix4::perspective(35.0f, float(SCREEN_WIDTH)/SCREEN_HEIGHT, 50.0f, 2500.0f);
 	projMatrix[1][1] *= -1;
 	projMatrix[2][2] *= -1;
 	projMatrix[2][3] *= -1;
@@ -1456,6 +1465,11 @@ void FluidMechanics::setSelectionPoint(std::vector<Vector3>& selectionPoint)
 void FluidMechanics::setFirstPoint(Vector3& startPoint)
 {
 	impl->firstPoint = startPoint;
+}
+
+void FluidMechanics::setOldDataMatrix(Matrix4& oldData)
+{
+	impl->oldDataMatrix = oldData;
 }
 
 void FluidMechanics::clearSelection()

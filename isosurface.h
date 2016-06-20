@@ -26,6 +26,7 @@ public:
 
 	// (GL context)
 	void render(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix);
+	void renderSelection(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix, Vector3& firstPos, Vector3& lastPos, const Matrix4& invSelectionMatrix);
 
 	bool isEmpty() const { return mIsEmpty; }
 

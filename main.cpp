@@ -170,6 +170,11 @@ int main()
 			{
 				app->setFirstPoint(server.selectionStartPoint);
 			}
+			
+			synchronized(server.oldDataMatrix)
+			{
+				app->setOldDataMatrix(server.oldDataMatrix);
+			}
 
 			app->getSettings()->showSelection = true;
 			server.hasSelectionSet = false;

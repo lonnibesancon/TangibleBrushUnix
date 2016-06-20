@@ -20,7 +20,7 @@ public:
 
 	// (GL context)
 	void render(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix);
-	void renderSelection(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix, Vector3& firstPos, Vector3& lastPos, const Matrix4& invSelectionMatrix);
+	void renderSelection(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix, Vector3& firstPos, Vector3& lastPos, const Matrix4& invSelectionMatrix, const Matrix4& oldData);
 
 	void setClipPlane(float a, float b, float c, float d); // plane equation: ax+by+cz+d=0
 	void clearClipPlane();

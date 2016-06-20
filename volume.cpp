@@ -61,7 +61,7 @@ namespace {
 		"  mediump vec3 scale = vec3(float(dimensions.x), float(dimensions.y), float(dimensions.z)) * spacing;\n"
 		"  highp vec4 viewSpacePos = modelView * vec4(scale * (vertex * vec3(1.0, 1.0, -1.0)), 1.0);\n"
 
-		"  v_posNotModified = viewSpacePos;\n"
+		"  v_posNotModified = vec4(scale * (vertex * vec3(1.0, 1.0, -1.0)), 1.0);\n"
 		"  gl_Position = projection * viewSpacePos;\n"
 
 		"  v_clipDist = dot(viewSpacePos.xyz, clipPlane.xyz) + clipPlane.w;\n"
@@ -96,12 +96,13 @@ namespace {
 		"uniform lowp sampler3D texture;\n"
 		"uniform lowp float opacity;\n"
 
-		"uniform highp vec3 uFirstPos;\n"
 		"uniform highp mat4 projection;\n"
+		"uniform highp vec3 uFirstPos;\n"
 		"uniform highp vec3 uLastPos;\n"
 		"uniform highp mat4 selectionMat;\n"
 		"uniform lowp bool selectionMode;\n"
 		"uniform highp mat4 modelView;\n"
+		"uniform highp mat4 invOldData;\n"
 		"varying highp vec4 v_posNotModified;\n"
 		"varying highp vec4 v_pos;\n"
 
@@ -120,12 +121,18 @@ namespace {
 		// "  return clamp(vec3(min(a,b), min(c,d), min(e,f)), 0.0, 1.0);\n"
 		// "}\n"
 		"void main() {\n"
+		//"if (v_clipDist > 0.0) discard;\n"
 		//Selection !
 		"  if(selectionMode)\n"
 		"  {\n"
-		"     vec4 testPos = selectionMat * v_posNotModified;\n"
+		"     vec4 testPos = selectionMat * modelView * v_posNotModified;\n"
 		//"     vec4 testPos = v_pos; \n"
-	    "	  if(testPos.x < 400*uFirstPos.x || testPos.x > 400*uLastPos.x || testPos.y < 400*uFirstPos.y || testPos.y > 400*uLastPos.y || testPos.z > 10.0 || testPos.z < -10.0) discard; \n"
+		
+		"		vec4 fp = invOldData * modelView * (vec4(uFirstPos.x, uFirstPos.y, 0.1, 1.0));\n"
+		"		vec4 lp = invOldData * modelView * (vec4(uLastPos.x, uLastPos.y, 0.1, 1.0));\n"
+	    
+	    "	  if(testPos.x < fp.x || testPos.x > lp.x || testPos.y < fp.y || testPos.y > lp.y || testPos.z > lp.z || testPos.z < fp.z) discard; \n"
+	    //"	  if(testPos.x < uFirstPos.x || testPos.x > uLastPos.x || testPos.y < uFirstPos.y || testPos.y > uLastPos.y || testPos.z > 0.01f || testPos.z < -0.01f) discard; \n"
 		"  }\n"
 
 		// "  lowp float value = texture2DArray(texture, v_texCoord).a;\n"
@@ -837,7 +844,7 @@ void Volume::render(const Matrix4& projectionMatrix, const Matrix4& modelViewMat
 }
 
 // (GL context)
-void Volume::renderSelection(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix, Vector3& firstPos, Vector3& lastPos, const Matrix4& invSelectionMatrix)
+void Volume::renderSelection(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix, Vector3& firstPos, Vector3& lastPos, const Matrix4& invSelectionMatrix, const Matrix4& oldData)
 {
 	synchronized (staleTexturesList) {
 		if (!staleTexturesList.empty()) {
@@ -879,7 +886,9 @@ void Volume::renderSelection(const Matrix4& projectionMatrix, const Matrix4& mod
 	glUniform3f(mMaterial->getUniform("uFirstPos"), firstPos.x, firstPos.y, firstPos.z);
 	glUniform3f(mMaterial->getUniform("uLastPos"), lastPos.x, lastPos.y, lastPos.z);
 	glUniformMatrix4fv(mMaterial->getUniform("selectionMat"), 1, false, invSelectionMatrix.data_);
+	glUniformMatrix4fv(mMaterial->getUniform("invOldData"), 1, false, oldData.inverse().data_);
 
+	
 	int dimVec[3];
 	dimVec[0] = mDimensions[0];
 	dimVec[1] = mDimensions[1];

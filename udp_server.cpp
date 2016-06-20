@@ -184,6 +184,14 @@ void udp_server::listen(){
 
 		else if(msg[0] == '2' && msg[1] == ';')
 		{
+			synchronized(dataMatrix)
+			{
+				synchronized(oldDataMatrix)
+				{
+					oldDataMatrix = Matrix4(dataMatrix);
+				}
+			}
+			
 			if(!hasSelectionSet)
 			{
 				std::string tok;

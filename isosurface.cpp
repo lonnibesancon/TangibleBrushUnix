@@ -39,6 +39,7 @@ namespace {
 
 		"uniform highp vec4 clipPlane;\n"
 		"varying highp float v_clipDist;\n"
+		"varying highp vec4 v_posNotModified;\n"
 
 		// "varying highp float v_depth;\n"
 
@@ -49,6 +50,7 @@ namespace {
 		"  mediump vec3 scale = vec3(float(dimensions.x), float(dimensions.y), float(dimensions.z));\n"
 		// "  gl_Position = projection * modelView * vec4(scale * (vertex * vec3(1.0, 1.0, -1.0) + vec3(0.0, 0.0, 0.5)), 1.0);\n"
 		"  highp vec4 viewSpacePos = modelView * vec4(scale * (vertex * vec3(1.0, 1.0, 1.0)), 1.0);\n"
+		"  v_posNotModified = viewSpacePos;\n"
 		"  gl_Position = projection * viewSpacePos;\n"
 
 		// "  v_lightDir = normalize(vec3(-1.0, -2.0, 1.5));\n"
@@ -79,12 +81,17 @@ namespace {
 
 		"uniform lowp float value;\n"
 		"uniform lowp float opacity;\n"
+		"uniform highp vec3 uFirstPos;\n"
+		"uniform highp vec3 uLastPos;\n"
+		"uniform highp mat4 selectionMat;\n"
+		"uniform lowp bool selectionMode;\n"
 		"varying mediump vec3 v_normal;\n"
 		"varying lowp vec3 v_lightDir;\n"
 		"varying lowp vec3 v_lightDir2;\n"
 
 		// "varying highp float v_depth;\n"
 		"varying highp float v_clipDist;\n"
+		"varying highp vec4 v_posNotModified;\n"
 
 		// // "Jet" color map (http://www.metastine.com/?p=7)
 		// // FIXME: duplicated code (see volume.cpp)
@@ -108,6 +115,14 @@ namespace {
 		// // "if (gl_FragCoord.z < 450.0) gl_FragColor.a = 0.0; else {\n"
 
 		"if (v_clipDist > 0.0) discard;\n"
+		
+		//Selection !
+		"  if(selectionMode)\n"
+		"  {\n"
+		"     vec4 testPos = selectionMat * v_posNotModified;\n"
+		//"     vec4 testPos = v_pos; \n"
+	    "	  if(testPos.x < uFirstPos.x || testPos.x > uLastPos.x || testPos.y < uFirstPos.y || testPos.y > uLastPos.y || testPos.z > 0.01 || testPos.z < -0.01) discard; \n"
+		"  }\n"
 
 		// "  lowp vec3 lightDir = normalize(vec3(1.0, 1.0, -0.5));\n" // FIXME: hardcoded light direction
 		"  lowp float NdotL = max(dot(normalize(v_normal), v_lightDir), 0.0);\n"
@@ -500,6 +515,61 @@ void IsoSurface::render(const Matrix4& projectionMatrix, const Matrix4& modelVie
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
 
 	// Rendering
+
+	glUseProgram(mMaterial->getHandle());
+	glUniformMatrix4fv(mModelViewUniform, 1, false, modelViewMatrix.data_);
+	glUniformMatrix4fv(mProjectionUniform, 1, false, projectionMatrix.data_);
+	glUniformMatrix3fv(mNormalMatrixUniform, 1, false, modelViewMatrix.inverse().transpose().get3x3Matrix().data_);
+	glUniform3iv(mDimensionsUniform, 1, mDimensions);
+	if (mValueUniform != -1) glUniform1f(mValueUniform, (mValue-mRange[0])/(mRange[1]-mRange[0]));
+	// glUniform1f(mOpacityUniform, (mStream ? 0.5f : 1.0f));
+	glUniform1f(mOpacityUniform, 1.0f);
+	glUniform4fv(mClipPlaneUniform, 1, mClipEq);
+
+	glDrawElements(GL_TRIANGLES, mIndices.size(), GL_UNSIGNED_SHORT, nullptr);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	glDisableVertexAttribArray(mVertexAttrib);
+	glDisableVertexAttribArray(mNormalAttrib);
+}
+
+// (GL context)
+void IsoSurface::renderSelection(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix, Vector3& firstPos, Vector3& lastPos, const Matrix4& invSelectionMatrix)
+{
+	if (mIsEmpty)
+		return;
+
+	if (!mBound)
+		bind();
+
+	if (mDirty)
+		update();
+
+	// Vertices
+	android_assert(mVertexAttrib != -1);
+	glEnableVertexAttribArray(mVertexAttrib);
+	android_assert(mVertexBuffer != 0);
+	glBindBuffer(GL_ARRAY_BUFFER, mVertexBuffer);
+	glVertexAttribPointer(mVertexAttrib, 3, GL_FLOAT, false, 0, nullptr);
+
+	// Normals
+	android_assert(mNormalAttrib != -1);
+	glEnableVertexAttribArray(mNormalAttrib);
+	android_assert(mNormalBuffer != 0);
+	glBindBuffer(GL_ARRAY_BUFFER, mNormalBuffer);
+	glVertexAttribPointer(mNormalAttrib, 3, GL_FLOAT, false, 0, nullptr);
+
+	// Indices
+	android_assert(mIndexBuffer != 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIndexBuffer);
+
+	//For the selection
+	glUniform1i(mMaterial->getUniform("selectionMode"), true);
+	glUniform3f(mMaterial->getUniform("uFirstPos"), firstPos.x, firstPos.y, firstPos.z);
+	glUniform3f(mMaterial->getUniform("uLastPos"), lastPos.x, lastPos.y, lastPos.z);
+	glUniformMatrix4fv(mMaterial->getUniform("selectionMat"), 1, false, invSelectionMatrix.data_);
 
 	glUseProgram(mMaterial->getHandle());
 	glUniformMatrix4fv(mModelViewUniform, 1, false, modelViewMatrix.data_);
