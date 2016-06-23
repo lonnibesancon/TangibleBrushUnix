@@ -22,6 +22,7 @@ udp_server::udp_server(){
 	sliceMatrix = Matrix4::makeTransform(Vector3(0, 0, 400));
 	seedPoint = Vector3(-1,-1,-1);
 	zoomingFactor = 1 ;
+	hasSetToSelection = false;
 }
 
 udp_server::udp_server(int p){
@@ -36,6 +37,7 @@ udp_server::udp_server(int p){
 	sliceMatrix = Matrix4::makeTransform(Vector3(0, 0, 400));
 	seedPoint = Vector3(-1,-1,-1);
 	zoomingFactor = 1 ;
+	hasSetToSelection = false;
 }
 
 udp_server::~udp_server(){
@@ -160,7 +162,7 @@ void udp_server::listen(){
 		//print details of the client/peer and the data received
 		std::string msg = buf ;
 		std::stringstream ss(msg);
-		std::cout << "Message = " << msg << std::endl ;
+		//std::cout << "Message = " << msg << std::endl ;
 
 		if(msg[0] == ' ')
 		{}
@@ -305,6 +307,12 @@ void udp_server::listen(){
 				hasSubDataChanged = true;
 			}
 
+		}
+		
+		else if(msg[0] == '6')
+		{
+			if(hasSetToSelection==false && msg[1] == '2' && msg[2] == '5')
+				hasSetToSelection = true;
 		}
 
 		else

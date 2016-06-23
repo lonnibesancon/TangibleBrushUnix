@@ -198,6 +198,12 @@ int main()
 			}
 			server.hasSubDataChanged = false;
 		}
+		
+		if(server.hasSetToSelection)
+		{
+			app->pushBackSelection();
+			server.hasSetToSelection = false;
+		}
 
 		dataMatrix = server.getDataMatrix();
 		sliceMatrix = server.getSliceMatrix();

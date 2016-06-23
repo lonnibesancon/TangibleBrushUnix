@@ -154,6 +154,7 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 
 void FluidMechanics::Impl::pushBackSelection()
 {
+	printf("pushBackSelection \n");
 	firstPoint.push_back(Vector3());
 	selectionMatrix.push_back(std::vector<Matrix4>());
 	selectionPoint.push_back(std::vector<Vector3>());
@@ -1477,6 +1478,7 @@ void FluidMechanics::setSelectionMatrix(std::vector<Matrix4>& selectionMatrix)
 
 void FluidMechanics::setSelectionPoint(std::vector<Vector3>& selectionPoint)
 {
+	printf("size array : %d \n", impl->selectionPoint.size());
 	impl->selectionPoint[impl->selectionPoint.size()-1].clear();
 	for(uint32_t i=0; i < selectionPoint.size(); i++)
 		impl->selectionPoint[impl->selectionPoint.size()-1].push_back(selectionPoint[i]);
@@ -1503,5 +1505,11 @@ void FluidMechanics::clearSelection()
 {
 	impl->selectionMatrix.clear();
 	impl->selectionPoint.clear();
+	impl->pushBackSelection();
+}
+
+void FluidMechanics::pushBackSelection()
+{
+	printf("pushBackSelection \n");
 	impl->pushBackSelection();
 }

@@ -32,9 +32,7 @@ public:
 	bool hasSelectionClear  = true;
 	bool hasPostTreatmentSet = false;
 	bool hasSubDataChanged = false;
-	
-
-	
+	bool hasSetToSelection = false;
 
 	std::string previousMessage ;
 
@@ -71,6 +69,7 @@ public:
 
 	Synchronized<Vector3> dataTrans;
 	Synchronized<Quaternion> dataRot;
+
 private:
 
 	void initSocket();

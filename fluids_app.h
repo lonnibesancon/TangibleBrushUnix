@@ -46,6 +46,7 @@ public:
 	void setPostTreatment(Vector3& postTreatmentTrans, Quaternion& postTreatmentRot);
 	void setSubData(Vector3& dataTrans, Quaternion& dataRot);
 	void clearSelection();
+	void pushBackSelection();
 private:
 	unsigned int getScreenWidth() const { return SCREEN_WIDTH; }
 	unsigned int getScreenHeight() const { return SCREEN_HEIGHT; }
