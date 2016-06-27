@@ -69,6 +69,7 @@ struct FluidMechanics::Impl
 	bool computeStylusClipPlane(Vector3& point, Vector3& normal);
 	void showParticules();
 	void showSelection();
+	void pushBackSelection();
 
 	Vector3 posToDataCoords(const Vector3& pos); // "pos" is in eye coordinates
 	Vector3 dataCoordsToPos(const Vector3& dataCoordsToPos);
@@ -126,14 +127,14 @@ struct FluidMechanics::Impl
 
 	bool buttonIsPressed;
 
-	Vector3 firstPoint;
-	std::vector<Matrix4> selectionMatrix;
-	std::vector<Vector3> selectionPoint;
+	std::vector<Vector3> firstPoint;
+	std::vector<std::vector<Matrix4>> selectionMatrix;
+	std::vector<std::vector<Vector3>> selectionPoint;
 	Vector3 postTreatmentTrans;
 	Quaternion postTreatmentRot;
 
-	Vector3 dataTrans;
-	Quaternion dataRot;
+	std::vector<Vector3> dataTrans;
+	std::vector<Quaternion> dataRot;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -148,6 +149,16 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 
 	for (Particle& p : particles)
 		p.valid = false;
+	pushBackSelection();
+}
+
+void FluidMechanics::Impl::pushBackSelection()
+{
+	firstPoint.push_back(Vector3());
+	selectionMatrix.push_back(std::vector<Matrix4>());
+	selectionPoint.push_back(std::vector<Vector3>());
+	dataTrans.push_back(Vector3());
+	dataRot.push_back(Quaternion());
 }
 
 void FluidMechanics::Impl::rebind()
@@ -1296,38 +1307,42 @@ void FluidMechanics::Impl::showSelection()
 
 	const Matrix4 proj = app->getProjMatrix();
 
-	for(uint32_t i=0; i < selectionMatrix.size(); i++)
-	{
-		bool exists = false;
-		synchronized (particles) {
-			for (Particle& p : particles) {
-				if (p.valid) {
-					exists = true;
-					break;
-				}
+	bool exists = false;
+	synchronized (particles) {
+		for (Particle& p : particles) {
+			if (p.valid) {
+				exists = true;
+				break;
 			}
 		}
-		
-		synchronized_if(isosurface) 
+	}
+
+	for(uint32_t i=0; i < selectionMatrix.size(); i++)
+	{
+		for(uint32_t j=0; j < selectionMatrix[i].size(); j++)
 		{
-			glDisable(GL_BLEND);
-			glDepthMask(true);
-			glDisable(GL_CULL_FACE);
-		//	isosurface->renderSelection(proj, mm, firstPoint, selectionPoint[i], selectionMatrix[i]);
-		}
+			
+			synchronized_if(isosurface) 
+			{
+				glDisable(GL_BLEND);
+				glDepthMask(true);
+				glDisable(GL_CULL_FACE);
+			//	isosurface->renderSelection(proj, mm, firstPoint, selectionPoint[i], selectionMatrix[i]);
+			}
 
-		synchronized_if(volume) {
-			glDepthMask(true);
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
-			// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
-			glDisable(GL_DEPTH_TEST);
-			glDisable(GL_CULL_FACE);
+			synchronized_if(volume) {
+				glDepthMask(true);
+				glEnable(GL_BLEND);
+				glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
+				// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
+				glDisable(GL_DEPTH_TEST);
+				glDisable(GL_CULL_FACE);
 
-			volume->setOpacity(exists ? 0.025 : 1.0);
-			if (exists) volume->clearClipPlane();
-	
-			volume->renderSelection(proj, Matrix4::makeTransform(dataTrans, dataRot), firstPoint, selectionPoint[i], selectionMatrix[i], mm);
+				volume->setOpacity(exists ? 0.025 : 1.0);
+				if (exists) volume->clearClipPlane();
+		
+				volume->renderSelection(proj, Matrix4::makeTransform(dataTrans[i], dataRot[i]), firstPoint[i], selectionPoint[i][j], selectionMatrix[i][j], mm);
+			}
 		}
 	}
 	return;
@@ -1455,16 +1470,16 @@ void FluidMechanics::updateSurfacePreview()
 
 void FluidMechanics::setSelectionMatrix(std::vector<Matrix4>& selectionMatrix)
 {
-	impl->selectionMatrix.clear();
+	impl->selectionMatrix[impl->selectionMatrix.size()-1].clear();
 	for(uint32_t i=0; i < selectionMatrix.size(); i++)
-		impl->selectionMatrix.push_back(Matrix4(selectionMatrix[i].data_));
+		impl->selectionMatrix[impl->selectionMatrix.size()-1].push_back(Matrix4(selectionMatrix[i].data_));
 }
 
 void FluidMechanics::setSelectionPoint(std::vector<Vector3>& selectionPoint)
 {
-	impl->selectionPoint.clear();
+	impl->selectionPoint[impl->selectionPoint.size()-1].clear();
 	for(uint32_t i=0; i < selectionPoint.size(); i++)
-		impl->selectionPoint.push_back(selectionPoint[i]);
+		impl->selectionPoint[impl->selectionPoint.size()-1].push_back(selectionPoint[i]);
 }
 
 void FluidMechanics::setPostTreatment(Vector3& postTreatmentTrans, Quaternion& postTreatmentRot)
@@ -1475,17 +1490,18 @@ void FluidMechanics::setPostTreatment(Vector3& postTreatmentTrans, Quaternion& p
 
 void FluidMechanics::setSubData(Vector3& dataTrans, Quaternion& dataRot)
 {
-	impl->dataTrans = dataTrans;
-	impl->dataRot = dataRot;
+	impl->dataTrans[impl->dataTrans.size()-1] = dataTrans;
+	impl->dataRot[impl->dataTrans.size()-1]   = dataRot;
 }
 
 void FluidMechanics::setFirstPoint(Vector3& startPoint)
 {
-	impl->firstPoint = startPoint;
+	impl->firstPoint[impl->firstPoint.size()-1] = startPoint;
 }
 
 void FluidMechanics::clearSelection()
 {
 	impl->selectionMatrix.clear();
 	impl->selectionPoint.clear();
+	impl->pushBackSelection();
 }
