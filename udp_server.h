@@ -30,6 +30,8 @@ public:
 	bool hasDataSetChanged 	= false ;
 	bool hasSelectionSet    = false;
 	bool hasSelectionClear  = true;
+	bool hasPostTreatmentSet = false;
+	bool hasSubDataChanged = false;
 	
 
 	
@@ -63,7 +65,12 @@ public:
 	Synchronized<Vector3>     selectionStartPoint;
 	Synchronized<std::vector<Matrix4>> selectionMatrix;
 	Synchronized<std::vector<Vector3>> selectionPoint;
-	Synchronized<Matrix4> oldDataMatrix;
+	Synchronized<Matrix4> postTreatmentMat;
+	Synchronized<Vector3> postTreatmentTrans;
+	Synchronized<Quaternion> postTreatmentRot;
+
+	Synchronized<Vector3> dataTrans;
+	Synchronized<Quaternion> dataRot;
 private:
 
 	void initSocket();

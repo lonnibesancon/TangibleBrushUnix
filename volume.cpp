@@ -42,14 +42,15 @@ namespace {
 		"uniform lowp ivec3 dimensions;\n" // (dimX,dimY,dimZ)
 		"uniform lowp vec3 spacing;\n"
 		"uniform lowp vec3 invert;\n" // != 0 when planes are flipped
-		"varying highp vec4 v_pos;\n"
 		"attribute highp vec3 vertex;\n"
 		"attribute mediump vec3 texCoord;\n"
 		"varying mediump vec3 v_texCoord;\n"
+		"uniform lowp bool selectionMode;\n"
 
 		"uniform highp vec4 clipPlane;\n"
 		"varying highp float v_clipDist;\n"
 		"varying highp vec4 v_posNotModified;\n"
+		"uniform highp mat4 postTreatment;\n"
 
 		"void main() {\n"
 		// "  if (invert == 0)\n"
@@ -61,12 +62,11 @@ namespace {
 		"  mediump vec3 scale = vec3(float(dimensions.x), float(dimensions.y), float(dimensions.z)) * spacing;\n"
 		"  highp vec4 viewSpacePos = modelView * vec4(scale * (vertex * vec3(1.0, 1.0, -1.0)), 1.0);\n"
 
-		"  v_posNotModified = vec4(scale * (vertex * vec3(1.0, 1.0, -1.0)), 1.0);\n"
-		"  gl_Position = projection * viewSpacePos;\n"
+		"  if(selectionMode) gl_Position = projection * postTreatment * vec4(scale * (vertex * vec3(1.0, 1.0, -1.0)), 1.0);\n"
+		"  else              gl_Position = projection * viewSpacePos;\n"
 
-		"  v_clipDist = dot(viewSpacePos.xyz, clipPlane.xyz) + clipPlane.w;\n"
-		"  v_pos = gl_Position;\n"
-
+		"  v_clipDist = dot((postTreatment * vec4(scale * (vertex * vec3(1.0, 1.0, -1.0)), 1.0)).xyz, clipPlane.xyz) + clipPlane.w;\n"
+		"  v_posNotModified = viewSpacePos;\n"
 		"}";
 
 	// // #ifndef GL_TEXTURE_2D_ARRAY_EXT
@@ -102,9 +102,8 @@ namespace {
 		"uniform highp mat4 selectionMat;\n"
 		"uniform lowp bool selectionMode;\n"
 		"uniform highp mat4 modelView;\n"
-		"uniform highp mat4 invOldData;\n"
+		"uniform highp mat4 postTreatment;\n"
 		"varying highp vec4 v_posNotModified;\n"
-		"varying highp vec4 v_pos;\n"
 
 		"varying highp float v_clipDist;\n"
 
@@ -121,18 +120,27 @@ namespace {
 		// "  return clamp(vec3(min(a,b), min(c,d), min(e,f)), 0.0, 1.0);\n"
 		// "}\n"
 		"void main() {\n"
-		//"if (v_clipDist > 0.0) discard;\n"
+		"if (v_clipDist > 0.0) discard;\n"
 		//Selection !
 		"  if(selectionMode)\n"
 		"  {\n"
-		"     vec4 testPos = selectionMat * modelView * v_posNotModified;\n"
+		"     vec4 testPos = selectionMat * v_posNotModified;\n"
 		//"     vec4 testPos = v_pos; \n"
 		
-		"		vec4 fp = invOldData * modelView * (vec4(uFirstPos.x, uFirstPos.y, 0.1, 1.0));\n"
-		"		vec4 lp = invOldData * modelView * (vec4(uLastPos.x, uLastPos.y, 0.1, 1.0));\n"
+		"     vec4 fp = (vec4(uFirstPos.x, uFirstPos.y, 0.0f, 1.0));\n"
+		"     fp = testPos.w * fp;\n"
+		"     vec4 lp = (vec4(uLastPos.x, uLastPos.y, 0.05f, 1.0));\n"
+		"     lp = testPos.w * lp;\n"
+
+		"     float fx = min(fp.x, lp.x);\n"
+		"     float fy = min(fp.y, lp.y);\n"
+		"     float fz = min(fp.z, lp.z);\n"
+
+		"     float lx = max(fp.x, lp.x);\n"
+		"     float ly = max(fp.y, lp.y);\n"
+		"     float lz = max(fp.z, lp.z);\n"
 	    
-	    "	  if(testPos.x < fp.x || testPos.x > lp.x || testPos.y < fp.y || testPos.y > lp.y || testPos.z > lp.z || testPos.z < fp.z) discard; \n"
-	    //"	  if(testPos.x < uFirstPos.x || testPos.x > uLastPos.x || testPos.y < uFirstPos.y || testPos.y > uLastPos.y || testPos.z > 0.01f || testPos.z < -0.01f) discard; \n"
+	    "	  if(testPos.x < fx || testPos.x > lx || testPos.y < fy || testPos.y > ly || testPos.z < fz || testPos.z > lz) discard; \n"
 		"  }\n"
 
 		// "  lowp float value = texture2DArray(texture, v_texCoord).a;\n"
@@ -886,7 +894,7 @@ void Volume::renderSelection(const Matrix4& projectionMatrix, const Matrix4& mod
 	glUniform3f(mMaterial->getUniform("uFirstPos"), firstPos.x, firstPos.y, firstPos.z);
 	glUniform3f(mMaterial->getUniform("uLastPos"), lastPos.x, lastPos.y, lastPos.z);
 	glUniformMatrix4fv(mMaterial->getUniform("selectionMat"), 1, false, invSelectionMatrix.data_);
-	glUniformMatrix4fv(mMaterial->getUniform("invOldData"), 1, false, oldData.inverse().data_);
+	glUniformMatrix4fv(mMaterial->getUniform("postTreatment"), 1, false, oldData.data_);
 
 	
 	int dimVec[3];

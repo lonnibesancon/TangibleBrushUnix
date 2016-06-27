@@ -43,8 +43,9 @@ public:
 	void setFirstPoint(Vector3& firstPoint);
 	void setSelectionPoint(std::vector<Vector3>& selectionPoint);
 	void setSelectionMatrix(std::vector<Matrix4>& selectionMatrix);
+	void setPostTreatment(Vector3& postTreatmentTrans, Quaternion& postTreatmentRot);
+	void setSubData(Vector3& dataTrans, Quaternion& dataRot);
 	void clearSelection();
-	void setOldDataMatrix(Matrix4& data);
 private:
 	unsigned int getScreenWidth() const { return SCREEN_WIDTH; }
 	unsigned int getScreenHeight() const { return SCREEN_HEIGHT; }

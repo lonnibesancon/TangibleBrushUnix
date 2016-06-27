@@ -129,7 +129,11 @@ struct FluidMechanics::Impl
 	Vector3 firstPoint;
 	std::vector<Matrix4> selectionMatrix;
 	std::vector<Vector3> selectionPoint;
-	Matrix4 oldDataMatrix;
+	Vector3 postTreatmentTrans;
+	Quaternion postTreatmentRot;
+
+	Vector3 dataTrans;
+	Quaternion dataRot;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -1131,7 +1135,7 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 	synchronized_if(isosurface) {
 		glDepthMask(true);
 		glDisable(GL_CULL_FACE);
-		isosurface->render(proj, mm);
+		//isosurface->render(proj, mm);
 	}
 	
 
@@ -1261,8 +1265,8 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 
 void FluidMechanics::Impl::showSelection()
 {
-	if(!settings->showSelection)
-		return;
+//	if(!settings->showSelection)
+//		return;
 	glClear(GL_DEPTH_BUFFER_BIT);
 
 	settings->showSlice = false;
@@ -1289,6 +1293,7 @@ void FluidMechanics::Impl::showSelection()
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
 	glDepthMask(true); // requires "discard" in the shader where alpha == 0
+
 	const Matrix4 proj = app->getProjMatrix();
 
 	for(uint32_t i=0; i < selectionMatrix.size(); i++)
@@ -1322,7 +1327,7 @@ void FluidMechanics::Impl::showSelection()
 			volume->setOpacity(exists ? 0.025 : 1.0);
 			if (exists) volume->clearClipPlane();
 	
-			volume->renderSelection(proj, mm, firstPoint, selectionPoint[i], selectionMatrix[i], oldDataMatrix);
+			volume->renderSelection(proj, Matrix4::makeTransform(dataTrans, dataRot), firstPoint, selectionPoint[i], selectionMatrix[i], mm);
 		}
 	}
 	return;
@@ -1462,14 +1467,21 @@ void FluidMechanics::setSelectionPoint(std::vector<Vector3>& selectionPoint)
 		impl->selectionPoint.push_back(selectionPoint[i]);
 }
 
+void FluidMechanics::setPostTreatment(Vector3& postTreatmentTrans, Quaternion& postTreatmentRot)
+{
+	impl->postTreatmentTrans = postTreatmentTrans;
+	impl->postTreatmentRot = postTreatmentRot;
+}
+
+void FluidMechanics::setSubData(Vector3& dataTrans, Quaternion& dataRot)
+{
+	impl->dataTrans = dataTrans;
+	impl->dataRot = dataRot;
+}
+
 void FluidMechanics::setFirstPoint(Vector3& startPoint)
 {
 	impl->firstPoint = startPoint;
-}
-
-void FluidMechanics::setOldDataMatrix(Matrix4& oldData)
-{
-	impl->oldDataMatrix = oldData;
 }
 
 void FluidMechanics::clearSelection()

@@ -184,14 +184,6 @@ void udp_server::listen(){
 
 		else if(msg[0] == '2' && msg[1] == ';')
 		{
-			synchronized(dataMatrix)
-			{
-				synchronized(oldDataMatrix)
-				{
-					oldDataMatrix = Matrix4(dataMatrix);
-				}
-			}
-			
 			if(!hasSelectionSet)
 			{
 				std::string tok;
@@ -239,6 +231,80 @@ void udp_server::listen(){
 				}
 				hasSelectionSet = true;
 			}
+		}
+
+		else if(msg[0] == '4')
+		{
+			if(!hasSelectionSet)
+			{
+				std::string tok;
+				float data[7];
+
+				//Useless one
+				getline(ss, tok, ';');
+
+				//Then get the matrix
+				for(uint32_t i=0; i < 7; i++)
+				{
+					getline(ss, tok, ';');
+					data[i] = std::stof(tok.c_str());
+				}
+
+				synchronized(postTreatmentTrans)
+				{
+					postTreatmentTrans = Vector3(data[0], data[1], data[2]);
+				}
+
+				synchronized(postTreatmentRot)
+				{
+					postTreatmentRot = Quaternion(data[3], data[4], data[5], data[6]);
+				}
+
+/*				synchronized(postTreatmentMat)
+				{
+					postTreatmentMat.push_back(Matrix4(matrix));
+				}
+*/
+				hasPostTreatmentSet = true;
+			}
+
+		}
+
+		else if(msg[0] == '5')
+		{
+			if(!hasSubDataChanged)
+			{
+				std::string tok;
+				float data[7];
+
+				//Useless one
+				getline(ss, tok, ';');
+
+				//Then get the matrix
+				for(uint32_t i=0; i < 7; i++)
+				{
+					getline(ss, tok, ';');
+					data[i] = std::stof(tok.c_str());
+				}
+
+				synchronized(dataTrans)
+				{
+					dataTrans = Vector3(data[0], data[1], data[2]);
+				}
+
+				synchronized(dataRot)
+				{
+					dataRot = Quaternion(data[3], data[4], data[5], data[6]);
+				}
+
+/*				synchronized(postTreatmentMat)
+				{
+					postTreatmentMat.push_back(Matrix4(matrix));
+				}
+*/
+				hasSubDataChanged = true;
+			}
+
 		}
 
 		else

@@ -21,13 +21,13 @@ CFLAGS = -std=c99
 CXXFLAGS = -std=c++0x
 
 #Home computer && Aviz one
-CPPFLAGS = -I. -isystem /usr/include/vtk-6.0/
-	LDFLAGS = -lpthread -lSDL2 -lGL -lpng -lvtkIOXML-6.0 -lvtkIOLegacy-6.0 -lvtkIOPLY-6.0 -lvtkIOGeometry-6.0 -lvtkFiltersModeling-6.0 -lvtkImagingCore-6.0 -lvtkRenderingFreeType-6.0 -lvtkRenderingCore-6.0 -lvtkIOImage-6.0 -lvtkDICOMParser-6.0 -lvtkmetaio-6.0 -lvtkFiltersSources-6.0 -lvtkFiltersGeometry-6.0 -lvtkIOXMLParser-6.0 -lvtkIOCore-6.0 -lvtkFiltersExtraction-6.0 -lvtkFiltersGeneral-6.0 -lvtkFiltersCore-6.0 -lvtkCommonExecutionModel-6.0 -lvtkCommonComputationalGeometry-6.0 -lvtkCommonDataModel-6.0 -lvtkCommonMisc-6.0 -lvtkCommonTransforms-6.0 -lvtkCommonSystem-6.0 -lvtkCommonMath-6.0 -lvtkCommonCore-6.0 -lvtksys-6.0 
+#CPPFLAGS = -I. -isystem /usr/include/vtk-6.0/
+#	LDFLAGS = -lpthread -lSDL2 -lGL -lpng -lvtkIOXML-6.0 -lvtkIOLegacy-6.0 -lvtkIOPLY-6.0 -lvtkIOGeometry-6.0 -lvtkFiltersModeling-6.0 -lvtkImagingCore-6.0 -lvtkRenderingFreeType-6.0 -lvtkRenderingCore-6.0 -lvtkIOImage-6.0 -lvtkDICOMParser-6.0 -lvtkmetaio-6.0 -lvtkFiltersSources-6.0 -lvtkFiltersGeometry-6.0 -lvtkIOXMLParser-6.0 -lvtkIOCore-6.0 -lvtkFiltersExtraction-6.0 -lvtkFiltersGeneral-6.0 -lvtkFiltersCore-6.0 -lvtkCommonExecutionModel-6.0 -lvtkCommonComputationalGeometry-6.0 -lvtkCommonDataModel-6.0 -lvtkCommonMisc-6.0 -lvtkCommonTransforms-6.0 -lvtkCommonSystem-6.0 -lvtkCommonMath-6.0 -lvtkCommonCore-6.0 -lvtksys-6.0 
 
 
 	
-#	CPPFLAGS = -I. -isystem /opt/vtk6/include/vtk/
-#	LDFLAGS = -L/opt/vtk6/lib/ -lpthread -lSDL2 -lGL -lpng -lvtkIOXML -lvtkIOLegacy -lvtkIOPLY -lvtkIOGeometry -lvtkFiltersModeling -lvtkImagingCore -lvtkRenderingFreeType -lvtkRenderingCore -lvtkIOImage -lvtkDICOMParser -lvtkmetaio -lvtkFiltersSources -lvtkFiltersGeometry -lvtkIOXMLParser -lvtkIOCore -lvtkFiltersExtraction -lvtkFiltersGeneral -lvtkFiltersCore -lvtkCommonExecutionModel -lvtkCommonComputationalGeometry -lvtkCommonDataModel -lvtkCommonMisc -lvtkCommonTransforms -lvtkCommonSystem -lvtkCommonMath -lvtkCommonCore -lvtksys 
+	CPPFLAGS = -I. -isystem /opt/vtk6/include/vtk/
+	LDFLAGS = -L/opt/vtk6/lib/ -lpthread -lSDL2 -lGL -lpng -lvtkIOXML -lvtkIOLegacy -lvtkIOPLY -lvtkIOGeometry -lvtkFiltersModeling -lvtkImagingCore -lvtkRenderingFreeType -lvtkRenderingCore -lvtkIOImage -lvtkDICOMParser -lvtkmetaio -lvtkFiltersSources -lvtkFiltersGeometry -lvtkIOXMLParser -lvtkIOCore -lvtkFiltersExtraction -lvtkFiltersGeneral -lvtkFiltersCore -lvtkCommonExecutionModel -lvtkCommonComputationalGeometry -lvtkCommonDataModel -lvtkCommonMisc -lvtkCommonTransforms -lvtkCommonSystem -lvtkCommonMath -lvtkCommonCore -lvtksys 
 
 
 

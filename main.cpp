@@ -171,13 +171,32 @@ int main()
 				app->setFirstPoint(server.selectionStartPoint);
 			}
 			
-			synchronized(server.oldDataMatrix)
-			{
-				app->setOldDataMatrix(server.oldDataMatrix);
-			}
-
 			app->getSettings()->showSelection = true;
 			server.hasSelectionSet = false;
+		}
+
+		if(server.hasPostTreatmentSet)
+		{
+			synchronized(server.postTreatmentTrans)
+			{
+				synchronized(server.postTreatmentRot)
+				{
+					app->setPostTreatment(server.postTreatmentTrans, server.postTreatmentRot);
+				}
+			}
+			server.hasPostTreatmentSet = false;
+		}
+
+		if(server.hasSubDataChanged)
+		{
+			synchronized(server.dataTrans)
+			{
+				synchronized(server.dataRot)
+				{
+					app->setSubData(server.dataTrans, server.dataRot);
+				}
+			}
+			server.hasSubDataChanged = false;
 		}
 
 		dataMatrix = server.getDataMatrix();
