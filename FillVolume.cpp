@@ -3,7 +3,7 @@
 FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x), m_y(y), m_z(z)
 {
 	pthread_mutex_init(&m_mutex, NULL);
-	m_fillVolume = (bool*)calloc((x*METRICS*y*METRICS*z*METRICS+7)*sizeof(bool)/8);
+	m_fillVolume = (bool*)calloc((x*METRICS*y*METRICS*z*METRICS+7)/8, sizeof(bool));
 }
 
 FillVolume::~FillVolume()
@@ -21,15 +21,15 @@ FillVolume* FillVolume::createUnion(const FillVolume& fv) const
 		{
 			for(uint64_t k=0; k < fmin(m_z, fv.m_z); k+=8)
 			{
-				uint8_t diff = min(fv.m_z - k, m_z - k);
+				uint8_t diff = fmin(fv.m_z - k, m_z - k);
 				if(diff < 8)
 				{
-					uint64_t selfShift = i + m_x*j + m_x*m_y*z;
-					bool self          = (m_fillVolume + selfShift)/8;
+					uint64_t selfShift = i + m_x*j + m_x*m_y*k;
+					bool self          = m_fillVolume + (selfShift)/8;
 					self               = (self >> (selfShift % 8)) & (0xff >> diff);
 
-					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*z;
-					bool its           = (fv.m_fillVolume + itsShift)/8;
+					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*k;
+					bool its           = fv.m_fillVolume + (itsShift)/8;
 					its                = (its >> (itsShift % 8)) & (0xff >> diff);
 
 					result->m_fillVolume[selfShift] = (its | self);
@@ -37,11 +37,11 @@ FillVolume* FillVolume::createUnion(const FillVolume& fv) const
 				}
 				else
 				{
-					uint64_t selfShift = i + m_x*j + m_x*m_y*z;
-					bool self          = (m_fillVolume + selfShift)/8;
+					uint64_t selfShift = i + m_x*j + m_x*m_y*k;
+					bool self          = m_fillVolume + (selfShift)/8;
 
-					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*z;
-					bool its           = (fv.m_fillVolume + itsShift)/8;
+					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*k;
+					bool its           = fv.m_fillVolume + (itsShift)/8;
 
 					result->m_fillVolume[selfShift] = (its | self);
 				}
@@ -60,15 +60,15 @@ FillVolume* FillVolume::createIntersection(const FillVolume& fv) const
 		{
 			for(uint64_t k=0; k < fmin(m_z, fv.m_z); k+=8)
 			{
-				uint8_t diff = min(fv.m_z - k, m_z - k);
+				uint8_t diff = fmin(fv.m_z - k, m_z - k);
 				if(diff < 8)
 				{
-					uint64_t selfShift = i + m_x*j + m_x*m_y*z;
-					bool self          = (m_fillVolume + selfShift)/8;
+					uint64_t selfShift = i + m_x*j + m_x*m_y*k;
+					bool self          = m_fillVolume + (selfShift)/8;
 					self               = (self >> (selfShift % 8)) & (0xff >> diff);
 
-					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*z;
-					bool its           = (fv.m_fillVolume + itsShift)/8;
+					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*k;
+					bool its           = fv.m_fillVolume + (itsShift)/8;
 					its                = (its >> (itsShift % 8)) & (0xff >> diff);
 
 					result->m_fillVolume[selfShift] = (self & its);
@@ -76,11 +76,11 @@ FillVolume* FillVolume::createIntersection(const FillVolume& fv) const
 				}
 				else
 				{
-					uint64_t selfShift = i + m_x*j + m_x*m_y*z;
-					bool self          = (m_fillVolume + selfShift)/8;
+					uint64_t selfShift = i + m_x*j + m_x*m_y*k;
+					bool self          = m_fillVolume + (selfShift)/8;
 
-					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*z;
-					bool its           = (fv.m_fillVolume + itsShift)/8;
+					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*k;
+					bool its           = fv.m_fillVolume + (itsShift)/8;
 
 					result->m_fillVolume[selfShift] = (self & its);
 				}

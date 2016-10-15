@@ -5,20 +5,21 @@
 #include "stdint.h"
 #include "stdlib.h"
 #include "pthread.h"
+#include <cmath>
 
 class FillVolume
 {
 	public:
 		FillVolume(uint64_t x, uint64_t y, uint64_t z);
 		~FillVolume();
-		void createUnion(const FillVolume& fv) const;
-		void createIntersection(const FillVolume& fv) const;
+		FillVolume* createUnion(const FillVolume& fv) const;
+		FillVolume* createIntersection(const FillVolume& fv) const;
 
 		void lock();
 		void unlock();
 	private:
 		bool* m_fillVolume;
-		uint64_t x, y, z;
+		uint64_t m_x, m_y, m_z;
 		pthread_mutex_t m_mutex;
 };
 
