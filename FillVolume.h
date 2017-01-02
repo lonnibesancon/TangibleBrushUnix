@@ -15,6 +15,7 @@ class FillVolume
 		FillVolume* createUnion(const FillVolume& fv) const;
 		FillVolume* createIntersection(const FillVolume& fv) const;
 
+		bool get();
 		void lock();
 		void unlock();
 	private:

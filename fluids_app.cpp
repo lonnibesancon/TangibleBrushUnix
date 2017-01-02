@@ -135,6 +135,8 @@ struct FluidMechanics::Impl
 
 	std::vector<Vector3> dataTrans;
 	std::vector<Quaternion> dataRot;
+
+	Cube selectionCube;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -1318,7 +1320,7 @@ void FluidMechanics::Impl::showSelection()
 		}
 	}
 
-	for(uint32_t i=0; i < selectionMatrix.size(); i++)
+/*	for(uint32_t i=0; i < selectionMatrix.size(); i++)
 	{
 		for(uint32_t j=0; j < selectionMatrix[i].size(); j++)
 		{
@@ -1343,6 +1345,19 @@ void FluidMechanics::Impl::showSelection()
 				if (exists) volume->clearClipPlane();
 		
 				volume->renderSelection(proj, Matrix4::makeTransform(dataTrans[i], dataRot[i]), firstPoint[i], selectionPoint[i][j], selectionMatrix[i][j], mm);
+			}
+		}
+	}
+*/
+
+	//Draw each sub_cubes
+	for(uint32_t i=0; i < ; i++)
+	{
+		for(uint32_t j=0; j < ; j++)
+		{
+			for(uint32_t k=0; k < ; k++)
+			{
+
 			}
 		}
 	}
