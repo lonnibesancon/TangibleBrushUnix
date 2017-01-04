@@ -30,6 +30,8 @@
 
 #define NEW_STYLUS_RENDER
 
+#define VOLUME_METRICS 0.01f
+
 struct Particle
 {
 	Vector3 pos;
@@ -41,6 +43,7 @@ struct Particle
 struct FluidMechanics::Impl
 {
 	Impl(const std::string& baseDir);
+	~Impl();
 
 	bool loadDataSet(const std::string& fileName);
 	bool loadVelocityDataSet(const std::string& fileName);
@@ -137,11 +140,15 @@ struct FluidMechanics::Impl
 	std::vector<Quaternion> dataRot;
 
 	Cube selectionCube;
+	//Tells where the volume is filled. Very useful for binary option (intersect, union, etc.)
+	FillVolume* fillVolume;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
  : buttonIsPressed(false)
 {
+	selectionCube.setColor(Vector3(220, 220, 0.0));
+	fillVolume=NULL;
 	cube.reset(new Cube);
 	axisCube.reset(new Cube(true));
 	particleSphere = LoaderOBJ::load(baseDir + "/sphere.obj");
@@ -154,9 +161,18 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 	pushBackSelection();
 }
 
+FluidMechanics::Impl::~Impl()
+{
+	fillVolume->lock();
+	{
+		if(fillVolume)
+			delete fillVolume;
+	}
+	fillVolume->unlock();
+}
+
 void FluidMechanics::Impl::pushBackSelection()
 {
-	printf("pushBackSelection \n");
 	firstPoint.push_back(Vector3());
 	selectionMatrix.push_back(std::vector<Matrix4>());
 	selectionPoint.push_back(std::vector<Vector3>());
@@ -241,6 +257,18 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	data->GetSpacing(spacing);
 	dataSpacing = Vector3(spacing[0], spacing[1], spacing[2]);
 
+	//Init the fill volume.
+	if(!fillVolume)
+		fillVolume = new FillVolume(dataDim[0], dataDim[1], dataDim[2]);
+	else
+	{
+		fillVolume->lock();
+		{
+			delete fillVolume;
+		}
+		fillVolume = new FillVolume(dataDim[0], dataDim[1], dataDim[2]);
+	}
+
 	// Compute a default zoom value according to the data dimensions
 	// static const float nativeSize = 128.0f;
 	static const float nativeSize = 110.0f;
@@ -269,6 +297,8 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	synchronized(volume) {
 		LOGD("creating volume...");
 		volume.reset(new Volume(data));
+		LOGD("minValue : %f", volume->getMinValue());
+		LOGD("maxValue : %f", volume->getMaxValue());
 		// volume.reset(new Volume3d(data));
 		// if (fileName.find("FTLE7.vtk") != std::string::npos) { // HACK
 		// 	// volume->setOpacity(0.25f);
@@ -1350,17 +1380,96 @@ void FluidMechanics::Impl::showSelection()
 	}
 */
 
-	//Draw each sub_cubes
-	for(uint32_t i=0; i < ; i++)
+	if(!fillVolume)
+		return;
+	//Draw each
+	//on the depth
+	for(uint32_t i=0; i < fillVolume->getSizeX(); i++)
 	{
-		for(uint32_t j=0; j < ; j++)
+		for(uint32_t j=0; j < fillVolume->getSizeY(); j++)
 		{
-			for(uint32_t k=0; k < ; k++)
+			for(uint32_t k=0; k < fillVolume->getSizeZ(); k++)
 			{
+				if(fillVolume->get(i, j, k))
+				{
+					Matrix4 projCube;
+					projCube.setPosition(Vector3(i*METRICS, j*METRICS, k*METRICS));
+					selectionCube.render(proj, projCube);
+					break;
+				}
+			}
 
+			for(int32_t k=fillVolume->getSizeZ()-1; k >=0; k--)
+			{
+				if(fillVolume->get(i, j, k))
+				{
+					Matrix4 projCube;
+					projCube.setPosition(Vector3(i*METRICS, j*METRICS, k*METRICS));
+					selectionCube.render(proj, projCube);
+					break;
+				}
 			}
 		}
 	}
+
+	//On the width
+	for(uint32_t k=0; k < fillVolume->getSizeZ(); k++)
+	{
+		for(uint32_t j=0; j < fillVolume->getSizeY(); j++)
+		{
+			for(uint32_t i=0; i < fillVolume->getSizeX(); i++)
+			{
+				if(fillVolume->get(i, j, k))
+				{
+					Matrix4 projCube;
+					projCube.setPosition(Vector3(i*METRICS, j*METRICS, k*METRICS));
+					selectionCube.render(proj, projCube);
+					break;
+				}
+			}
+
+			for(int32_t i=fillVolume->getSizeX()-1; i >=0; i--)
+			{
+				if(fillVolume->get(i, j, k))
+				{
+					Matrix4 projCube;
+					projCube.setPosition(Vector3(i*METRICS, j*METRICS, k*METRICS));
+					selectionCube.render(proj, projCube);
+					break;
+				}
+			}
+		}
+	}
+
+	//On the height
+	for(uint32_t i=0; i < fillVolume->getSizeX(); i++)
+	{
+		for(uint32_t k=0; k < fillVolume->getSizeZ(); k++)
+		{
+			for(uint32_t j=0; j < fillVolume->getSizeY(); j++)
+			{
+				if(fillVolume->get(i, j, k))
+				{
+					Matrix4 projCube;
+					projCube.setPosition(Vector3(i*METRICS, j*METRICS, k*METRICS));
+					selectionCube.render(proj, projCube);
+					break;
+				}
+			}
+
+			for(int32_t j=fillVolume->getSizeY()-1; j >=0; j--)
+			{
+				if(fillVolume->get(i, j, k))
+				{
+					Matrix4 projCube;
+					projCube.setPosition(Vector3(i*METRICS, j*METRICS, k*METRICS));
+					selectionCube.render(proj, projCube);
+					break;
+				}
+			}
+		}
+	}
+
 	return;
 }
 
@@ -1493,7 +1602,6 @@ void FluidMechanics::setSelectionMatrix(std::vector<Matrix4>& selectionMatrix)
 
 void FluidMechanics::setSelectionPoint(std::vector<Vector3>& selectionPoint)
 {
-	printf("size array : %d \n", impl->selectionPoint.size());
 	impl->selectionPoint[impl->selectionPoint.size()-1].clear();
 	for(uint32_t i=0; i < selectionPoint.size(); i++)
 		impl->selectionPoint[impl->selectionPoint.size()-1].push_back(selectionPoint[i]);
@@ -1525,6 +1633,5 @@ void FluidMechanics::clearSelection()
 
 void FluidMechanics::pushBackSelection()
 {
-	printf("pushBackSelection \n");
 	impl->pushBackSelection();
 }
