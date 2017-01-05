@@ -34,8 +34,10 @@ FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x*METRICS), m_y
 {
 	pthread_mutex_init(&m_mutex, NULL);
 	m_fillVolume = (bool*)calloc((x*METRICS*y*METRICS*z*METRICS+7)/8, sizeof(bool));
-	for(uint32_t i=0; i < (x*METRICS*y*METRICS*z*METRICS+7)/8; i++)
-		m_fillVolume[i]=0;
+	for(uint32_t i=x*METRICS/4; i < 2*x*METRICS/4; i++)
+		for(uint32_t j=y*METRICS/4; j < 2*y*METRICS/4; j++)
+			for(uint32_t k=z*METRICS/4; k < 2*z*METRICS/4; k++)
+				m_fillVolume[(i+m_x*j+m_x*m_y*k)/8]=0xff;
 }
 
 FillVolume::~FillVolume()
@@ -312,7 +314,6 @@ bool FillVolume::get(uint64_t x, uint64_t y, uint64_t z)
 	uint64_t selfShift = x + m_x*y + m_x*m_y*z;
 	bool self          = *(m_fillVolume + (selfShift)/8);
 	self               = (self >> (selfShift % 8)) & 0x01;
-	printf("self : %d \n", self);
 
 	return self;
 }

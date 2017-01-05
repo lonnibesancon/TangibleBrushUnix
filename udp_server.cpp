@@ -9,7 +9,6 @@
 #include <string>
 #include <stdlib.h>
 
-
 udp_server::udp_server(){
 	int i ;
 	port = 8888 ;
@@ -162,7 +161,7 @@ void udp_server::listen(){
 		//print details of the client/peer and the data received
 		std::string msg = buf ;
 		std::stringstream ss(msg);
-		//std::cout << "Message = " << msg << std::endl ;
+		std::cout << "Message = " << msg << std::endl ;
 
 		if(msg[0] == ' ')
 		{}
@@ -316,7 +315,7 @@ void udp_server::listen(){
 				hasSetToSelection = true;
 		}
 
-		else
+		else if(msg[0]=='1')
 		{
 			std::string tok;
 			int nbOfElementsToParseFirst = 7 ;
@@ -404,17 +403,21 @@ void udp_server::listen(){
 			int consider = -1 ;
 			//We don't need to use getline again, it was stored in the last do-while loop		getline(ss, tok, ';');
 			std::cout << "SS ======" << tok.c_str() << std::endl ;
+			printf("%s \n", tok.c_str());
 			consider = std::stoi(tok.c_str());
 			this->considerX = consider ;
 			getline(ss, tok, ';');
+
 			std::cout << "SS ======" << tok.c_str() << std::endl ;
+			printf("%s \n", tok.c_str());
 			consider = std::stoi(tok.c_str());
 			this->considerY = consider ;
 			getline(ss, tok, ';');
+
 			std::cout << "SS ======" << tok.c_str() << std::endl ;
+			printf("%si \n", tok.c_str());
 			consider = std::stoi(tok.c_str());
 			this->considerZ = consider ;
-			
 			
 			hasDataChanged = true ;
 		}
