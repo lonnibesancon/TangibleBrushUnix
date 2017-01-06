@@ -166,10 +166,11 @@ int main()
 				app->setSelectionPoint(server.selectionPoint);
 			}
 
-			synchronized(server.selectionStartPoint)
+/*  		synchronized(server.selectionStartPoint)
 			{
 				app->setFirstPoint(server.selectionStartPoint);
 			}
+*/
 			
 			app->getSettings()->showSelection = true;
 			server.hasSelectionSet = false;

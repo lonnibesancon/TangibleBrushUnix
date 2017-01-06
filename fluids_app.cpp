@@ -130,9 +130,9 @@ struct FluidMechanics::Impl
 
 	bool buttonIsPressed;
 
-	std::vector<Vector3> firstPoint;
 	std::vector<std::vector<Matrix4>> selectionMatrix;
-	std::vector<std::vector<Vector3>> selectionPoint;
+	std::vector<Vector3> selectionPoint;
+
 	Vector3 postTreatmentTrans;
 	Quaternion postTreatmentRot;
 
@@ -168,16 +168,15 @@ FluidMechanics::Impl::~Impl()
 		if(fillVolume)
 			delete fillVolume;
 	}
-	fillVolume->unlock();
 }
 
 void FluidMechanics::Impl::pushBackSelection()
 {
-	firstPoint.push_back(Vector3());
-	selectionMatrix.push_back(std::vector<Matrix4>());
+/*  selectionMatrix.push_back(std::vector<Matrix4>());
 	selectionPoint.push_back(std::vector<Vector3>());
 	dataTrans.push_back(Vector3());
 	dataRot.push_back(Quaternion());
+*/
 }
 
 void FluidMechanics::Impl::rebind()
@@ -1384,91 +1383,153 @@ void FluidMechanics::Impl::showSelection()
 		return;
 	//Draw each
 	//on the depth
-	for(uint32_t i=0; i < fillVolume->getSizeX(); i++)
+	for(uint32_t i=0; i < fillVolume->getMetricsSizeX(); i+=8)
 	{
-		for(uint32_t j=0; j < fillVolume->getSizeY(); j++)
+		for(uint32_t j=0; j < fillVolume->getMetricsSizeY(); j++)
 		{
-			for(uint32_t k=0; k < fillVolume->getSizeZ(); k++)
+			for(uint32_t k=0; k < fillVolume->getMetricsSizeZ(); k++)
 			{
-				if(fillVolume->get(i, j, k))
+				bool found=false;
+				if(fillVolume->hasSomething8Bits(i, j, k))
 				{
-					Matrix4 projCube;
-					projCube.setPosition(Vector3(i*METRICS, j*METRICS, k*METRICS));
-					selectionCube.render(proj, projCube);
-					break;
+					for(uint64_t l=0; l < 8; l++)
+					{
+						if(fillVolume->get(i+l, j, k))
+						{
+							Matrix4 projCube = Matrix4::identity();
+							projCube.setPosition(Vector3(i/METRICS, j/METRICS, k/METRICS));
+							selectionCube.render(proj, projCube);
+							found=true;
+							break;
+						}
+					}
 				}
+				if(found)
+					break;
 			}
 
-			for(int32_t k=fillVolume->getSizeZ()-1; k >=0; k--)
+			for(int32_t k=fillVolume->getMetricsSizeZ()-1; k >=0; k--)
 			{
-				if(fillVolume->get(i, j, k))
+				bool found=false;
+				if(fillVolume->hasSomething8Bits(i, j, k))
 				{
-					Matrix4 projCube;
-					projCube.setPosition(Vector3(i*METRICS, j*METRICS, k*METRICS));
-					selectionCube.render(proj, projCube);
-					break;
+					for(uint64_t l=0; l < 8; l++)
+					{
+						if(fillVolume->get(i+l, j, k+l))
+						{
+							Matrix4 projCube = Matrix4::identity();
+							projCube.setPosition(Vector3(i/METRICS, j/METRICS, k/METRICS));
+							selectionCube.render(proj, projCube);
+							found=true;
+							break;
+						}
+					}
 				}
+				if(found)
+					break;
 			}
 		}
 	}
 
 	//On the width
-	for(uint32_t k=0; k < fillVolume->getSizeZ(); k++)
+	for(uint32_t k=0; k < fillVolume->getMetricsSizeZ(); k++)
 	{
-		for(uint32_t j=0; j < fillVolume->getSizeY(); j++)
+		for(uint32_t j=0; j < fillVolume->getMetricsSizeY(); j++)
 		{
-			for(uint32_t i=0; i < fillVolume->getSizeX(); i++)
+			for(uint32_t i=0; i < fillVolume->getMetricsSizeX(); i++)
 			{
-				if(fillVolume->get(i, j, k))
+				bool found=false;
+				if(fillVolume->hasSomething8Bits(i, j, k))
 				{
-					Matrix4 projCube;
-					projCube.setPosition(Vector3(i*METRICS, j*METRICS, k*METRICS));
-					selectionCube.render(proj, projCube);
-					break;
+					for(uint64_t l=0; l < 8; l++)
+					{
+						if(fillVolume->get(i+l, j, k))
+						{
+							Matrix4 projCube = Matrix4::identity();
+							projCube.setPosition(Vector3(i/METRICS, j/METRICS, k/METRICS));
+							selectionCube.render(proj, projCube);
+							found=true;
+							break;
+						}
+					}
 				}
+				if(found)
+					break;
 			}
 
-			for(int32_t i=fillVolume->getSizeX()-1; i >=0; i--)
+			for(int32_t i=fillVolume->getMetricsSizeX()-1; i >=0; i-=8)
 			{
-				if(fillVolume->get(i, j, k))
+				bool found=false;
+				if(fillVolume->hasSomething8Bits(i, j, k))
 				{
-					Matrix4 projCube;
-					projCube.setPosition(Vector3(i*METRICS, j*METRICS, k*METRICS));
-					selectionCube.render(proj, projCube);
-					break;
+					for(uint64_t l=0; l < 8; l++)
+					{
+						if(fillVolume->get(i+l, j, k))
+						{
+							Matrix4 projCube = Matrix4::identity();
+							projCube.setPosition(Vector3(i/METRICS, j/METRICS, k/METRICS));
+							selectionCube.render(proj, projCube);
+							found=true;
+							break;
+						}
+					}
 				}
+				if(found)
+					break;
 			}
 		}
 	}
 
 	//On the height
-	for(uint32_t i=0; i < fillVolume->getSizeX(); i++)
+	for(uint32_t i=0; i < fillVolume->getMetricsSizeX(); i+=8)
 	{
-		for(uint32_t k=0; k < fillVolume->getSizeZ(); k++)
+		for(uint32_t k=0; k < fillVolume->getMetricsSizeZ(); k++)
 		{
-			for(uint32_t j=0; j < fillVolume->getSizeY(); j++)
+			for(uint32_t j=0; j < fillVolume->getMetricsSizeY(); j++)
 			{
-				if(fillVolume->get(i, j, k))
+				bool found=false;
+				if(fillVolume->hasSomething8Bits(i, j, k))
 				{
-					Matrix4 projCube;
-					projCube.setPosition(Vector3(i*METRICS, j*METRICS, k*METRICS));
-					selectionCube.render(proj, projCube);
-					break;
+					for(uint64_t l=0; l < 8; l++)
+					{
+						if(fillVolume->get(i+l, j, k))
+						{
+							Matrix4 projCube = Matrix4::identity();
+							projCube.setPosition(Vector3(i/METRICS, j/METRICS, k/METRICS));
+							selectionCube.render(proj, projCube);
+							found=true;
+							break;
+						}
+					}
 				}
+				if(found)
+					break;
 			}
 
-			for(int32_t j=fillVolume->getSizeY()-1; j >=0; j--)
+			for(int32_t j=fillVolume->getMetricsSizeY()-1; j >=0; j--)
 			{
-				if(fillVolume->get(i, j, k))
+				bool found=false;
+				if(fillVolume->hasSomething8Bits(i, j, k))
 				{
-					Matrix4 projCube;
-					projCube.setPosition(Vector3(i*METRICS, j*METRICS, k*METRICS));
-					selectionCube.render(proj, projCube);
-					break;
+					for(uint64_t l=0; l < 8; l++)
+					{
+						if(fillVolume->get(i+l, j, k))
+						{
+							Matrix4 projCube = Matrix4::identity();
+							projCube.setPosition(Vector3(i/METRICS, j/METRICS, k/METRICS));
+							selectionCube.render(proj, projCube);
+							found=true;
+							break;
+						}
+					}
 				}
+				if(found)
+					break;
 			}
 		}
 	}
+
+	printf("End !\n");
 
 	return;
 }
@@ -1602,9 +1663,7 @@ void FluidMechanics::setSelectionMatrix(std::vector<Matrix4>& selectionMatrix)
 
 void FluidMechanics::setSelectionPoint(std::vector<Vector3>& selectionPoint)
 {
-	impl->selectionPoint[impl->selectionPoint.size()-1].clear();
-	for(uint32_t i=0; i < selectionPoint.size(); i++)
-		impl->selectionPoint[impl->selectionPoint.size()-1].push_back(selectionPoint[i]);
+	impl->selectionPoint = selectionPoint;
 }
 
 void FluidMechanics::setPostTreatment(Vector3& postTreatmentTrans, Quaternion& postTreatmentRot)
@@ -1617,11 +1676,6 @@ void FluidMechanics::setSubData(Vector3& dataTrans, Quaternion& dataRot)
 {
 	impl->dataTrans[impl->dataTrans.size()-1] = dataTrans;
 	impl->dataRot[impl->dataTrans.size()-1]   = dataRot;
-}
-
-void FluidMechanics::setFirstPoint(Vector3& startPoint)
-{
-	impl->firstPoint[impl->firstPoint.size()-1] = startPoint;
 }
 
 void FluidMechanics::clearSelection()

@@ -41,7 +41,6 @@ public:
 	SettingsPtr getSettings() const { return settings; }
 	StateConstPtr getState() const { return state; }
 
-	void setFirstPoint(Vector3& firstPoint);
 	void setSelectionPoint(std::vector<Vector3>& selectionPoint);
 	void setSelectionMatrix(std::vector<Matrix4>& selectionMatrix);
 	void setPostTreatment(Vector3& postTreatmentTrans, Quaternion& postTreatmentRot);

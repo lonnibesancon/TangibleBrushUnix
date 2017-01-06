@@ -1,7 +1,7 @@
 #ifndef  FILLVOLUME_INC
 #define  FILLVOLUME_INC
 
-#define METRICS 10
+#define METRICS 5.0
 #include "stdint.h"
 #include "stdlib.h"
 #include "pthread.h"
@@ -45,9 +45,15 @@ class FillVolume
 		void lock();
 		void unlock();
 
-		uint64_t getSizeX(){return m_x;}
-		uint64_t getSizeY(){return m_y;}
-		uint64_t getSizeZ(){return m_z;}
+		uint64_t getSizeX(){return m_x/METRICS;}
+		uint64_t getSizeY(){return m_y/METRICS;}
+		uint64_t getSizeZ(){return m_z/METRICS;}
+
+		uint64_t getMetricsSizeX(){return m_x;}
+		uint64_t getMetricsSizeY(){return m_y;}
+		uint64_t getMetricsSizeZ(){return m_z;}
+
+		bool hasSomething8Bits(uint64_t x, uint64_t y, uint64_t z){return m_fillVolume[(x+ m_x*y + m_x*m_y*z)/8];}
 	private:
 		bool* m_fillVolume;
 		uint64_t m_x, m_y, m_z;

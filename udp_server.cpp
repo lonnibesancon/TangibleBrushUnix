@@ -184,7 +184,7 @@ void udp_server::listen(){
 			}
 		}
 
-		else if(msg[0] == '2' && msg[1] == ';')
+	/*  else if(msg[0] == '2' && msg[1] == ';')
 		{
 			if(!hasSelectionSet)
 			{
@@ -234,6 +234,7 @@ void udp_server::listen(){
 				hasSelectionSet = true;
 			}
 		}
+	*/
 
 		else if(msg[0] == '4')
 		{
