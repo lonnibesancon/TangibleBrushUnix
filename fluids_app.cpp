@@ -1385,103 +1385,93 @@ void FluidMechanics::Impl::showSelection()
 	bool last=false;
 
 	int32_t minX=-1, minY=-1, minZ=-1, maxX=0, maxY=0, maxZ=0;
+
+	Vector3_f dtest(0, 0, 0);
+	Vector3_f dvalue;
 	//Draw each
 	//on the depth
-	for(uint32_t i=0; i <= fillVolume->getMetricsSizeX(); i+=8)
+	for(int32_t i=0; i < fillVolume->getMetricsSizeX(); i++)
 	{
-		for(uint32_t j=0; j <= fillVolume->getMetricsSizeY(); j++)
+		for(int32_t j=0; j < fillVolume->getMetricsSizeY(); j++)
 		{
 			last  = false;
-			for(int32_t k=0; k <= fillVolume->getMetricsSizeZ(); k++)
+			for(int32_t k=0; k < fillVolume->getMetricsSizeZ(); k++)
 			{
-				if(!last/* && fillVolume->hasSomething8Bits(i, j, k)*/)
+				if(!last && fillVolume->get(i, j, k))
 				{
 					if(minX == -1)
 						minX = i;
-					maxX = i;
-
 					if(minY == -1)
 						minY = j;
-					maxY = j;
-
 					if(minZ == -1)
 						minZ = k;
-					maxZ = k;
+
+					if(minX > i)
+						minX = i;
+					if(minY > j)
+						minY = j;
+					if(minZ > k)
+						minZ = k;
+
+					if(maxX < i)
+						maxX = i;
+					if(maxY < j)
+						maxY = j;
+					if(maxZ < k)
+						maxZ = k;
 
 					last  = true;
-					for(uint64_t l=0; l < 8; l++)
-					{
-						if(fillVolume->get(i+l, j, k))
-						{
-							Matrix4 projCube = Matrix4::identity();
-							projCube.setScale(0.5f/METRICS, 0.5f/METRICS, 0.5f/METRICS);
-							projCube.setPosition(Vector3(2*i, 2*j, 2*k));
-
-//							selectionCube.render(proj, state->modelMatrix*projCube);
-							selectionCube.render(proj, projCube);
-						}
-					}
+					Matrix4 projCube = Matrix4::identity();
+					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
+					projCube.setPosition(Vector3(i/METRICS, j/METRICS, k/METRICS));
+					selectionCube.render(proj, state->modelMatrix*projCube);
 				}
 
-				else if(last == true && !fillVolume->hasSomething8Bits(i, j, k))
+				else if(last == true && (!fillVolume->get(i, j, k) || k+1 == fillVolume->getMetricsSizeZ()))
 				{
+					if(maxZ < k)
+						maxZ = k;
+
 					last = false;
-					for(uint64_t l=0; l < 8; l++)
-					{
-						if(fillVolume->get(i+l, j, k))
-						{
-							Matrix4 projCube = Matrix4::identity();
-							projCube.setScale(0.5f/METRICS, 0.5f/METRICS, 0.5f/METRICS);
-							projCube.setPosition(Vector3(2*i, 2*j, 2*k));
+					Matrix4 projCube = Matrix4::identity();
+					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
+					if(i==1)
+						printf("i == 1 !\n");
+					projCube.setPosition(Vector3(i/METRICS, j/METRICS, (k-1)/METRICS));
 
-
-							selectionCube.render(proj, state->modelMatrix*projCube);
-						}
-					}
+					selectionCube.render(proj, state->modelMatrix*projCube);
 				}
 			}
 		}
 	}
 
-	for(uint32_t i=minX; i <= maxX; i+=8)
+	printf("minX %d minY %d minZ %d maxX %d maxY %d maxZ %d \n", minX, minY, minZ, maxX, maxY, maxZ);
+  
+	for(uint32_t i=minX; i <= maxX; i++)
 	{
 		for(uint32_t k=minZ; k <= maxZ; k++)
 		{
-			last  = false;
+			last = false;
 			for(int32_t j=minY; j <= maxY; j++)
 			{
-				if(!last && fillVolume->hasSomething8Bits(i, j, k))
+				if(!last && fillVolume->get(i, j, k))
 				{
 					last  = true;
-					for(uint64_t l=0; l < 8; l++)
-					{
-						if(fillVolume->get(i+l, j, k))
-						{
-							Matrix4 projCube = Matrix4::identity();
-							projCube.setScale(0.5f/METRICS, 0.5f/METRICS, 0.5f/METRICS);
-							projCube.setPosition(Vector3(2*i, 2*j, 2*k));
+					Matrix4 projCube = Matrix4::identity();
+					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
+					projCube.setPosition(Vector3(i/METRICS, j/METRICS, k/METRICS));
 
-
-							selectionCube.render(proj, state->modelMatrix*projCube);
-						}
-					}
+					selectionCube.render(proj, state->modelMatrix*projCube);
 				}
 
-				else if(last == true && !fillVolume->hasSomething8Bits(i, j, k))
+				else if(last == true && (!fillVolume->get(i, j, k) || j+1 == fillVolume->getMetricsSizeY()))
 				{
 					last = false;
-					for(uint64_t l=0; l < 8; l++)
-					{
-						if(fillVolume->get(i+l, j, k))
-						{
-							Matrix4 projCube = Matrix4::identity();
-							projCube.setScale(0.5f/METRICS, 0.5f/METRICS, 0.5f/METRICS);
-							projCube.setPosition(Vector3(2*i, 2*j, 2*k));
+					Matrix4 projCube = Matrix4::identity();
+					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
+					projCube.setPosition(Vector3(i/METRICS, (j-1)/METRICS, k/METRICS));
 
-
-							selectionCube.render(proj, state->modelMatrix*projCube);
-						}
-					}
+					selectionCube.render(proj, state->modelMatrix*projCube);
 				}
 			}
 		}
@@ -1492,44 +1482,31 @@ void FluidMechanics::Impl::showSelection()
 		for(uint32_t k=minZ; k <= maxZ; k++)
 		{
 			last  = false;
-			for(int32_t i=minX; i <= maxX; i+=8)
+			for(int32_t i=minX; i <= maxX; i++)
 			{
-				if(fillVolume->hasSomething8Bits(i, j, k))
+				if(!last && fillVolume->get(i, j, k))
 				{
-					for(uint64_t l=0; l < 8; l++)
-					{
-						if(!last && fillVolume->get(i+l, j, k))
-						{
-							last  = true;
-							Matrix4 projCube = Matrix4::identity();
-							projCube.setScale(0.5f/METRICS, 0.5f/METRICS, 0.5f/METRICS);
-							projCube.setPosition(Vector3(2*i, 2*j, 2*k));
+					last  = true;
+					Matrix4 projCube = Matrix4::identity();
+					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
+					projCube.setPosition(Vector3(i/METRICS, j/METRICS, k/METRICS));
 
+					selectionCube.render(proj, state->modelMatrix*projCube);
+				}
 
-							selectionCube.render(proj, state->modelMatrix*projCube);
-						}
+				else if(last == true && (!fillVolume->get(i, j, k) || i+1 == fillVolume->getMetricsSizeX()))
+				{
+					last = false;
+					Matrix4 projCube = Matrix4::identity();
+					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
+					projCube.setPosition(Vector3((i-1)/METRICS, j/METRICS, k/METRICS));
 
-						else if(last == true && !fillVolume->hasSomething8Bits(i, j, k))
-						{
-							last = false;
-							for(uint64_t l=0; l < 8; l++)
-							{
-								if(fillVolume->get(i+l, j, k))
-								{
-									Matrix4 projCube = Matrix4::identity();
-									projCube.setScale(0.5f/METRICS, 0.5f/METRICS, 0.5f/METRICS);
-									projCube.setPosition(Vector3(2*i, 2*j, 2*k));
-
-
-									selectionCube.render(proj, state->modelMatrix*projCube);
-								}
-							}
-						}
-					}
+					selectionCube.render(proj, state->modelMatrix*projCube);
 				}
 			}
 		}
 	}
+	
 
 	printf("End !\n");
 

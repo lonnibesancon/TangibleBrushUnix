@@ -69,6 +69,7 @@ private:
 	bool mShadeless;
 	Vector3 mShadelessColor;
 	bool mOnlyShadow;
+	Vector3_f minValue;
 };
 
 #endif /* MESH_H */

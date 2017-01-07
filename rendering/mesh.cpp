@@ -274,8 +274,32 @@ Mesh::Mesh(const MeshData& data, TexturePtr texture)
 {
 	android_assert(!data.indices.empty());
 
+	double minX=0, minY=0, minZ=0, maxX=0, maxY=0, maxZ=0;
+	bool initMin=false;
 	for (const MeshData::Index idx : data.indices) {
 		const Vector3& pos = data.vertices[idx.v];
+		if(!initMin)
+		{
+			initMin=true;
+			minX = maxX = pos.x;
+			minY = maxY = pos.y;
+			minZ = maxZ = pos.z;
+		}
+
+		if(minX > pos.x)
+			minX = pos.x;
+		if(minY > pos.y)
+			minY = pos.y;
+		if(minZ > pos.z)
+			minZ = pos.z;
+
+		if(maxX < pos.x)
+			maxX = pos.x;
+		if(maxY < pos.y)
+			maxY = pos.y;
+		if(maxZ < pos.z)
+			maxZ = pos.z;
+
 		mMeshBuffer.push_back(pos.x);
 		mMeshBuffer.push_back(pos.y);
 		mMeshBuffer.push_back(pos.z);
@@ -300,6 +324,11 @@ Mesh::Mesh(const MeshData& data, TexturePtr texture)
 
 		++mNumFaces;
 	}
+
+	printf("minX %f minY %f minZ %f maxX %f maxY %f maxZ %f\n", minX, minY, minZ, maxX, maxY, maxZ);
+	minValue.x = minX;
+	minValue.y = minY;
+	minValue.z = minZ;
 }
 
 void Mesh::setColor(const Vector3& color)

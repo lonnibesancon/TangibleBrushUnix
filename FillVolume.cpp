@@ -33,11 +33,10 @@ Rectangle3f::Rectangle3f(double a, double b, double c, double w, double h, doubl
 FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x*METRICS), m_y(y*METRICS), m_z(z*METRICS)
 {
 	pthread_mutex_init(&m_mutex, NULL);
-	m_fillVolume = (bool*)calloc((x*METRICS*y*METRICS*z*METRICS+7)/8, sizeof(bool));
-	for(uint32_t i=x*METRICS/4; i < 2*x*METRICS/4; i++)
-		for(uint32_t j=y*METRICS/4; j < 2*y*METRICS/4; j++)
-			for(uint32_t k=z*METRICS/4; k < 2*z*METRICS/4; k++)
-				m_fillVolume[(i+m_x*j+m_x*m_y*k)/8]=0xff;
+	m_fillVolume = (uint8_t*)calloc((x*METRICS*y*METRICS*z*METRICS+7)/8, sizeof(uint8_t));
+
+	for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
+		m_fillVolume[i] = 0xff;
 }
 
 FillVolume::~FillVolume()
@@ -59,11 +58,11 @@ FillVolume* FillVolume::createUnion(const FillVolume& fv) const
 				if(diff < 8)
 				{
 					uint64_t selfShift = i + m_x*j + m_x*m_y*k;
-					bool self          = *(m_fillVolume + (selfShift)/8);
+					uint8_t self          = *(m_fillVolume + (selfShift)/8);
 					self               = (self >> (selfShift % 8)) & (0xff >> diff);
 
 					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*k;
-					bool its           = *(fv.m_fillVolume + (itsShift)/8);
+					uint8_t its           = *(fv.m_fillVolume + (itsShift)/8);
 					its                = (its >> (itsShift % 8)) & (0xff >> diff);
 
 					result->m_fillVolume[selfShift] = (its | self);
@@ -72,10 +71,10 @@ FillVolume* FillVolume::createUnion(const FillVolume& fv) const
 				else
 				{
 					uint64_t selfShift = i + m_x*j + m_x*m_y*k;
-					bool self          = *(m_fillVolume + (selfShift)/8);
+					uint8_t self          = *(m_fillVolume + (selfShift)/8);
 
 					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*k;
-					bool its           = *(fv.m_fillVolume + (itsShift)/8);
+					uint8_t its           = *(fv.m_fillVolume + (itsShift)/8);
 
 					result->m_fillVolume[selfShift] = (its | self);
 				}
@@ -98,11 +97,11 @@ FillVolume* FillVolume::createIntersection(const FillVolume& fv) const
 				if(diff < 8)
 				{
 					uint64_t selfShift = i + m_x*j + m_x*m_y*k;
-					bool self          = *(m_fillVolume + (selfShift)/8);
+					uint8_t self          = *(m_fillVolume + (selfShift)/8);
 					self               = (self >> (selfShift % 8)) & (0xff >> diff);
 
 					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*k;
-					bool its           = *(fv.m_fillVolume + (itsShift)/8);
+					uint8_t its           = *(fv.m_fillVolume + (itsShift)/8);
 					its                = (its >> (itsShift % 8)) & (0xff >> diff);
 
 					result->m_fillVolume[selfShift] = (self & its);
@@ -111,10 +110,10 @@ FillVolume* FillVolume::createIntersection(const FillVolume& fv) const
 				else
 				{
 					uint64_t selfShift = i + m_x*j + m_x*m_y*k;
-					bool self          = *(m_fillVolume + (selfShift)/8);
+					uint8_t self          = *(m_fillVolume + (selfShift)/8);
 
 					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*k;
-					bool its           = *(fv.m_fillVolume + (itsShift)/8);
+					uint8_t its           = *(fv.m_fillVolume + (itsShift)/8);
 
 					result->m_fillVolume[selfShift] = (self & its);
 				}
@@ -137,11 +136,11 @@ FillVolume* FillVolume::createExclusion(const FillVolume& fv) const
 				if(diff < 8)
 				{
 					uint64_t selfShift = i + m_x*j + m_x*m_y*k;
-					bool self          = *(m_fillVolume + (selfShift)/8);
+					uint8_t self          = *(m_fillVolume + (selfShift)/8);
 					self               = (self >> (selfShift % 8)) & (0xff >> diff);
 
 					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*k;
-					bool its           = *(fv.m_fillVolume + (itsShift)/8);
+					uint8_t its           = *(fv.m_fillVolume + (itsShift)/8);
 					its                = (its >> (itsShift % 8)) & (0xff >> diff);
 
 					result->m_fillVolume[selfShift] = (self & (~its));
@@ -150,10 +149,10 @@ FillVolume* FillVolume::createExclusion(const FillVolume& fv) const
 				else
 				{
 					uint64_t selfShift = i + m_x*j + m_x*m_y*k;
-					bool self          = *(m_fillVolume + (selfShift)/8);
+					uint8_t self          = *(m_fillVolume + (selfShift)/8);
 
 					uint64_t itsShift  = i + fv.m_x*j + fv.m_x*fv.m_y*k;
-					bool its           = *(fv.m_fillVolume + (itsShift)/8);
+					uint8_t its           = *(fv.m_fillVolume + (itsShift)/8);
 
 					result->m_fillVolume[selfShift] = (self & (~its));
 				}
@@ -219,7 +218,7 @@ void FillVolume::fillWithSurface(const std::vector<Vector2_d>& points, double de
 		if(aet.size() == 0)
 			continue;
 
-		bool enable = true;
+		uint8_t enable = true;
 		uint32_t aetIndice = 0;
 
 		//Go along the scanline, don't forget that the x = startX * (y - yMin) * incr
@@ -245,7 +244,7 @@ void FillVolume::fillWithSurface(const std::vector<Vector2_d>& points, double de
 							for(double z=rect.z; x < rect.depth; z+=1.0/METRICS)
 							{
 								uint64_t selfShift = METRICS*(x + m_x*y + m_x*m_y*z);
-								bool self          = *(m_fillVolume + (selfShift)/8);
+								uint8_t self          = *(m_fillVolume + (selfShift)/8);
 								m_fillVolume[selfShift] = self & (0x01 << (selfShift % 8));
 							}
 				}
@@ -312,7 +311,7 @@ Rectangle3f computeRectangle(double x, double y, double z, const Matrix4_d& matr
 bool FillVolume::get(uint64_t x, uint64_t y, uint64_t z)
 {
 	uint64_t selfShift = x + m_x*y + m_x*m_y*z;
-	bool self          = *(m_fillVolume + (selfShift)/8);
+	uint8_t self          = *(m_fillVolume + (selfShift)/8);
 	self               = (self >> (selfShift % 8)) & 0x01;
 
 	return self;

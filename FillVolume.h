@@ -55,7 +55,7 @@ class FillVolume
 
 		bool hasSomething8Bits(uint64_t x, uint64_t y, uint64_t z){return m_fillVolume[(x+ m_x*y + m_x*m_y*z)/8];}
 	private:
-		bool* m_fillVolume;
+		uint8_t* m_fillVolume;
 		uint64_t m_x, m_y, m_z;
 		pthread_mutex_t m_mutex;
 };

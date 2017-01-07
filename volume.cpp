@@ -326,6 +326,9 @@ Volume::Volume(vtkSmartPointer<vtkImageData> data)
 	// 	}
 	// }
 
+	int extent[6];
+	data->GetExtent(extent);
+	LOGD("%i %i %i %i %i %i extent", extent[0], extent[1], extent[2], extent[3], extent[4], extent[5]);
 	LOGD("loading finished");
 }
 
