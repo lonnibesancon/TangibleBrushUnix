@@ -1,7 +1,8 @@
 #ifndef  FILLVOLUME_INC
 #define  FILLVOLUME_INC
 
-#define METRICS 5.0
+#define METRICS 3.0
+
 #include "stdint.h"
 #include "stdlib.h"
 #include "pthread.h"
@@ -13,13 +14,16 @@
 struct Edge
 {
 	public:
-		Edge(const Vector2_d& a, const Vector2_d& b);
-		Vector2_d m_a;
-		Vector2_d m_b;
+		Edge(const Vector2_f& a, const Vector2_f& b);
+		Vector2_f m_a;
+		Vector2_f m_b;
 		double m_incr;
 		double m_yMin;
 		double m_yMax;
 		double m_startX;
+		bool m_linear;
+
+		double computeX(double j) const{return (m_linear) ? m_startX : m_startX + m_incr * (j-m_yMin);}
 };
 
 struct Rectangle3f
@@ -33,13 +37,14 @@ class FillVolume
 {
 	public:
 		FillVolume(uint64_t x, uint64_t y, uint64_t z);
+		void init(const std::vector<Vector2_f>& p);
 		~FillVolume();
 
 		FillVolume* createUnion(const FillVolume& fv) const;
 		FillVolume* createIntersection(const FillVolume& fv) const;
 		FillVolume* createExclusion(const FillVolume& fv) const;
 
-		void fillWithSurface(const std::vector<Vector2_d>& points, double depth, const Matrix4_d& matrix);
+		void fillWithSurface(double depth, const Matrix4_f& matrix);
 
 		bool get(uint64_t x, uint64_t y, uint64_t z);
 		void lock();
@@ -54,16 +59,19 @@ class FillVolume
 		uint64_t getMetricsSizeZ(){return m_z;}
 
 		bool hasSomething8Bits(uint64_t x, uint64_t y, uint64_t z){return m_fillVolume[(x+ m_x*y + m_x*m_y*z)/8];}
+		bool isInit() const{return m_isInit;}
 	private:
+		bool m_isInit=false;
 		uint8_t* m_fillVolume;
 		uint64_t m_x, m_y, m_z;
 		pthread_mutex_t m_mutex;
+		std::vector<Vector2_f> m_selectionPoints;
 };
 
 //The compare edge function, useful for sorting the edge table
 bool compareYEdge (const Edge& a, const Edge& b);
 bool compareXEdge (const Edge* a, const Edge* b);
 
-Rectangle3f computeRectangle(double x, double y, double z, const Matrix4_d& matrix);
+Rectangle3f computeRectangle(double x, double y, double z, const Matrix4_f& matrix);
 
 #endif

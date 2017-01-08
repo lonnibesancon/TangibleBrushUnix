@@ -1435,8 +1435,6 @@ void FluidMechanics::Impl::showSelection()
 					last = false;
 					Matrix4 projCube = Matrix4::identity();
 					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
-					if(i==1)
-						printf("i == 1 !\n");
 					projCube.setPosition(Vector3(i/METRICS, j/METRICS, (k-1)/METRICS));
 
 					selectionCube.render(proj, state->modelMatrix*projCube);
@@ -1445,8 +1443,6 @@ void FluidMechanics::Impl::showSelection()
 		}
 	}
 
-	printf("minX %d minY %d minZ %d maxX %d maxY %d maxZ %d \n", minX, minY, minZ, maxX, maxY, maxZ);
-  
 	for(uint32_t i=minX; i <= maxX; i++)
 	{
 		for(uint32_t k=minZ; k <= maxZ; k++)
@@ -1517,6 +1513,7 @@ void FluidMechanics::Impl::showSelection()
 void FluidMechanics::Impl::renderObjects()
 {
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 //	showParticules();
 	showSelection();
 
@@ -1675,4 +1672,14 @@ void FluidMechanics::clearSelection()
 void FluidMechanics::pushBackSelection()
 {
 	impl->pushBackSelection();
+}
+
+void FluidMechanics::updateCurrentSelection(const std::vector<Vector2_f>& points, const Matrix4_f* m)
+{
+	if(!impl->fillVolume)
+		return;
+
+	if(!impl->fillVolume->isInit())
+		impl->fillVolume->init(points);
+	impl->fillVolume->fillWithSurface(METRICS, *m);
 }

@@ -235,6 +235,7 @@ void udp_server::listen(){
 		}
 	*/
 
+		//The postTreatment matrix
 		else if(msg[0] == '4')
 		{
 			if(!hasSelectionSet)
@@ -254,24 +255,33 @@ void udp_server::listen(){
 
 				synchronized(postTreatmentTrans)
 				{
-					postTreatmentTrans = Vector3(data[0], data[1], data[2]);
+					postTreatmentTrans = Vector3_f(data[0], data[1], data[2]);
 				}
 
 				synchronized(postTreatmentRot)
 				{
-					postTreatmentRot = Quaternion(data[3], data[4], data[5], data[6]);
+					postTreatmentRot = Quaternion_f(data[3], data[4], data[5], data[6]);
 				}
 
+				synchronized(dataSelected)
+				{
+					if(dataSelected.size() > 0)
+						dataSelected.rbegin()->addPostTreatmentMatrix(Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3_f(1, 1, 1)));
+				}
 /*				synchronized(postTreatmentMat)
 				{
 					postTreatmentMat.push_back(Matrix4(matrix));
 				}
 */
 				hasPostTreatmentSet = true;
+				hasSetToSelection = true;
 			}
 
 		}
 
+		//The difference between the postTreatment matrix and the model matrix (for the tablet).
+		//It is now useless
+		/* 
 		else if(msg[0] == '5')
 		{
 			if(!hasSubDataChanged)
@@ -299,20 +309,37 @@ void udp_server::listen(){
 					dataRot = Quaternion(data[3], data[4], data[5], data[6]);
 				}
 
-/*				synchronized(postTreatmentMat)
+				synchronized(postTreatmentMat)
 				{
 					postTreatmentMat.push_back(Matrix4(matrix));
 				}
-*/
+
 				hasSubDataChanged = true;
 			}
-
 		}
+		*/
 		
 		else if(msg[0] == '6')
 		{
 			if(hasSetToSelection==false && msg[1] == '2' && msg[2] == '5')
 				hasSetToSelection = true;
+
+			//Useless one
+			std::string tok;
+			getline(ss, tok, ';');
+
+			std::vector<Vector2_f> points;
+			std::vector<float> datas;
+			while(getline(ss, tok, ';'))
+			{
+				datas.push_back(std::stof(tok.c_str()));
+			}
+
+			for(uint32_t i=0; i < datas.size(); i+= 2)
+				points.push_back(Vector2_f(datas[i], datas[i+1]));
+
+			synchronized(dataSelected)
+				dataSelected.push_back(Selection(std::move(points)));
 		}
 
 		else if(msg[0]=='1')

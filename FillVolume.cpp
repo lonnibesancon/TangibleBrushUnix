@@ -1,7 +1,10 @@
 #include "FillVolume.h"
 
-Edge::Edge(const Vector2_d& a, const Vector2_d& b) : m_a(a), m_b(b), m_incr((b.x-a.x)/(b.y-a.y))
+Edge::Edge(const Vector2_f& a, const Vector2_f& b) : m_a(a), m_b(b), m_incr((b.x-a.x)/(b.y-a.y))
 {
+	if(b.y-a.y < 0.001 && b.y - a.y > -0.001)
+		m_linear = true;
+
 	if(a.y < b.y)
 	{
 		m_yMin   = a.y;
@@ -33,10 +36,15 @@ Rectangle3f::Rectangle3f(double a, double b, double c, double w, double h, doubl
 FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x*METRICS), m_y(y*METRICS), m_z(z*METRICS)
 {
 	pthread_mutex_init(&m_mutex, NULL);
-	m_fillVolume = (uint8_t*)calloc((x*METRICS*y*METRICS*z*METRICS+7)/8, sizeof(uint8_t));
+	m_fillVolume = (uint8_t*)calloc((m_x*m_y*m_z+7)/8, sizeof(uint8_t));
+	//for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
+	//	m_fillVolume[i] = 0xff;
+}
 
-	for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
-		m_fillVolume[i] = 0xff;
+void FillVolume::init(const std::vector<Vector2_f>& p)
+{
+	m_selectionPoints = p;
+	m_isInit          = true;
 }
 
 FillVolume::~FillVolume()
@@ -172,26 +180,27 @@ void FillVolume::unlock()
 	pthread_mutex_unlock(&m_mutex);
 }
 
-void FillVolume::fillWithSurface(const std::vector<Vector2_d>& points, double depth, const Matrix4_d& matrix)
+void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 {
+	printf("fill with surface \n");
 	//Create the edge table
 	std::vector<Edge> et;
-	for(uint32_t i=0; i < points.size()-1; i++)
-		et.emplace_back(points[i], points[i+1]);
+	for(uint32_t i=0; i < m_selectionPoints.size()-1; i++)
+		et.emplace_back(m_selectionPoints[i], m_selectionPoints[i+1]);
 
 	std::sort(et.begin(), et.end(), compareYEdge);
 
 	//Determine the yMin
-	double yMin = points[0].y;
-	for(uint32_t i=0; i < points.size(); i++)
-		yMin = fmin(yMin, points[i].y);
+	double yMin = m_selectionPoints[0].y;
+	for(uint32_t i=0; i < m_selectionPoints.size(); i++)
+		yMin = fmin(yMin, m_selectionPoints[i].y);
 
 	//Now we need the Active Edge Table
 	std::vector<const Edge*> aet;
 	uint32_t etIndice=0;
 
 	//For each scanline
-	for(double j=yMin; etIndice < points.size(); j+=1.0/METRICS)
+	for(double j=yMin; etIndice < et.size(); j+=1.0/METRICS)
 	{
 		//Update the Active Edge Table
 		//
@@ -213,7 +222,9 @@ void FillVolume::fillWithSurface(const std::vector<Vector2_d>& points, double de
 
 		//Sort the aet table to the x component
 		std::vector<const Edge*> aetSorted = aet;
-		std::sort(aetSorted.begin(), aet.end(), compareXEdge);
+		if(aetSorted.size() == 1)
+			continue;
+		std::sort(aetSorted.begin(), aetSorted.end(), compareXEdge);
 
 		if(aet.size() == 0)
 			continue;
@@ -222,10 +233,10 @@ void FillVolume::fillWithSurface(const std::vector<Vector2_d>& points, double de
 		uint32_t aetIndice = 0;
 
 		//Go along the scanline, don't forget that the x = startX * (y - yMin) * incr
-		for(double i=aet[0]->m_startX + aet[0]->m_incr * (j - aet[0]->m_yMin); aetIndice < aetSorted.size(); i+=1.0/METRICS)
+		for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size(); i+=1.0/METRICS)
 		{
 			//Make a step
-			while(aet[aetIndice]->m_startX + aet[aetIndice]->m_incr * (j - aet[aetIndice]->m_yMin) <= i)
+			while(!aetSorted[aetIndice]->m_linear && aetSorted[aetIndice]->computeX(j) <= i)
 			{
 				enable = !enable;
 				aetIndice++;
@@ -239,14 +250,28 @@ void FillVolume::fillWithSurface(const std::vector<Vector2_d>& points, double de
 					Rectangle3f rect = computeRectangle(i, j, k, matrix);
 
 					//Now fill the m_fillVolume
-					for(double x=rect.x; x < rect.width; x+=1.0/METRICS)
-						for(double y=rect.y; y < rect.height; y+=1.0/METRICS)
-							for(double z=rect.z; x < rect.depth; z+=1.0/METRICS)
+					for(double x=rect.x; x < rect.x+rect.width; x+=1.0/METRICS)
+					{
+						if(x < 0 || x > 64)
+							continue;
+						for(double y=rect.y; y < rect.y+rect.height; y+=1.0/METRICS)
+						{
+							if(y < 0 || y > 64)
+								continue;
+							for(double z=rect.z; z < rect.z+rect.depth; z+=1.0/METRICS)
 							{
-								uint64_t selfShift = METRICS*(x + m_x*y + m_x*m_y*z);
+								if(z < 0 || z > 84)
+									continue;
+
+								uint64_t selfShift = x + m_x*y + m_x*m_y*z;
+								if(selfShift >= m_x*m_y*m_z || selfShift < 0)
+									continue;
+
 								uint8_t self          = *(m_fillVolume + (selfShift)/8);
-								m_fillVolume[selfShift] = self & (0x01 << (selfShift % 8));
+								m_fillVolume[selfShift/8] = self & (0x01 << (selfShift % 8));
 							}
+						}
+					}
 				}
 			}
 		}
@@ -254,25 +279,25 @@ void FillVolume::fillWithSurface(const std::vector<Vector2_d>& points, double de
 }
 
 
-Rectangle3f computeRectangle(double x, double y, double z, const Matrix4_d& matrix)
+Rectangle3f computeRectangle(double x, double y, double z, const Matrix4_f& matrix)
 {
 	//Take the object 3D rect from its default configuration
-	Vector3_d v[8] = {
-		Vector3_d(0.0, 0.0, 0.0), Vector3_d(0.0, 1.0/METRICS, 0.0), 
-		Vector3_d(1.0/METRICS, 0.0, 0.0), Vector3_d(1.0/METRICS, 1.0/METRICS, 0.0), //Front face
+	Vector3_f v[8] = {
+		Vector3_f(0.0, 0.0, 0.0), Vector3_f(0.0, 1.0/METRICS, 0.0), 
+		Vector3_f(1.0/METRICS, 0.0, 0.0), Vector3_f(1.0/METRICS, 1.0/METRICS, 0.0), //Front face
 		
-		Vector3_d(0.0, 0.0, 0.0), Vector3_d(0.0, 1.0/METRICS, 0.0), 
-		Vector3_d(1.0/METRICS, 0.0, 0.0), Vector3_d(1.0/METRICS, 1.0/METRICS, 0.0), //Front face
+		Vector3_f(0.0, 0.0, 0.0), Vector3_f(0.0, 1.0/METRICS, 0.0), 
+		Vector3_f(1.0/METRICS, 0.0, 0.0), Vector3_f(1.0/METRICS, 1.0/METRICS, 0.0), //Front face
 	};
 
 	//Get the back face position
 	for(uint32_t i=4; i < 8; i++)
-		v[i] = v[i] + Vector3_d(0.0, 0.0, 1.0/METRICS);
+		v[i] = v[i] + Vector3_f(0.0, 0.0, 1.0/METRICS);
 
 	for(uint32_t i=0; i < 8; i++)
 	{
 		//Add the default position
-		v[i] = v[i] + Vector3_d(x, y, z);
+		v[i] = v[i] + Vector3_f(x, y, z);
 		//Then Calculate the transformation to these vec
 		v[i] = matrix * v[i];
 	}

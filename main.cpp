@@ -24,8 +24,8 @@ void loadDataSet(std::unique_ptr<FluidMechanics> app, int dataset){
 
 int main()
 {
-	
-	bool realFullScreen = false ;
+	bool realFullScreen  = false ;
+	int32_t selectionID  = 0;
 	udp_server server(8500);
 	//server.listen();
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -188,7 +188,7 @@ int main()
 			server.hasPostTreatmentSet = false;
 		}
 
-		if(server.hasSubDataChanged)
+/*  	if(server.hasSubDataChanged)
 		{
 			synchronized(server.dataTrans)
 			{
@@ -199,10 +199,45 @@ int main()
 			}
 			server.hasSubDataChanged = false;
 		}
+*/
 		
 		if(server.hasSetToSelection)
 		{
-			app->pushBackSelection();
+			uint32_t dataSelectedSize=0;
+			synchronized(server.dataSelected)
+			{
+				dataSelectedSize = server.dataSelected.size();
+			}
+
+			for(uint32_t i=selectionID; i < dataSelectedSize; i++)
+			{
+				const Matrix4_f* m;
+				const std::vector<Vector2_f>* points = NULL;
+				synchronized(server.dataSelected)
+				{
+					points = &(server.dataSelected[selectionID].getSelectionPoint());
+				}
+
+				synchronized(server.dataSelected)
+				{
+					m = server.dataSelected[selectionID].nextMatrix();
+				}
+
+				if(m == NULL && dataSelectedSize > selectionID+1)
+				{
+					selectionID++;
+					app->pushBackSelection();
+				}
+
+				else if(m != NULL)
+				{
+					do
+					{
+						app->updateCurrentSelection(*points, m);
+						printf("Yeah, one update current selection done !! \n");
+					}while(m != NULL);
+				}
+			}
 			server.hasSetToSelection = false;
 		}
 

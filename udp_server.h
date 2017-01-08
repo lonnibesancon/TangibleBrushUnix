@@ -12,6 +12,8 @@
 #include "util/linear_math.h"
 #include <cstring>
 #include "global.h"
+#include <vector>
+#include "Selection.h"
 
 #define BUFLEN 512
 #define NUMBEROFITEMSINMESSAGE 35
@@ -69,6 +71,7 @@ public:
 
 	Synchronized<Vector3> dataTrans;
 	Synchronized<Quaternion> dataRot;
+	Synchronized<std::vector<Selection>> dataSelected;
 
 private:
 

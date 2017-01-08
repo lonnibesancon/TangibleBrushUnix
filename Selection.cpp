@@ -1,6 +1,6 @@
 #include "Selection.h"
 
-void Selection::addPostTreatmentMatrix(const Matrix4 matrix)
+void Selection::addPostTreatmentMatrix(const Matrix4& matrix)
 {
 	m_moveMatrix.push_back(matrix);
 }
