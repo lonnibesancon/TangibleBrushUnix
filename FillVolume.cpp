@@ -4,20 +4,22 @@ Edge::Edge(const Vector2_f& a, const Vector2_f& b) : m_a(a), m_b(b), m_incr((b.x
 {
 	if(b.y-a.y < 0.001 && b.y - a.y > -0.001)
 		m_linear = true;
+	else
+		m_linear = false;
 
 	if(a.y < b.y)
 	{
 		m_yMin   = a.y;
 		m_yMax   = b.y;
-		m_startX = a.x;
 	}
 
 	else
 	{
 		m_yMin   = b.y;
 		m_yMax   = a.y;
-		m_startX = b.x;
 	}
+
+	a.x < b.x ? m_startX = a.x : m_startX = b.x;
 }
 
 bool compareYEdge(const Edge& a, const Edge& b)
@@ -180,13 +182,14 @@ void FillVolume::unlock()
 	pthread_mutex_unlock(&m_mutex);
 }
 
-void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
+void FillVolume::fillWithSurface(double depth, SelectionMode s, const Matrix4_f& matrix)
 {
 	printf("fill with surface \n");
 	//Create the edge table
 	std::vector<Edge> et;
 	for(uint32_t i=0; i < m_selectionPoints.size()-1; i++)
 		et.emplace_back(m_selectionPoints[i], m_selectionPoints[i+1]);
+	et.emplace_back(m_selectionPoints[0], *(m_selectionPoints.rbegin()));
 
 	std::sort(et.begin(), et.end(), compareYEdge);
 
@@ -214,7 +217,7 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 		}
 
 		//Add the new edge to handle
-		while(et[etIndice].m_yMin <= j)
+		while(etIndice < et.size() && et[etIndice].m_yMin < j)
 		{
 			aet.push_back(&(et[etIndice]));
 			etIndice++;
@@ -236,7 +239,7 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 		for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size(); i+=1.0/METRICS)
 		{
 			//Make a step
-			while(!aetSorted[aetIndice]->m_linear && aetSorted[aetIndice]->computeX(j) <= i)
+			while(aetIndice < aetSorted.size() && !aetSorted[aetIndice]->m_linear && aetSorted[aetIndice]->computeX(j) < i)
 			{
 				enable = !enable;
 				aetIndice++;
@@ -244,31 +247,32 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 
 			if(enable)
 			{
-				for(double k=0; k < depth; k+=1.0/METRICS)
+				for(double k=0; k < depth; k+=.5/METRICS)
 				{
 					//Get the rect of the object at the position (i, j, k)
 					Rectangle3f rect = computeRectangle(i, j, k, matrix);
 
 					//Now fill the m_fillVolume
-					for(double x=rect.x; x < rect.x+rect.width; x+=1.0/METRICS)
+					for(double x=rect.x; x < rect.x+rect.width; x+=.5/METRICS)
 					{
-						if(x < 0 || x > 64)
+						if(x < 0 || x >= 640)
 							continue;
-						for(double y=rect.y; y < rect.y+rect.height; y+=1.0/METRICS)
+						for(double y=rect.y; y < rect.y+rect.height; y+=.5/METRICS)
 						{
-							if(y < 0 || y > 64)
+							if(y < 0 || y >= 640)
 								continue;
-							for(double z=rect.z; z < rect.z+rect.depth; z+=1.0/METRICS)
+							for(double z=rect.z; z < rect.z+rect.depth; z+=.5/METRICS)
 							{
-								if(z < 0 || z > 84)
+								if(z < 0 || z >= 930)
 									continue;
 
-								uint64_t selfShift = x + m_x*y + m_x*m_y*z;
+								int64_t selfShift = (int)(METRICS*x) + m_x*(int)(METRICS*y) + m_x*m_y*(int)(METRICS*z);
 								if(selfShift >= m_x*m_y*m_z || selfShift < 0)
 									continue;
 
 								uint8_t self          = *(m_fillVolume + (selfShift)/8);
-								m_fillVolume[selfShift/8] = self & (0x01 << (selfShift % 8));
+								m_fillVolume[selfShift/8] = self | (0x01 << (selfShift % 8));
+								printf("x %f y %f z %f \n", x, y, z);
 							}
 						}
 					}

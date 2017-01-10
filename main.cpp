@@ -212,6 +212,7 @@ int main()
 			for(uint32_t i=selectionID; i < dataSelectedSize; i++)
 			{
 				const Matrix4_f* m;
+				SelectionMode s;
 				const std::vector<Vector2_f>* points = NULL;
 				synchronized(server.dataSelected)
 				{
@@ -220,20 +221,19 @@ int main()
 
 				synchronized(server.dataSelected)
 				{
-					m = server.dataSelected[selectionID].nextMatrix();
+					int i = server.dataSelected[selectionID].nextIndice();
+					m = server.dataSelected[selectionID].getMatrix(i);
+					s = server.dataSelected[selectionID].getSelectionMode(i);
 				}
 
 				if(m == NULL && dataSelectedSize > selectionID+1)
-				{
 					selectionID++;
-					app->pushBackSelection();
-				}
 
 				else if(m != NULL)
 				{
 					do
 					{
-						app->updateCurrentSelection(*points, m);
+						app->updateCurrentSelection(*points, s, m);
 						printf("Yeah, one update current selection done !! \n");
 					}while(m != NULL);
 				}

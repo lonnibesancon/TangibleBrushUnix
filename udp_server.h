@@ -72,7 +72,6 @@ public:
 	Synchronized<Vector3> dataTrans;
 	Synchronized<Quaternion> dataRot;
 	Synchronized<std::vector<Selection>> dataSelected;
-
 private:
 
 	void initSocket();

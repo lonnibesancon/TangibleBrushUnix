@@ -1,7 +1,7 @@
 #ifndef  FILLVOLUME_INC
 #define  FILLVOLUME_INC
 
-#define METRICS 3.0
+#define METRICS 10.0
 
 #include "stdint.h"
 #include "stdlib.h"
@@ -9,6 +9,7 @@
 #include <cmath>
 #include "global.h"
 #include <algorithm>
+#include "Selection.h"
 
 //Structure which contain a Edge
 struct Edge
@@ -23,7 +24,7 @@ struct Edge
 		double m_startX;
 		bool m_linear;
 
-		double computeX(double j) const{return (m_linear) ? m_startX : m_startX + m_incr * (j-m_yMin);}
+		double computeX(double j) const{return (m_linear) ? m_a.x : m_a.x + m_incr * (j-m_yMin);}
 };
 
 struct Rectangle3f
@@ -44,7 +45,7 @@ class FillVolume
 		FillVolume* createIntersection(const FillVolume& fv) const;
 		FillVolume* createExclusion(const FillVolume& fv) const;
 
-		void fillWithSurface(double depth, const Matrix4_f& matrix);
+		void fillWithSurface(double depth, SelectionMode s,const Matrix4_f& matrix);
 
 		bool get(uint64_t x, uint64_t y, uint64_t z);
 		void lock();

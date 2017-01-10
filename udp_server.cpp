@@ -241,10 +241,14 @@ void udp_server::listen(){
 			if(!hasSelectionSet)
 			{
 				std::string tok;
+				SelectionMode s;
 				float data[7];
 
 				//Useless one
 				getline(ss, tok, ';');
+
+				getline(ss, tok, ';');
+				s = (SelectionMode)(std::stoi(tok));
 
 				//Then get the matrix
 				for(uint32_t i=0; i < 7; i++)
@@ -265,8 +269,7 @@ void udp_server::listen(){
 
 				synchronized(dataSelected)
 				{
-					if(dataSelected.size() > 0)
-						dataSelected.rbegin()->addPostTreatmentMatrix(Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3_f(1, 1, 1)));
+					dataSelected.rbegin()->addPostTreatmentMatrix(s, Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3_f(1, 1, 1)));
 				}
 /*				synchronized(postTreatmentMat)
 				{
@@ -339,7 +342,9 @@ void udp_server::listen(){
 				points.push_back(Vector2_f(datas[i], datas[i+1]));
 
 			synchronized(dataSelected)
+			{
 				dataSelected.push_back(Selection(std::move(points)));
+			}
 		}
 
 		else if(msg[0]=='1')

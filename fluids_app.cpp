@@ -142,6 +142,8 @@ struct FluidMechanics::Impl
 	Cube selectionCube;
 	//Tells where the volume is filled. Very useful for binary option (intersect, union, etc.)
 	FillVolume* fillVolume;
+
+	SelectionMode selectionMode;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -258,7 +260,17 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 
 	//Init the fill volume.
 	if(!fillVolume)
+	{
 		fillVolume = new FillVolume(dataDim[0], dataDim[1], dataDim[2]);
+		//Test
+		std::vector<Vector2_f> points;
+		points.push_back(Vector2_f(0.0, -0.5));
+		points.push_back(Vector2_f(0.0, 0.5));
+		points.push_back(Vector2_f(-0.5, 0.0));
+		fillVolume->init(points);
+
+		fillVolume->fillWithSurface(0.2, UNION, Matrix4_f::identity());
+	}
 	else
 	{
 		fillVolume->lock();
@@ -1674,12 +1686,12 @@ void FluidMechanics::pushBackSelection()
 	impl->pushBackSelection();
 }
 
-void FluidMechanics::updateCurrentSelection(const std::vector<Vector2_f>& points, const Matrix4_f* m)
+void FluidMechanics::updateCurrentSelection(const std::vector<Vector2_f>& points, SelectionMode s, const Matrix4_f* m)
 {
 	if(!impl->fillVolume)
 		return;
 
 	if(!impl->fillVolume->isInit())
 		impl->fillVolume->init(points);
-	impl->fillVolume->fillWithSurface(METRICS, *m);
+	impl->fillVolume->fillWithSurface(METRICS, s, *m);
 }
