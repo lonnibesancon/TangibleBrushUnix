@@ -275,7 +275,7 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 
 	if(volumetricRendering)
 		delete volumetricRendering;
-	volumetricRendering = new Volumetric(fillVolume, Vector3_f(1.0, 1.0, 0.0), 1.0);
+	volumetricRendering = new Volumetric(fillVolume, Vector3_f(1.0, 1.0, 0.0), 0.5);
 
 	// Compute a default zoom value according to the data dimensions
 	// static const float nativeSize = 128.0f;
@@ -1681,7 +1681,6 @@ void FluidMechanics::clearSelection()
 
 void FluidMechanics::pushBackSelection(SelectionMode s, const std::vector<Vector2_f>& points)
 {
-//	impl->pushBackSelection();
 	impl->fillVolume->setSelectionMode(s); 
 	if(!impl->fillVolume->isInit())
 		impl->fillVolume->init(points);
@@ -1695,4 +1694,11 @@ void FluidMechanics::updateCurrentSelection(const Matrix4_f* m)
 	Matrix4_f mat = *m;
 	mat.translate(impl->fillVolumeMatrix.position());
 	impl->fillVolume->fillWithSurface(METRICS, mat);
+}
+
+void FluidMechanics::updateVolumetricRendering()
+{
+	if(impl->volumetricRendering)
+		delete impl->volumetricRendering;
+	impl->volumetricRendering = new Volumetric(impl->fillVolume, Vector3_f(1.0, 1.0, 0.0), 0.5);
 }

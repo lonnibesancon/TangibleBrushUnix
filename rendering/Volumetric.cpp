@@ -89,7 +89,7 @@ Volumetric::Volumetric(FillVolume* fill, const Vector3_f& c, float alpha) :
 		chRGBABuffer[i*4] = c.x;
 		chRGBABuffer[i*4+1] = c.y;
 		chRGBABuffer[i*4+2] = c.z;
-		chRGBABuffer[i*4+3] = (v) ? 0.5: 0.0;
+		chRGBABuffer[i*4+3] = (v) ? alpha : 0.0;
 	}
 
 
