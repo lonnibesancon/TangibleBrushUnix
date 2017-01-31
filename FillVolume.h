@@ -1,7 +1,7 @@
 #ifndef  FILLVOLUME_INC
 #define  FILLVOLUME_INC
 
-#define METRICS 10.0
+#define METRICS 1.0
 
 #include "stdint.h"
 #include "stdlib.h"
@@ -10,6 +10,7 @@
 #include "global.h"
 #include <algorithm>
 #include "Selection.h"
+#include <cstring>
 
 //Structure which contain a Edge
 struct Edge
@@ -45,7 +46,7 @@ class FillVolume
 		FillVolume* createIntersection(const FillVolume& fv) const;
 		FillVolume* createExclusion(const FillVolume& fv) const;
 
-		void fillWithSurface(double depth, SelectionMode s,const Matrix4_f& matrix);
+		void fillWithSurface(double depth, const Matrix4_f& matrix);
 
 		bool get(uint64_t x, uint64_t y, uint64_t z);
 		void lock();
@@ -61,12 +62,17 @@ class FillVolume
 
 		bool hasSomething8Bits(uint64_t x, uint64_t y, uint64_t z){return m_fillVolume[(x+ m_x*y + m_x*m_y*z)/8];}
 		bool isInit() const{return m_isInit;}
+		void setSelectionMode(SelectionMode s);
 	private:
 		bool m_isInit=false;
+
 		uint8_t* m_fillVolume;
+		uint8_t* m_saveVolume;
+
 		uint64_t m_x, m_y, m_z;
 		pthread_mutex_t m_mutex;
 		std::vector<Vector2_f> m_selectionPoints;
+		SelectionMode m_selectionMode=UNION;
 };
 
 //The compare edge function, useful for sorting the edge table

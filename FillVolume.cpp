@@ -39,8 +39,11 @@ FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x*METRICS), m_y
 {
 	pthread_mutex_init(&m_mutex, NULL);
 	m_fillVolume = (uint8_t*)calloc((m_x*m_y*m_z+7)/8, sizeof(uint8_t));
-	//for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
-	//	m_fillVolume[i] = 0xff;
+	m_saveVolume = (uint8_t*)calloc((m_x*m_y*m_z+7)/8, sizeof(uint8_t));
+
+
+	for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
+		m_fillVolume[i] = 0xff;
 }
 
 void FillVolume::init(const std::vector<Vector2_f>& p)
@@ -182,7 +185,7 @@ void FillVolume::unlock()
 	pthread_mutex_unlock(&m_mutex);
 }
 
-void FillVolume::fillWithSurface(double depth, SelectionMode s, const Matrix4_f& matrix)
+void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 {
 	printf("fill with surface \n");
 	//Create the edge table
@@ -270,9 +273,21 @@ void FillVolume::fillWithSurface(double depth, SelectionMode s, const Matrix4_f&
 								if(selfShift >= m_x*m_y*m_z || selfShift < 0)
 									continue;
 
-								uint8_t self          = *(m_fillVolume + (selfShift)/8);
-								m_fillVolume[selfShift/8] = self | (0x01 << (selfShift % 8));
-								printf("x %f y %f z %f \n", x, y, z);
+								uint8_t self              = *(m_fillVolume + (selfShift)/8);
+								self                      = self | (0x01 << (selfShift % 8));
+								switch(m_selectionMode)
+								{
+									case UNION:
+										self = self | *(m_saveVolume + selfShift/8);
+										break;
+									case INTERSECT:
+										self = self & *(m_saveVolume + selfShift/8);
+										break;
+									case EXCLUSION:
+										self = self & (~(*(m_saveVolume + selfShift/8)));
+										break;
+								}
+								m_fillVolume[selfShift/8] = self;
 							}
 						}
 					}
@@ -344,4 +359,19 @@ bool FillVolume::get(uint64_t x, uint64_t y, uint64_t z)
 	self               = (self >> (selfShift % 8)) & 0x01;
 
 	return self;
+}
+
+void FillVolume::setSelectionMode(SelectionMode s)
+{
+	m_selectionMode = s;
+	memcpy(m_saveVolume, m_fillVolume, m_x*m_y*m_z);
+
+	switch(s)
+	{
+		case INTERSECT:
+			m_fillVolume = memset(m_fillVolume, 0x00, m_x*m_y*m_z);
+			break;
+		default:
+			break;
+	}
 }

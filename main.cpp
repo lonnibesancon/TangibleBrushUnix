@@ -212,31 +212,35 @@ int main()
 			for(uint32_t i=selectionID; i < dataSelectedSize; i++)
 			{
 				const Matrix4_f* m;
-				SelectionMode s;
-				const std::vector<Vector2_f>* points = NULL;
-				synchronized(server.dataSelected)
-				{
-					points = &(server.dataSelected[selectionID].getSelectionPoint());
-				}
+				const Vector2_d* factor;
 
-				synchronized(server.dataSelected)
+				do
 				{
-					int i = server.dataSelected[selectionID].nextIndice();
-					m = server.dataSelected[selectionID].getMatrix(i);
-					s = server.dataSelected[selectionID].getSelectionMode(i);
-				}
-
-				if(m == NULL && dataSelectedSize > selectionID+1)
-					selectionID++;
-
-				else if(m != NULL)
-				{
-					do
+					synchronized(server.dataSelected)
 					{
-						app->updateCurrentSelection(*points, s, m);
-						printf("Yeah, one update current selection done !! \n");
-					}while(m != NULL);
-				}
+						int i = server.dataSelected[selectionID].nextIndice();
+						m = server.dataSelected[selectionID].getMatrix(i);
+						factor = server.dataSelected[selectionID].getScaleFactor(i);
+					}
+
+					if(m == NULL && dataSelectedSize > selectionID+1)
+					{
+						selectionID++;
+						SelectionMode s;
+						synchronized(server.dataSelected)
+						{
+							s = server.dataSelected[selectionID].getSelectionMode();
+							const std::vector<Vector2_f>* points = &(server.dataSelected[selectionID].getSelectionPoint());
+							app->pushBackSelection(s, *points);
+							continue;
+						}
+					}
+
+					else if(m != NULL)
+					{
+						app->updateCurrentSelection(m);
+					}
+				}while(m != NULL);
 			}
 			server.hasSetToSelection = false;
 		}

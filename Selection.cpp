@@ -1,7 +1,8 @@
 #include "Selection.h"
 
-void Selection::addPostTreatmentMatrix(SelectionMode s, const Matrix4& matrix)
+void Selection::addPostTreatmentMatrix(SelectionMode s, double sx, double sy, const Matrix4& matrix)
 {
+	m_scale.push_back(Vector2_d(sx, sy));
 	m_moveMatrix.push_back(matrix);
 }
 

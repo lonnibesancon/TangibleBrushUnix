@@ -142,8 +142,7 @@ struct FluidMechanics::Impl
 	Cube selectionCube;
 	//Tells where the volume is filled. Very useful for binary option (intersect, union, etc.)
 	FillVolume* fillVolume;
-
-	SelectionMode selectionMode;
+	Matrix4_f fillVolumeMatrix;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -161,6 +160,7 @@ FluidMechanics::Impl::Impl(const std::string& baseDir)
 	for (Particle& p : particles)
 		p.valid = false;
 	pushBackSelection();
+	fillVolumeMatrix = Matrix4_f::identity();
 }
 
 FluidMechanics::Impl::~Impl()
@@ -259,26 +259,16 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	dataSpacing = Vector3(spacing[0], spacing[1], spacing[2]);
 
 	//Init the fill volume.
-	if(!fillVolume)
-	{
-		fillVolume = new FillVolume(dataDim[0], dataDim[1], dataDim[2]);
-		//Test
-		std::vector<Vector2_f> points;
-		points.push_back(Vector2_f(0.0, -0.5));
-		points.push_back(Vector2_f(0.0, 0.5));
-		points.push_back(Vector2_f(-0.5, 0.0));
-		fillVolume->init(points);
-
-		fillVolume->fillWithSurface(0.2, UNION, Matrix4_f::identity());
-	}
-	else
+	if(fillVolume)
 	{
 		fillVolume->lock();
 		{
 			delete fillVolume;
 		}
-		fillVolume = new FillVolume(dataDim[0], dataDim[1], dataDim[2]);
 	}
+
+	fillVolume       = new FillVolume(dataDim[0]*spacing[0], dataDim[1]*spacing[1], dataDim[2]*spacing[2]);
+	fillVolumeMatrix = Matrix4_f::makeTransform(Vector3_f(-dataDim[0]*spacing[0]/2.0, -dataDim[1]*spacing[1]/2.0, -dataDim[2]*spacing[2]/2.0), Quaternion_f::identity(), Vector3_f(1.0, 1.0, 1.0));
 
 	// Compute a default zoom value according to the data dimensions
 	// static const float nativeSize = 128.0f;
@@ -1436,7 +1426,7 @@ void FluidMechanics::Impl::showSelection()
 					Matrix4 projCube = Matrix4::identity();
 					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
 					projCube.setPosition(Vector3(i/METRICS, j/METRICS, k/METRICS));
-					selectionCube.render(proj, state->modelMatrix*projCube);
+					selectionCube.render(proj, state->modelMatrix*fillVolumeMatrix*projCube);
 				}
 
 				else if(last == true && (!fillVolume->get(i, j, k) || k+1 == fillVolume->getMetricsSizeZ()))
@@ -1449,7 +1439,7 @@ void FluidMechanics::Impl::showSelection()
 					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
 					projCube.setPosition(Vector3(i/METRICS, j/METRICS, (k-1)/METRICS));
 
-					selectionCube.render(proj, state->modelMatrix*projCube);
+					selectionCube.render(proj, state->modelMatrix*fillVolumeMatrix*projCube);
 				}
 			}
 		}
@@ -1469,7 +1459,7 @@ void FluidMechanics::Impl::showSelection()
 					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
 					projCube.setPosition(Vector3(i/METRICS, j/METRICS, k/METRICS));
 
-					selectionCube.render(proj, state->modelMatrix*projCube);
+					selectionCube.render(proj, state->modelMatrix*fillVolumeMatrix*projCube);
 				}
 
 				else if(last == true && (!fillVolume->get(i, j, k) || j+1 == fillVolume->getMetricsSizeY()))
@@ -1479,7 +1469,7 @@ void FluidMechanics::Impl::showSelection()
 					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
 					projCube.setPosition(Vector3(i/METRICS, (j-1)/METRICS, k/METRICS));
 
-					selectionCube.render(proj, state->modelMatrix*projCube);
+					selectionCube.render(proj, state->modelMatrix*fillVolumeMatrix*projCube);
 				}
 			}
 		}
@@ -1499,7 +1489,7 @@ void FluidMechanics::Impl::showSelection()
 					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
 					projCube.setPosition(Vector3(i/METRICS, j/METRICS, k/METRICS));
 
-					selectionCube.render(proj, state->modelMatrix*projCube);
+					selectionCube.render(proj, state->modelMatrix*fillVolumeMatrix*projCube);
 				}
 
 				else if(last == true && (!fillVolume->get(i, j, k) || i+1 == fillVolume->getMetricsSizeX()))
@@ -1509,15 +1499,12 @@ void FluidMechanics::Impl::showSelection()
 					projCube.setScale(1.0f/METRICS, 1.0f/METRICS, 1.0f/METRICS);
 					projCube.setPosition(Vector3((i-1)/METRICS, j/METRICS, k/METRICS));
 
-					selectionCube.render(proj, state->modelMatrix*projCube);
+					selectionCube.render(proj, state->modelMatrix*fillVolumeMatrix*projCube);
 				}
 			}
 		}
 	}
 	
-
-	printf("End !\n");
-
 	return;
 }
 
@@ -1526,7 +1513,7 @@ void FluidMechanics::Impl::renderObjects()
 {
 	glViewport(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-//	showParticules();
+	showParticules();
 	showSelection();
 
 	return;
@@ -1681,17 +1668,20 @@ void FluidMechanics::clearSelection()
 	impl->pushBackSelection();
 }
 
-void FluidMechanics::pushBackSelection()
+void FluidMechanics::pushBackSelection(SelectionMode s, const std::vector<Vector2_f>& points)
 {
-	impl->pushBackSelection();
+//	impl->pushBackSelection();
+	impl->fillVolume->setSelectionMode(s); 
+	if(!impl->fillVolume->isInit())
+		impl->fillVolume->init(points);
 }
 
-void FluidMechanics::updateCurrentSelection(const std::vector<Vector2_f>& points, SelectionMode s, const Matrix4_f* m)
+void FluidMechanics::updateCurrentSelection(const Matrix4_f* m)
 {
 	if(!impl->fillVolume)
 		return;
 
-	if(!impl->fillVolume->isInit())
-		impl->fillVolume->init(points);
-	impl->fillVolume->fillWithSurface(METRICS, s, *m);
+	Matrix4_f mat = *m;
+	mat.translate(impl->fillVolumeMatrix.position());
+	impl->fillVolume->fillWithSurface(METRICS, mat);
 }

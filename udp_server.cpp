@@ -244,11 +244,15 @@ void udp_server::listen(){
 				SelectionMode s;
 				float data[7];
 
+				double scaleFactorX, scaleFactorY;
+
 				//Useless one
 				getline(ss, tok, ';');
 
 				getline(ss, tok, ';');
-				s = (SelectionMode)(std::stoi(tok));
+				scaleFactorX = std::stof(tok.c_str());
+				getline(ss, tok, ';');
+				scaleFactorY = std::stof(tok.c_str());
 
 				//Then get the matrix
 				for(uint32_t i=0; i < 7; i++)
@@ -269,7 +273,7 @@ void udp_server::listen(){
 
 				synchronized(dataSelected)
 				{
-					dataSelected.rbegin()->addPostTreatmentMatrix(s, Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3_f(1, 1, 1)));
+					dataSelected.rbegin()->addPostTreatmentMatrix(s, scaleFactorX, scaleFactorY, Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3_f(1, 1, 1)));
 				}
 /*				synchronized(postTreatmentMat)
 				{
@@ -330,6 +334,8 @@ void udp_server::listen(){
 			//Useless one
 			std::string tok;
 			getline(ss, tok, ';');
+			getline(ss, tok, ';');
+			uint32_t mode = std::stoi(tok.c_str());
 
 			std::vector<Vector2_f> points;
 			std::vector<float> datas;
@@ -343,7 +349,7 @@ void udp_server::listen(){
 
 			synchronized(dataSelected)
 			{
-				dataSelected.push_back(Selection(std::move(points)));
+				dataSelected.push_back(Selection(mode, std::move(points)));
 			}
 		}
 
