@@ -1,4 +1,5 @@
 #include "fluids_app.h"
+#include "rendering/Volumetric.h"
 
 #include "vtk_output_window.h"
 #include "vtk_error_observer.h"
@@ -141,8 +142,9 @@ struct FluidMechanics::Impl
 
 	Cube selectionCube;
 	//Tells where the volume is filled. Very useful for binary option (intersect, union, etc.)
-	FillVolume* fillVolume;
+	FillVolume* fillVolume=NULL;
 	Matrix4_f fillVolumeMatrix;
+	Volumetric* volumetricRendering=NULL;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -269,6 +271,11 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 
 	fillVolume       = new FillVolume(dataDim[0]*spacing[0], dataDim[1]*spacing[1], dataDim[2]*spacing[2]);
 	fillVolumeMatrix = Matrix4_f::makeTransform(Vector3_f(-dataDim[0]*spacing[0]/2.0, -dataDim[1]*spacing[1]/2.0, -dataDim[2]*spacing[2]/2.0), Quaternion_f::identity(), Vector3_f(1.0, 1.0, 1.0));
+	fillVolumeMatrix.rescale(dataDim[0]*spacing[0], dataDim[1]*spacing[1], dataDim[2]*spacing[2]);
+
+	if(volumetricRendering)
+		delete volumetricRendering;
+	volumetricRendering = new Volumetric(fillVolume, Vector3_f(1.0, 1.0, 0.0), 1.0);
 
 	// Compute a default zoom value according to the data dimensions
 	// static const float nativeSize = 128.0f;
@@ -1384,6 +1391,7 @@ void FluidMechanics::Impl::showSelection()
 	if(!fillVolume)
 		return;
 
+#if 0  
 	bool last=false;
 
 	int32_t minX=-1, minY=-1, minZ=-1, maxX=0, maxY=0, maxZ=0;
@@ -1504,6 +1512,9 @@ void FluidMechanics::Impl::showSelection()
 			}
 		}
 	}
+#endif
+	std::cout << "end image" << std::endl;
+	volumetricRendering->render(proj, state->modelMatrix*fillVolumeMatrix);
 	
 	return;
 }

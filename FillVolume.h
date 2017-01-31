@@ -48,17 +48,18 @@ class FillVolume
 
 		void fillWithSurface(double depth, const Matrix4_f& matrix);
 
-		bool get(uint64_t x, uint64_t y, uint64_t z);
+		bool get(uint64_t x, uint64_t y, uint64_t z) const;
+		bool get(uint64_t v) const{return m_fillVolume[v/8] & (1 << (v%8));}
 		void lock();
 		void unlock();
 
-		uint64_t getSizeX(){return m_x/METRICS;}
-		uint64_t getSizeY(){return m_y/METRICS;}
-		uint64_t getSizeZ(){return m_z/METRICS;}
+		uint64_t getSizeX() const{return m_x/METRICS;}
+		uint64_t getSizeY() const{return m_y/METRICS;}
+		uint64_t getSizeZ() const{return m_z/METRICS;}
 
-		uint64_t getMetricsSizeX(){return m_x;}
-		uint64_t getMetricsSizeY(){return m_y;}
-		uint64_t getMetricsSizeZ(){return m_z;}
+		uint64_t getMetricsSizeX() const{return m_x;}
+		uint64_t getMetricsSizeY() const{return m_y;}
+		uint64_t getMetricsSizeZ() const{return m_z;}
 
 		bool hasSomething8Bits(uint64_t x, uint64_t y, uint64_t z){return m_fillVolume[(x+ m_x*y + m_x*m_y*z)/8];}
 		bool isInit() const{return m_isInit;}

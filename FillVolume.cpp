@@ -352,7 +352,7 @@ Rectangle3f computeRectangle(double x, double y, double z, const Matrix4_f& matr
 	return Rectangle3f(xMin, yMin, zMin, xMax - xMin, yMax - yMin, zMax - zMin);
 }
 
-bool FillVolume::get(uint64_t x, uint64_t y, uint64_t z)
+bool FillVolume::get(uint64_t x, uint64_t y, uint64_t z) const
 {
 	uint64_t selfShift = x + m_x*y + m_x*m_y*z;
 	uint8_t self          = *(m_fillVolume + (selfShift)/8);
