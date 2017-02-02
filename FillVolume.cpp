@@ -1,11 +1,17 @@
 #include "FillVolume.h"
 
-Edge::Edge(const Vector2_f& a, const Vector2_f& b) : m_a(a), m_b(b), m_incr((b.x-a.x)/(b.y-a.y))
+Edge::Edge(const Vector2_f& a, const Vector2_f& b) : m_a(a), m_b(b)
 {
 	if(b.y-a.y < 0.001 && b.y - a.y > -0.001)
+	{
 		m_linear = true;
+		m_incr = 0;
+	}
 	else
+	{
+		m_incr = ((b.x-a.x)/(b.y-a.y));
 		m_linear = false;
+	}
 
 	if(a.y < b.y)
 	{
@@ -19,12 +25,17 @@ Edge::Edge(const Vector2_f& a, const Vector2_f& b) : m_a(a), m_b(b), m_incr((b.x
 		m_yMax   = a.y;
 	}
 
-	a.x < b.x ? m_startX = a.x : m_startX = b.x;
+	(a.x < b.x) ? m_startX = a.x : m_startX = b.x;
+	(a.x > b.x) ? m_endX = a.x : m_endX = b.x;
 }
 
 bool compareYEdge(const Edge& a, const Edge& b)
 {
-	return a.m_yMin < b.m_yMin;
+	if(a.m_yMin < b.m_yMin)
+		return true;
+	if(a.m_linear)
+		return true;
+	return false;
 }
 
 bool compareXEdge(const Edge* a, const Edge* b)
@@ -42,8 +53,8 @@ FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x*METRICS), m_y
 	m_saveVolume = (uint8_t*)calloc((m_x*m_y*m_z+7)/8, sizeof(uint8_t));
 
 
-	for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
-		m_fillVolume[i] = 0xff;
+//	for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
+//		m_fillVolume[i] = 0xff;
 }
 
 void FillVolume::init(const std::vector<Vector2_f>& p)
@@ -185,28 +196,37 @@ void FillVolume::unlock()
 	pthread_mutex_unlock(&m_mutex);
 }
 
-void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
+void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Vector2_f* factor)
 {
-	printf("fill with surface \n");
 	//Create the edge table
 	std::vector<Edge> et;
 	for(uint32_t i=0; i < m_selectionPoints.size()-1; i++)
-		et.emplace_back(m_selectionPoints[i], m_selectionPoints[i+1]);
-	et.emplace_back(m_selectionPoints[0], *(m_selectionPoints.rbegin()));
+		et.emplace_back(m_selectionPoints[i]**factor, m_selectionPoints[i+1]**factor);
+	et.emplace_back(m_selectionPoints[0]**factor, (*(m_selectionPoints.rbegin()))**factor);
+
+	for(uint32_t i=0; i < et.size(); i++)
+	{
+		if(et[i].m_linear)
+		{
+			et.erase(et.begin()+i);
+			i--;
+		}
+	}
 
 	std::sort(et.begin(), et.end(), compareYEdge);
 
+
 	//Determine the yMin
-	double yMin = m_selectionPoints[0].y;
+	double yMin = m_selectionPoints[0].y*factor->y;
 	for(uint32_t i=0; i < m_selectionPoints.size(); i++)
-		yMin = fmin(yMin, m_selectionPoints[i].y);
+		yMin = fmin(yMin, m_selectionPoints[i].y*factor->y);
 
 	//Now we need the Active Edge Table
 	std::vector<const Edge*> aet;
 	uint32_t etIndice=0;
 
 	//For each scanline
-	for(double j=yMin; etIndice < et.size(); j+=1.0/METRICS)
+	for(double j=yMin; et.begin()->m_yMax >= j; j+=.05/METRICS)
 	{
 		//Update the Active Edge Table
 		//
@@ -220,7 +240,7 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 		}
 
 		//Add the new edge to handle
-		while(etIndice < et.size() && et[etIndice].m_yMin < j)
+		while(etIndice < et.size() && et[etIndice].m_yMin <= j)
 		{
 			aet.push_back(&(et[etIndice]));
 			etIndice++;
@@ -239,37 +259,57 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 		uint32_t aetIndice = 0;
 
 		//Go along the scanline, don't forget that the x = startX * (y - yMin) * incr
-		for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size(); i+=1.0/METRICS)
+		for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size() && i <= (*aetSorted.rbegin())->computeX(j); i+=.05/METRICS)
 		{
 			//Make a step
-			while(aetIndice < aetSorted.size() && !aetSorted[aetIndice]->m_linear && aetSorted[aetIndice]->computeX(j) < i)
+			while(aetIndice-1 < aetSorted.size() && aetSorted[aetIndice+1]->computeX(j) > i)
 			{
-				enable = !enable;
+				if(i < aetSorted[aetIndice]->m_endX)
+					enable = !enable;
 				aetIndice++;
 			}
 
 			if(enable)
 			{
-				for(double k=0; k < depth; k+=.5/METRICS)
+				std::cout << i << " " << j << std::endl;
+				for(double k=0; k < depth; k+=.05/METRICS)
 				{
 					//Get the rect of the object at the position (i, j, k)
 					Rectangle3f rect = computeRectangle(i, j, k, matrix);
 
-					//Now fill the m_fillVolume
-					for(double x=rect.x; x < rect.x+rect.width; x+=.5/METRICS)
-					{
-						if(x < 0 || x >= 640)
-							continue;
-						for(double y=rect.y; y < rect.y+rect.height; y+=.5/METRICS)
-						{
-							if(y < 0 || y >= 640)
-								continue;
-							for(double z=rect.z; z < rect.z+rect.depth; z+=.5/METRICS)
-							{
-								if(z < 0 || z >= 930)
-									continue;
+					if(rect.x + rect.width < 0.0 ||
+							rect.y + rect.height < 0.0 ||
+							rect.x >= m_x ||
+							rect.y >= m_y ||
+							rect.z + rect.depth < 0.0 ||
+							rect.z >= m_z)
+						continue;
 
-								int64_t selfShift = (int)(METRICS*x) + m_x*(int)(METRICS*y) + m_x*m_y*(int)(METRICS*z);
+					if(i == aetSorted[0]->computeX(j) && j > 0.5 && k==0)
+					{
+						std::cout << 2+2 << std::endl;
+					}
+
+					//Now fill the m_fillVolume
+					for(int32_t x=rect.x; x < rect.x+rect.width; x+=1)
+					{
+						if(x < 0)
+							continue;
+						else if(x > m_x)
+							break;
+						for(int32_t y=rect.y; y < rect.y+rect.height; y+=1)
+						{
+							if(y < 0)
+								continue;
+							else if(y > m_y)
+								break;
+							for(int32_t z=rect.z; z < rect.z+rect.depth; z+=1)
+							{
+								if(z < 0)
+									continue;
+								else if(z > m_z)
+									break;
+								int64_t selfShift = x + m_x*y + m_x*m_y*z;
 								if(selfShift >= m_x*m_y*m_z || selfShift < 0)
 									continue;
 
@@ -304,9 +344,8 @@ Rectangle3f computeRectangle(double x, double y, double z, const Matrix4_f& matr
 	Vector3_f v[8] = {
 		Vector3_f(0.0, 0.0, 0.0), Vector3_f(0.0, 1.0/METRICS, 0.0), 
 		Vector3_f(1.0/METRICS, 0.0, 0.0), Vector3_f(1.0/METRICS, 1.0/METRICS, 0.0), //Front face
-		
 		Vector3_f(0.0, 0.0, 0.0), Vector3_f(0.0, 1.0/METRICS, 0.0), 
-		Vector3_f(1.0/METRICS, 0.0, 0.0), Vector3_f(1.0/METRICS, 1.0/METRICS, 0.0), //Front face
+		Vector3_f(1.0/METRICS, 0.0, 0.0), Vector3_f(1.0/METRICS, 1.0/METRICS, 0.0) //Front face
 	};
 
 	//Get the back face position

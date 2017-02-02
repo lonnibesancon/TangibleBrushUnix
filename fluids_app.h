@@ -48,7 +48,7 @@ public:
 	void setSubData(Vector3& dataTrans, Quaternion& dataRot);
 	void clearSelection();
 	void pushBackSelection(SelectionMode s, const std::vector<Vector2_f>& points);
-	void updateCurrentSelection(const Matrix4_f* m);
+	void updateCurrentSelection(const Matrix4_f* m, const Vector2_f* factor);
 	void updateVolumetricRendering();
 private:
 	unsigned int getScreenWidth() const { return SCREEN_WIDTH; }

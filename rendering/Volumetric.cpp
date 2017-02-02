@@ -3,24 +3,6 @@
 
 namespace
 {
-	GLfloat vertices[] = { 1, 1, 1,  0, 1, 1,  0,0, 1,      // v0-v1-v2 (front)
-                       0,0, 1,   1,0, 1,   1, 1, 1,      // v2-v3-v0
-
-                        1, 1, 1,   1,0, 1,   1,0,0,      // v0-v3-v4 (right)
-                        1,0,0,   1, 1,0,   1, 1, 1,      // v4-v5-v0
-
-                        1, 1, 1,   1, 1,0,  0, 1,0,      // v0-v5-v6 (top)
-                       0, 1,0,  0, 1, 1,   1, 1, 1,      // v6-v1-v0
-
-                       0, 1, 1,  0, 1,0,  0,0,0,      // v1-v6-v7 (left)
-                       0,0,0,  0,0, 1,  0, 1, 1,      // v7-v2-v1
-
-                       0,0,0,   1,0,0,   1,0, 1,      // v7-v4-v3 (bottom)
-                        1,0, 1,  0,0, 1,  0,0,0,      // v3-v2-v7
-
-                        1,0,0,  0,0,0,  0, 1,0,      // v4-v7-v6 (back)
-                       0, 1,0,   1, 1,0,   1,0,0 };    // v6-v5-v4
-
 	GLfloat normals[]  = { 0, 0, 1,   0, 0, 1,   0, 0, 1,      // v0-v1-v2 (front)
                         0, 0, 1,   0, 0, 1,   0, 0, 1,      // v2-v3-v0
 
@@ -50,10 +32,10 @@ namespace
 		"attribute highp vec3 vertex;\n"
 		"attribute mediump vec3 normal;\n"
 
-		"varying mediump vec3 vPos;\n"
+		"varying highp vec3 vPos;\n"
 		"void main() {\n"
 		"  vPos = vertex;\n"
-		"  gl_Position = projection * modelView * vec4(vertex, 1.0);\n"
+		"  gl_Position = projection * modelView * (vec4(0.0, 0.0, 0.01, 1.0) + vec4(vertex, 1.0));\n"
 		"}";
 
 	const char* fragmentShader =
@@ -65,10 +47,12 @@ namespace
 		"#endif\n"
 
 		"uniform sampler3D volume;\n"
-		"varying mediump vec3 vPos;\n"
+		"varying highp vec3 vPos;\n"
 
 		"void main() {\n"
-		"  gl_FragColor = texture(volume, vPos);\n"
+		"  vec4 c = texture(volume, vPos);\n"
+		"  if(c.a == 0.0) discard;\n"
+		"  gl_FragColor = c;"
 		"}";
 }
 
@@ -79,7 +63,10 @@ Volumetric::Volumetric(FillVolume* fill, const Vector3_f& c, float alpha) :
     m_projectionUniform(-1), m_modelViewUniform(-1), m_normalMatrixUniform(-1), m_volumeUniform(-1)
 {
 	glGenTextures(1, &m_textureId);
-	uint64_t bufferSize = fill->getMetricsSizeX()*fill->getMetricsSizeY()*fill->getMetricsSizeZ();
+	uint32_t bufferSize = fill->getMetricsSizeX()*fill->getMetricsSizeY()*fill->getMetricsSizeZ();
+	m_x = fill->getMetricsSizeX();
+	m_y = fill->getMetricsSizeY();
+	m_z = fill->getMetricsSizeZ();
     //RGBA buffer
     float* chRGBABuffer = new float[bufferSize*4];
 
@@ -91,7 +78,6 @@ Volumetric::Volumetric(FillVolume* fill, const Vector3_f& c, float alpha) :
 		chRGBABuffer[i*4+2] = c.z;
 		chRGBABuffer[i*4+3] = (v) ? alpha : 0.0;
 	}
-
 
 	glBindTexture(GL_TEXTURE_3D, m_textureId);
 	{
@@ -134,21 +120,42 @@ void Volumetric::render(const Matrix4& projectionMatrix, const Matrix4& modelVie
 
 	glUseProgram(m_material->getHandle());
 	{
-		glVertexAttribPointer(m_vertexAttrib, 3, GL_FLOAT, false, 0, vertices);
+		for(float i=0; i < 2.0; i+=0.005f)
+		{
+			GLfloat vertices[] = { 1, 1, i+0.005f,  0, 1, i+0.005f,  0,0, i+0.005f,      // v0-v1-v2 (front)
+						   0,0, i+0.005f,   1,0, i+0.005f,   1, 1, i+0.005f,      // v2-v3-v0
 
-		// Vertex normals
-		glVertexAttribPointer(m_normalAttrib, 3, GL_FLOAT, false, 0, normals);
-		glUniformMatrix4fv(m_projectionUniform, 1, false, projectionMatrix.data_);
-		glUniformMatrix4fv(m_modelViewUniform, 1, false, (modelViewMatrix * Matrix4(Matrix4::identity())).data_);
+							1, 1, i+0.005f,   1,0, i+0.005f,   1,0,i,      // v0-v3-v4 (right)
+							1,0,i,   1, 1,i,   1, 1, i+0.005f,      // v4-v5-v0
 
-		glEnableVertexAttribArray(m_vertexAttrib);
-		glEnableVertexAttribArray(m_normalAttrib);
-		glBindTexture(GL_TEXTURE_3D, m_textureId);
-			glUniform1i(m_volumeUniform, 0); 
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		glBindTexture(GL_TEXTURE_3D, 0);
-		glDisableVertexAttribArray(m_normalAttrib);
-		glDisableVertexAttribArray(m_vertexAttrib);
+							1, 1, i+0.005f,   1, 1,i,  0, 1,i,      // v0-v5-v6 (top)
+						   0, 1,i,  0, 1, i+0.005f,   1, 1, i+0.005f,      // v6-v1-v0
+
+						   0, 1, i+0.005f,  0, 1,i,  0,0,i,      // v1-v6-v7 (left)
+						   0,0,i,  0,0, i+0.005f,  0, 1, i+0.005f,      // v7-v2-v1
+
+						   0,0,i,   1,0,i,   1,0, i+0.005f,      // v7-v4-v3 (bottom)
+							1,0, i+0.005f,  0,0, i+0.005f,  0,0,i,      // v3-v2-v7
+
+							1,0,i,  0,0,i,  0, 1,i,      // v4-v7-v6 (back)
+						   0, 1,i,   1, 1,i,   1,0,i 	};    // v6-v5-v4
+
+			glVertexAttribPointer(m_vertexAttrib, 3, GL_FLOAT, false, 0, vertices);
+
+			// Vertex normals
+			glVertexAttribPointer(m_normalAttrib, 3, GL_FLOAT, false, 0, normals);
+			glUniformMatrix4fv(m_projectionUniform, 1, false, projectionMatrix.data_);
+			glUniformMatrix4fv(m_modelViewUniform, 1, false, (modelViewMatrix * Matrix4(Matrix4::identity())).data_);
+
+			glEnableVertexAttribArray(m_vertexAttrib);
+			glEnableVertexAttribArray(m_normalAttrib);
+			glBindTexture(GL_TEXTURE_3D, m_textureId);
+				glUniform1i(m_volumeUniform, 0); 
+				glDrawArrays(GL_TRIANGLES, 0, 36);
+			glBindTexture(GL_TEXTURE_3D, 0);
+			glDisableVertexAttribArray(m_normalAttrib);
+			glDisableVertexAttribArray(m_vertexAttrib);
+		}
 	}
 	glUseProgram(0);
 }

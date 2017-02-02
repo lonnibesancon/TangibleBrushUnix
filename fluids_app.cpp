@@ -273,9 +273,27 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	fillVolumeMatrix = Matrix4_f::makeTransform(Vector3_f(-dataDim[0]*spacing[0]/2.0, -dataDim[1]*spacing[1]/2.0, -dataDim[2]*spacing[2]/2.0), Quaternion_f::identity(), Vector3_f(1.0, 1.0, 1.0));
 	fillVolumeMatrix.rescale(dataDim[0]*spacing[0], dataDim[1]*spacing[1], dataDim[2]*spacing[2]);
 
+	std::vector<Vector2_f> points;
+	points.push_back(Vector2_f(0.25, 0.0));
+	points.push_back(Vector2_f(0.75, 1.0));
+	points.push_back(Vector2_f(1.25, 0.0));
+
+	fillVolume->init(points);
+	Matrix4 id = Matrix4::makeTransform(Vector3(2, 2, 2),
+			Quaternion::identity(),
+			Vector3(32, 32, 10));
+	Vector2_f d(1.0, 1.0);
+	fillVolume->fillWithSurface(0.5, id, &d);
+
+	Matrix4 id2 = Matrix4::makeTransform(Vector3(50, 50, 20),
+			Quaternion(Vector3(0.0, 0.0, 1.0), 1.66),
+			Vector3(32, 32, 10));
+	fillVolume->fillWithSurface(0.5, id2, &d);
+
 	if(volumetricRendering)
 		delete volumetricRendering;
-	volumetricRendering = new Volumetric(fillVolume, Vector3_f(1.0, 1.0, 0.0), 0.5);
+	volumetricRendering = new Volumetric(fillVolume, Vector3_f(1.0, 1.0, 0.0), 1.0);
+
 
 	// Compute a default zoom value according to the data dimensions
 	// static const float nativeSize = 128.0f;
@@ -1187,7 +1205,7 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 	synchronized_if(isosurface) {
 		glDepthMask(true);
 		glDisable(GL_CULL_FACE);
-		//isosurface->render(proj, mm);
+/bin/bash: q : commande introuvable
 	}
 	
 
@@ -1686,14 +1704,14 @@ void FluidMechanics::pushBackSelection(SelectionMode s, const std::vector<Vector
 		impl->fillVolume->init(points);
 }
 
-void FluidMechanics::updateCurrentSelection(const Matrix4_f* m)
+void FluidMechanics::updateCurrentSelection(const Matrix4_f* m, const Vector2_f* factor)
 {
 	if(!impl->fillVolume)
 		return;
 
 	Matrix4_f mat = *m;
 	mat.translate(impl->fillVolumeMatrix.position());
-	impl->fillVolume->fillWithSurface(METRICS, mat);
+	impl->fillVolume->fillWithSurface(METRICS, mat, factor);
 }
 
 void FluidMechanics::updateVolumetricRendering()

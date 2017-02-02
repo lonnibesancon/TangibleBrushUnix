@@ -23,12 +23,12 @@ class Selection
 		uint32_t getNbData() const{return m_moveMatrix.size();}
 		const std::vector<Vector2_f>& getSelectionPoint() const{return m_pointSelection;}
 		const Matrix4_f* getMatrix(int i){return ((i < 0 || i >= getNbData()) ? NULL : &m_moveMatrix[i]);}
-		const Vector2_d* getScaleFactor(int i){return ((i < 0 || i >= getNbData()) ? NULL : &m_scale[i]);}
+		const Vector2_f* getScaleFactor(int i){return ((i < 0 || i >= getNbData()) ? NULL : &m_scale[i]);}
 		SelectionMode getSelectionMode() const{return m_selectionMode;}
 	private:
 		std::vector<Vector2_f> m_pointSelection; //The point drawn on the tablette
 		std::vector<Matrix4_f> m_moveMatrix;     //The array of all the postTreatment (movement of the tablette after the tablette is in selectionMode) matrix
-		std::vector<Vector2_d> m_scale;
+		std::vector<Vector2_f> m_scale;
 		uint32_t m_currentData=0;
 		SelectionMode m_selectionMode;
 };

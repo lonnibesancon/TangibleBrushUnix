@@ -21,6 +21,7 @@ class Volumetric : public Renderable
 		bool m_bound;
 		GLint m_vertexAttrib, m_normalAttrib;
 		GLint m_projectionUniform, m_modelViewUniform, m_normalMatrixUniform, m_volumeUniform;
+		uint32_t m_x, m_y, m_z;
 };
 
 #endif

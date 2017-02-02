@@ -23,9 +23,10 @@ struct Edge
 		double m_yMin;
 		double m_yMax;
 		double m_startX;
+		double m_endX;
 		bool m_linear;
 
-		double computeX(double j) const{return (m_linear) ? m_a.x : m_a.x + m_incr * (j-m_yMin);}
+		double computeX(double j) const{return (m_linear) ? m_endX : m_a.x + m_incr * (j-m_a.y);}
 };
 
 struct Rectangle3f
@@ -46,7 +47,7 @@ class FillVolume
 		FillVolume* createIntersection(const FillVolume& fv) const;
 		FillVolume* createExclusion(const FillVolume& fv) const;
 
-		void fillWithSurface(double depth, const Matrix4_f& matrix);
+		void fillWithSurface(double depth, const Matrix4_f& matrix, const Vector2_f* factor);
 
 		bool get(uint64_t x, uint64_t y, uint64_t z) const;
 		bool get(uint64_t v) const{return m_fillVolume[v/8] & (1 << (v%8));}

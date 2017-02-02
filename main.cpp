@@ -212,7 +212,7 @@ int main()
 			for(uint32_t i=selectionID; i < dataSelectedSize; i++)
 			{
 				const Matrix4_f* m;
-				const Vector2_d* factor;
+				const Vector2_f* factor;
 
 				do
 				{
@@ -238,10 +238,11 @@ int main()
 
 					else if(m != NULL)
 					{
-						app->updateCurrentSelection(m);
+						app->updateCurrentSelection(m, factor);
 					}
 				}while(m != NULL);
 			}
+			app->updateVolumetricRendering();
 			server.hasSetToSelection = false;
 		}
 
