@@ -11,6 +11,7 @@ class Rectangle : public Renderable
 		void bind();
 		void render(const Matrix4& projMat, const Matrix4& mvp);
 		void setSize(float w, float h);
+		void setColor(const Vector3& v);
 
 	private:
 		float m_width, m_height;

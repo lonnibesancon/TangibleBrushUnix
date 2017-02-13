@@ -6,9 +6,9 @@
 
 enum SelectionMode
 {
-	UNION,
-	INTERSECT,
-	EXCLUSION
+	UNION=1,
+	INTERSECT=3,
+	EXCLUSION=2
 };
 
 class Selection

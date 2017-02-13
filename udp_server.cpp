@@ -238,52 +238,54 @@ void udp_server::listen(){
 		//The postTreatment matrix
 		else if(msg[0] == '4')
 		{
-			if(!hasSelectionSet)
+			std::string tok;
+			SelectionMode s;
+			float data[7];
+
+			double scaleFactorX, scaleFactorY;
+
+			//Useless one
+			getline(ss, tok, ';');
+
+			getline(ss, tok, ';');
+			scaleFactorX = std::stof(tok.c_str());
+			getline(ss, tok, ';');
+			scaleFactorY = std::stof(tok.c_str());
+
+			//Then get the matrix
+			for(uint32_t i=0; i < 7; i++)
 			{
-				std::string tok;
-				SelectionMode s;
-				float data[7];
-
-				double scaleFactorX, scaleFactorY;
-
-				//Useless one
 				getline(ss, tok, ';');
+				data[i] = std::stof(tok.c_str());
+			}
 
-				getline(ss, tok, ';');
-				scaleFactorX = std::stof(tok.c_str());
-				getline(ss, tok, ';');
-				scaleFactorY = std::stof(tok.c_str());
+			synchronized(postTreatmentTrans)
+			{
+				postTreatmentTrans = Vector3_f(data[0], data[1], data[2]);
+			}
 
-				//Then get the matrix
-				for(uint32_t i=0; i < 7; i++)
-				{
-					getline(ss, tok, ';');
-					data[i] = std::stof(tok.c_str());
-				}
+			synchronized(postTreatmentRot)
+			{
+				postTreatmentRot = Quaternion_f(data[3], data[4], data[5], data[6]);
+			}
 
-				synchronized(postTreatmentTrans)
-				{
-					postTreatmentTrans = Vector3_f(data[0], data[1], data[2]);
-				}
+			//Need to position the tablet position on the screen
+			synchronized(postTreatmentMat)
+			{
+				postTreatmentMat = Matrix4_f::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3_f(1.0, 1.0, 1.0));
+			}
 
-				synchronized(postTreatmentRot)
-				{
-					postTreatmentRot = Quaternion_f(data[3], data[4], data[5], data[6]);
-				}
-
+			if(hasSelectionSet)
+			{
 				synchronized(dataSelected)
 				{
-					dataSelected.rbegin()->addPostTreatmentMatrix(s, scaleFactorX, scaleFactorY, Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3_f(1, 1, 1)));
+					if(dataSelected.size() > 0)
+						dataSelected.rbegin()->addPostTreatmentMatrix(s, scaleFactorX, scaleFactorY, postTreatmentMat);
 				}
-/*				synchronized(postTreatmentMat)
-				{
-					postTreatmentMat.push_back(Matrix4(matrix));
-				}
-*/
-				hasPostTreatmentSet = true;
 				hasSetToSelection = true;
 			}
 
+			hasPostTreatmentSet = true;
 		}
 
 		//The difference between the postTreatment matrix and the model matrix (for the tablet).
@@ -328,14 +330,11 @@ void udp_server::listen(){
 		
 		else if(msg[0] == '6')
 		{
-			if(hasSetToSelection==false && msg[1] == '2' && msg[2] == '5')
-				hasSetToSelection = true;
-
 			//Useless one
 			std::string tok;
 			getline(ss, tok, ';');
-			getline(ss, tok, ';');
-			uint32_t mode = std::stoi(tok.c_str());
+			//uint32_t mode = std::stoi(tok.c_str());
+			uint32_t mode=1;
 
 			std::vector<Vector2_f> points;
 			std::vector<float> datas;
@@ -351,6 +350,32 @@ void udp_server::listen(){
 			{
 				dataSelected.push_back(Selection(mode, std::move(points)));
 			}
+
+			hasSelectionSet = true;
+		}
+
+		//Tablet matrix
+		else if(msg[0]=='7')
+		{
+			std::string tok;
+			SelectionMode s;
+			float data[16];
+			//Useless one
+			getline(ss, tok, ';');
+
+			//Then get the matrix
+			for(uint32_t i=0; i < 16; i++)
+			{
+				getline(ss, tok, ';');
+				data[i] = std::stof(tok.c_str());
+			}
+
+			synchronized(tabletMatrix)
+			{
+				tabletMatrix = Matrix4(data);
+			}
+
+			hasSetTabletMatrix=true;
 		}
 
 		else if(msg[0]=='1')

@@ -46,6 +46,7 @@ public:
 	void setSelectionMatrix(std::vector<Matrix4>& selectionMatrix);
 	void setPostTreatment(Vector3& postTreatmentTrans, Quaternion& postTreatmentRot);
 	void setSubData(Vector3& dataTrans, Quaternion& dataRot);
+	void setTabletMatrix(const Matrix4& mat);
 	void clearSelection();
 	void pushBackSelection(SelectionMode s, const std::vector<Vector2_f>& points);
 	void updateCurrentSelection(const Matrix4_f* m, const Vector2_f* factor);
@@ -55,6 +56,7 @@ private:
 	unsigned int getScreenHeight() const { return SCREEN_HEIGHT; }
 
 	Matrix4 getProjMatrix() const { return projMatrix; }
+	void setProjMatrix(const Matrix4& p) {projMatrix = p;}
 	Matrix4 getOrthoProjMatrix() const { return orthoProjMatrix; }
 
 	float getNearClipDist() const { return projNearClipDist; }

@@ -25,7 +25,7 @@ void loadDataSet(std::unique_ptr<FluidMechanics> app, int dataset){
 int main()
 {
 	bool realFullScreen  = false ;
-	int32_t selectionID  = 0;
+	int32_t selectionID  = -1;
 	udp_server server(8500);
 	//server.listen();
 	if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -154,27 +154,27 @@ int main()
 			server.hasSelectionClear = false;
 		}
 
-		if(server.hasSelectionSet)
+	/*  if(server.hasSelectionSet)
 		{
 			synchronized(server.selectionMatrix)
 			{
 				app->setSelectionMatrix(server.selectionMatrix);
 			}
 
-			synchronized(server.selectionPoint)
-			{
-				app->setSelectionPoint(server.selectionPoint);
-			}
+		//	synchronized(server.selectionPoint)
+		//	{
+		//		app->pushBackSelection(server.dataSelected.rbegin()->getSelectionMode(), server.dataSelected.rbegin()->getSelectionPoint());
+		//	}
 
-/*  		synchronized(server.selectionStartPoint)
+			synchronized(server.selectionStartPoint)
 			{
 				app->setFirstPoint(server.selectionStartPoint);
 			}
-*/
-			
+
 			app->getSettings()->showSelection = true;
 			server.hasSelectionSet = false;
 		}
+		*/
 
 		if(server.hasPostTreatmentSet)
 		{
@@ -186,6 +186,14 @@ int main()
 				}
 			}
 			server.hasPostTreatmentSet = false;
+		}
+
+		if(server.hasSetTabletMatrix)
+		{
+			synchronized(server.tabletMatrix)
+			{
+				app->setTabletMatrix(server.tabletMatrix);
+			}
 		}
 
 /*  	if(server.hasSubDataChanged)
@@ -203,15 +211,29 @@ int main()
 		
 		if(server.hasSetToSelection)
 		{
-			uint32_t dataSelectedSize=0;
+
+			if(selectionID == -1)
+			{
+				selectionID=0;
+				SelectionMode s;
+				synchronized(server.dataSelected)
+				{
+					s = server.dataSelected[selectionID].getSelectionMode();
+					const std::vector<Vector2_f>* points = &(server.dataSelected[selectionID].getSelectionPoint());
+					app->pushBackSelection(s, *points);
+					continue;
+				}
+			}
+
+			int32_t dataSelectedSize=0;
 			synchronized(server.dataSelected)
 			{
 				dataSelectedSize = server.dataSelected.size();
 			}
 
-			for(uint32_t i=selectionID; i < dataSelectedSize; i++)
+			for(int32_t i=selectionID; i < dataSelectedSize; i++)
 			{
-				const Matrix4_f* m;
+				const Matrix4_f* m=NULL;
 				const Vector2_f* factor;
 
 				do
@@ -238,7 +260,10 @@ int main()
 
 					else if(m != NULL)
 					{
-						app->updateCurrentSelection(m, factor);
+						synchronized(server.dataSelected)
+						{
+							app->updateCurrentSelection(m, factor);
+						}
 					}
 				}while(m != NULL);
 			}

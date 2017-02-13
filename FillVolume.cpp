@@ -1,4 +1,5 @@
 #include "FillVolume.h"
+#include "math.h"
 
 Edge::Edge(const Vector2_f& a, const Vector2_f& b) : m_a(a), m_b(b)
 {
@@ -59,8 +60,12 @@ FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x*METRICS), m_y
 
 void FillVolume::init(const std::vector<Vector2_f>& p)
 {
-	m_selectionPoints = p;
-	m_isInit          = true;
+	if(p.size() > 0)
+	{
+		for(uint32_t i=0; i < p.size(); i++)
+			m_selectionPoints.push_back(p[i]);
+		m_isInit          = true;
+	}
 }
 
 FillVolume::~FillVolume()
@@ -198,11 +203,15 @@ void FillVolume::unlock()
 
 void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Vector2_f* factor)
 {
+	if(!m_isInit || m_selectionPoints.size() == 0)
+		return;
+
+	std::cout << "Fill ! " << std::endl;
 	//Create the edge table
 	std::vector<Edge> et;
-	for(uint32_t i=0; i < m_selectionPoints.size()-1; i++)
-		et.emplace_back(m_selectionPoints[i]**factor, m_selectionPoints[i+1]**factor);
-	et.emplace_back(m_selectionPoints[0]**factor, (*(m_selectionPoints.rbegin()))**factor);
+	for(int i=0; i < (int)(m_selectionPoints.size()-1); i++)
+		et.push_back(Edge(m_selectionPoints[i], m_selectionPoints[i+1]));
+	et.push_back(Edge(m_selectionPoints[0], (*(m_selectionPoints.rbegin()))));
 
 	for(uint32_t i=0; i < et.size(); i++)
 	{
@@ -291,19 +300,19 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 					}
 
 					//Now fill the m_fillVolume
-					for(int32_t x=rect.x; x < rect.x+rect.width; x+=1)
+					for(int32_t x=fmin(0, rect.x); x < rect.x+rect.width; x+=1)
 					{
 						if(x < 0)
 							continue;
 						else if(x > m_x)
 							break;
-						for(int32_t y=rect.y; y < rect.y+rect.height; y+=1)
+						for(int32_t y=fmin(0, rect.y); y < rect.y+rect.height; y+=1)
 						{
 							if(y < 0)
 								continue;
 							else if(y > m_y)
 								break;
-							for(int32_t z=rect.z; z < rect.z+rect.depth; z+=1)
+							for(int32_t z=fmin(0, rect.z); z < rect.z+rect.depth; z+=1)
 							{
 								if(z < 0)
 									continue;
@@ -403,14 +412,15 @@ bool FillVolume::get(uint64_t x, uint64_t y, uint64_t z) const
 void FillVolume::setSelectionMode(SelectionMode s)
 {
 	m_selectionMode = s;
-	memcpy(m_saveVolume, m_fillVolume, m_x*m_y*m_z);
+/*  memcpy(m_saveVolume, m_fillVolume, (m_x*m_y*m_z+7/8));
 
 	switch(s)
 	{
 		case INTERSECT:
-			m_fillVolume = memset(m_fillVolume, 0x00, m_x*m_y*m_z);
+			m_fillVolume = memset(m_fillVolume, 0x00, (m_x*m_y*m_z+7)/8);
 			break;
 		default:
 			break;
 	}
+*/
 }

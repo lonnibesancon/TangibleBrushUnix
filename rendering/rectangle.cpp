@@ -7,7 +7,11 @@ namespace
 						   0.0f,0.0f, 0.0f,   1.0f,-0.0f, 0.0f,   1.0f, 1.0f, 0.0f};
 
 	const char* vertexShader =
-		"#version 100\n"
+		"#ifndef GL_ES\n"
+		"#define highp\n"
+		"#define mediump\n"
+		"#define lowp\n"
+		"#endif\n"
 		"uniform highp mat4 projection;\n"
 		"uniform highp mat4 modelView;\n"
 		"attribute highp vec3 vertex;\n"
@@ -16,7 +20,12 @@ namespace
 		"}";
 
 	const char* fragmentShader =
-		"#version 100\n"
+		"#ifndef GL_ES\n"
+		"#define highp\n"
+		"#define mediump\n"
+		"#define lowp\n"
+		"#endif\n"
+
 		"uniform lowp vec4 color;\n"
 		"void main() {\n"
 		"  gl_FragColor = color;\n"
@@ -27,6 +36,11 @@ Rectangle::Rectangle(float width, float height) : m_width(width), m_height(heigh
 	m_bound(false), m_vertexAttrib(-1), m_projectionUniform(-1), m_modelViewUniform(-1), m_colorUniform(-1),
 	m_color(Vector3(0.0, 0.0, 1.0)), m_opacity(1.0f)
 {}
+
+void Rectangle::setColor(const Vector3& v)
+{
+	m_color = v;
+}
 
 void Rectangle::bind()
 {
@@ -47,7 +61,7 @@ void Rectangle::bind()
 
 void Rectangle::render(const Matrix4& projectionMatrix, const Matrix4& modelViewMatrix)
 {
-	if (!m_bound)
+	if(!m_bound)
 		bind();
 
 	glUseProgram(m_material->getHandle());

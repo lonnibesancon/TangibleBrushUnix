@@ -35,6 +35,7 @@ public:
 	bool hasPostTreatmentSet = false;
 	bool hasSubDataChanged = false;
 	bool hasSetToSelection = false;
+	bool hasSetTabletMatrix=false;
 
 	std::string previousMessage ;
 
@@ -72,6 +73,7 @@ public:
 	Synchronized<Vector3> dataTrans;
 	Synchronized<Quaternion> dataRot;
 	Synchronized<std::vector<Selection>> dataSelected;
+	Synchronized<Matrix4> tabletMatrix;
 private:
 
 	void initSocket();
