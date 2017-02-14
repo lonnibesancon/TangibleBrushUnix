@@ -1722,9 +1722,9 @@ void FluidMechanics::updateCurrentSelection(const Matrix4_f* m, const Vector2_f*
 
 	Matrix4_f mat = impl->tabletMatrix.inverse();
 	Vector3 pos = -impl->fillVolumeMatrix.position();
-	mat.translate(-impl->fillVolumeMatrix.position());
+	mat.translate(pos);
 	impl->fillVolume->fillWithSurface(METRICS, mat, factor);
-	Vector3 temp(0, 0, 0);
+	Vector3 temp(0.0, 0.0, 0.0);
 }
 
 void FluidMechanics::updateVolumetricRendering()

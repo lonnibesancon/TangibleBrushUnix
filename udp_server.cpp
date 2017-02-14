@@ -333,8 +333,8 @@ void udp_server::listen(){
 			//Useless one
 			std::string tok;
 			getline(ss, tok, ';');
-			//uint32_t mode = std::stoi(tok.c_str());
-			uint32_t mode=1;
+			getline(ss, tok, ';');
+			uint32_t mode = std::stoi(tok.c_str());
 
 			std::vector<Vector2_f> points;
 			std::vector<float> datas;

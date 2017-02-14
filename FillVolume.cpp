@@ -213,15 +213,6 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 		et.push_back(Edge(m_selectionPoints[i], m_selectionPoints[i+1]));
 	et.push_back(Edge(m_selectionPoints[0], (*(m_selectionPoints.rbegin()))));
 
-	for(uint32_t i=0; i < et.size(); i++)
-	{
-		if(et[i].m_linear)
-		{
-			et.erase(et.begin()+i);
-			i--;
-		}
-	}
-
 	std::sort(et.begin(), et.end(), compareYEdge);
 
 
@@ -235,7 +226,7 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 	uint32_t etIndice=0;
 
 	//For each scanline
-	for(double j=yMin; et.begin()->m_yMax >= j; j+=.05/METRICS)
+	for(double j=yMin; et.rbegin()->m_yMax >= j; j+=.03)
 	{
 		//Update the Active Edge Table
 		//
@@ -268,8 +259,9 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 		uint32_t aetIndice = 0;
 
 		//Go along the scanline, don't forget that the x = startX * (y - yMin) * incr
-		for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size() && i <= (*aetSorted.rbegin())->computeX(j); i+=.05/METRICS)
+		for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size() && i <= (*aetSorted.rbegin())->computeX(j); i+=0.03)
 		{
+			std::cout << i << " " << j << std::endl;
 			//Make a step
 			while(aetIndice-1 < aetSorted.size() && aetSorted[aetIndice+1]->computeX(j) > i)
 			{
@@ -280,10 +272,8 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 
 			if(enable)
 			{
-				std::cout << i << " " << j << std::endl;
 				for(double k=0; k < depth; k+=.05/METRICS)
 				{
-					//Get the rect of the object at the position (i, j, k)
 					Rectangle3f rect = computeRectangle(i, j, k, matrix);
 
 					if(rect.x + rect.width < 0.0 ||
@@ -294,34 +284,20 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 							rect.z >= m_z)
 						continue;
 
-					if(i == aetSorted[0]->computeX(j) && j > 0.5 && k==0)
-					{
-						std::cout << 2+2 << std::endl;
-					}
-
 					//Now fill the m_fillVolume
 					for(int32_t x=fmin(0, rect.x); x < rect.x+rect.width; x+=1)
 					{
-						if(x < 0)
-							continue;
-						else if(x > m_x)
+						if(x > m_x)
 							break;
 						for(int32_t y=fmin(0, rect.y); y < rect.y+rect.height; y+=1)
 						{
-							if(y < 0)
-								continue;
-							else if(y > m_y)
+							if(y > m_y)
 								break;
 							for(int32_t z=fmin(0, rect.z); z < rect.z+rect.depth; z+=1)
 							{
-								if(z < 0)
-									continue;
-								else if(z > m_z)
+								if(z > m_z)
 									break;
 								int64_t selfShift = x + m_x*y + m_x*m_y*z;
-								if(selfShift >= m_x*m_y*m_z || selfShift < 0)
-									continue;
-
 								uint8_t self              = *(m_fillVolume + (selfShift)/8);
 								self                      = self | (0x01 << (selfShift % 8));
 								switch(m_selectionMode)
@@ -412,7 +388,7 @@ bool FillVolume::get(uint64_t x, uint64_t y, uint64_t z) const
 void FillVolume::setSelectionMode(SelectionMode s)
 {
 	m_selectionMode = s;
-/*  memcpy(m_saveVolume, m_fillVolume, (m_x*m_y*m_z+7/8));
+    memcpy(m_saveVolume, m_fillVolume, (m_x*m_y*m_z+7)/8);
 
 	switch(s)
 	{
@@ -422,5 +398,5 @@ void FillVolume::setSelectionMode(SelectionMode s)
 		default:
 			break;
 	}
-*/
+
 }
