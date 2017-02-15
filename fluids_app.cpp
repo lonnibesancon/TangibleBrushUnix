@@ -146,11 +146,14 @@ struct FluidMechanics::Impl
 	FillVolume* fillVolume=NULL;
 	Matrix4_f fillVolumeMatrix;
 	Matrix4 tabletMatrix;
+	Vector3_f modelTrans;
+	Quaternion modelRot;
 	Volumetric* volumetricRendering=NULL;
+	Rectangle tabletRect;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
- : buttonIsPressed(false)
+ : buttonIsPressed(false), tabletRect(3.0, 3.0)
 {
 	selectionCube.setColor(Vector3(220, 220, 0.0));
 	fillVolume=NULL;
@@ -1529,21 +1532,20 @@ void FluidMechanics::Impl::showScreenPosition()
 
 	const Matrix4_f proj = app->getProjMatrix();
 
-	app->setProjMatrix(proj*Matrix4::makeTransform(Vector3(0.0, 0.0, 500.0), Quaternion::identity(), Vector3(1.0, 1.0, 1.0)));
-
+	app->setProjMatrix(proj*Matrix4::makeTransform(Vector3(0.0, 0.0, 500.0), Quaternion(Vector3_f(1.0f, 1.0f, 1.0f), 3.14f/4.0f), Vector3(1.0, 1.0, 1.0)));
 	showParticules();
-/*  Rectangle r(2.0, 2.0);
-	r.setColor(Vector3(1.0, 0.0, 0.0));
-	r.render(app->getProjMatrix(), tabletMatrix.inverse());
-*/
+
+	if(fillVolume && fillVolume->isInit())
+		tabletRect.render(app->getProjMatrix(), (tabletMatrix*Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse() * Matrix4::makeTransform(Vector3_f(-1.5, -1.5, 0.0), Quaternion::identity(), Vector3_f(1.0, 1.0, 1.0)));
+	volumetricRendering->render(app->getProjMatrix(), state->modelMatrix*fillVolumeMatrix);
 	app->setProjMatrix(proj);
 }
 
 // (GL context)
 void FluidMechanics::Impl::renderObjects()
 {
-	glViewport(0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
 	showSelection();
 
 	glViewport(SCREEN_WIDTH/2, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
@@ -1694,16 +1696,23 @@ void FluidMechanics::setSubData(Vector3& dataTrans, Quaternion& dataRot)
 	}
 }
 
-void FluidMechanics::setTabletMatrix(const Matrix4& m)
+void FluidMechanics::setTabletMatrix(const Matrix4& m, const Vector3_f& trans, const Quaternion& rot)
 {
 	impl->tabletMatrix = m;
+	impl->modelTrans = trans;
+	impl->modelRot = rot;
 }
 
 void FluidMechanics::clearSelection()
 {
-	impl->selectionMatrix.clear();
-	impl->selectionPoint.clear();
-	impl->pushBackSelection();
+	if(impl->fillVolume)
+		impl->fillVolume->clear();
+
+	/* 
+		impl->selectionMatrix.clear();
+		impl->selectionPoint.clear();
+		impl->pushBackSelection();
+	*/
 }
 
 void FluidMechanics::pushBackSelection(SelectionMode s, const std::vector<Vector2_f>& points)
@@ -1720,11 +1729,11 @@ void FluidMechanics::updateCurrentSelection(const Matrix4_f* m, const Vector2_f*
 	if(!impl->fillVolume)
 		return;
 
-	Matrix4_f mat = impl->tabletMatrix.inverse();
-	Vector3 pos = -impl->fillVolumeMatrix.position();
-	mat.translate(pos);
-	impl->fillVolume->fillWithSurface(METRICS, mat, factor);
-	Vector3 temp(0.0, 0.0, 0.0);
+//	Matrix4_f projMat = Matrix4::makeTransform(-impl->modelTrans, impl->modelRot.inverse(), Vector3_f(1.0, 1.0, 1.0))*(impl->tabletMatrix**m).inverse();
+	Matrix4_f projMat = (impl->tabletMatrix**m*state->modelMatrix).inverse();
+	projMat.translate(-impl->fillVolumeMatrix.position());
+	impl->fillVolume->fillWithSurface(METRICS, projMat, factor);
+	Vector3 temp(0.0, 0.0, -1.0);
 }
 
 void FluidMechanics::updateVolumetricRendering()

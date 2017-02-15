@@ -34,8 +34,6 @@ bool compareYEdge(const Edge& a, const Edge& b)
 {
 	if(a.m_yMin < b.m_yMin)
 		return true;
-	if(a.m_linear)
-		return true;
 	return false;
 }
 
@@ -53,17 +51,21 @@ FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x*METRICS), m_y
 	m_fillVolume = (uint8_t*)calloc((m_x*m_y*m_z+7)/8, sizeof(uint8_t));
 	m_saveVolume = (uint8_t*)calloc((m_x*m_y*m_z+7)/8, sizeof(uint8_t));
 
-
 //	for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
 //		m_fillVolume[i] = 0xff;
+}
+
+void FillVolume::clear()
+{
+	memset(m_fillVolume, 0x00, (m_x*m_y*m_z+7)/8);
+	memset(m_saveVolume, 0x00, (m_x*m_y*m_z+7)/8);
 }
 
 void FillVolume::init(const std::vector<Vector2_f>& p)
 {
 	if(p.size() > 0)
 	{
-		for(uint32_t i=0; i < p.size(); i++)
-			m_selectionPoints.push_back(p[i]);
+		m_selectionPoints = p;
 		m_isInit          = true;
 	}
 }
@@ -71,6 +73,7 @@ void FillVolume::init(const std::vector<Vector2_f>& p)
 FillVolume::~FillVolume()
 {
 	free(m_fillVolume);
+	free(m_saveVolume);
 	unlock();
 }
 
@@ -203,15 +206,14 @@ void FillVolume::unlock()
 
 void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Vector2_f* factor)
 {
-	if(!m_isInit || m_selectionPoints.size() == 0)
+	if(!m_isInit || m_selectionPoints.size() < 2)
 		return;
 
-	std::cout << "Fill ! " << std::endl;
 	//Create the edge table
 	std::vector<Edge> et;
 	for(int i=0; i < (int)(m_selectionPoints.size()-1); i++)
 		et.push_back(Edge(m_selectionPoints[i], m_selectionPoints[i+1]));
-	et.push_back(Edge(m_selectionPoints[0], (*(m_selectionPoints.rbegin()))));
+	et.push_back(Edge(m_selectionPoints[0], m_selectionPoints[m_selectionPoints.size()-1]));
 
 	std::sort(et.begin(), et.end(), compareYEdge);
 
@@ -226,7 +228,7 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 	uint32_t etIndice=0;
 
 	//For each scanline
-	for(double j=yMin; et.rbegin()->m_yMax >= j; j+=.03)
+	for(double j=yMin; et.rbegin()->m_yMax >= j; j+=.02)
 	{
 		//Update the Active Edge Table
 		//
@@ -259,11 +261,10 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 		uint32_t aetIndice = 0;
 
 		//Go along the scanline, don't forget that the x = startX * (y - yMin) * incr
-		for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size() && i <= (*aetSorted.rbegin())->computeX(j); i+=0.03)
+		for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size() && i <= (*aetSorted.rbegin())->computeX(j); i+=0.02)
 		{
-			std::cout << i << " " << j << std::endl;
 			//Make a step
-			while(aetIndice-1 < aetSorted.size() && aetSorted[aetIndice+1]->computeX(j) > i)
+			while(aetIndice+1 < aetSorted.size() && aetSorted[aetIndice+1]->computeX(j) < i)
 			{
 				if(i < aetSorted[aetIndice]->m_endX)
 					enable = !enable;
@@ -272,48 +273,42 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 
 			if(enable)
 			{
-				for(double k=0; k < depth; k+=.05/METRICS)
+				Vector3_f pos = matrix*Vector3(i, j, -1.0f);
+				pos =  pos;
+				Vector3_f pos2 = matrix*Vector3(i+0.02, j+0.02, -1.0f);
+				pos2 = pos2;
+
+				for(int32_t x=std::max(0.0f, std::min(pos.x, pos2.x)); x <= std::max(pos.x, pos2.x)+1; x+=1)
 				{
-					Rectangle3f rect = computeRectangle(i, j, k, matrix);
-
-					if(rect.x + rect.width < 0.0 ||
-							rect.y + rect.height < 0.0 ||
-							rect.x >= m_x ||
-							rect.y >= m_y ||
-							rect.z + rect.depth < 0.0 ||
-							rect.z >= m_z)
-						continue;
-
-					//Now fill the m_fillVolume
-					for(int32_t x=fmin(0, rect.x); x < rect.x+rect.width; x+=1)
+					if(x > m_x)
+						break;
+					for(int32_t y=std::max(0.0f, std::min(pos.y, pos2.y)); y <= std::max(pos.y, pos2.y)+1; y+=1)
 					{
-						if(x > m_x)
+						if(y > m_y)
 							break;
-						for(int32_t y=fmin(0, rect.y); y < rect.y+rect.height; y+=1)
+						for(int32_t z=std::max(0.0f, std::min(pos.z, pos2.z)); z <= std::max(pos.z, pos2.z)+1+depth; z+=1)
 						{
-							if(y > m_y)
+							if(z > m_z)
 								break;
-							for(int32_t z=fmin(0, rect.z); z < rect.z+rect.depth; z+=1)
+
+							int64_t selfShift = x + m_x*y + m_x*m_y*z;
+							uint8_t self      = *(m_fillVolume + (selfShift)/8);
+							switch(m_selectionMode)
 							{
-								if(z > m_z)
+								case UNION:
+									self = self | (0x01 << (selfShift % 8));
 									break;
-								int64_t selfShift = x + m_x*y + m_x*m_y*z;
-								uint8_t self              = *(m_fillVolume + (selfShift)/8);
-								self                      = self | (0x01 << (selfShift % 8));
-								switch(m_selectionMode)
-								{
-									case UNION:
-										self = self | *(m_saveVolume + selfShift/8);
-										break;
-									case INTERSECT:
-										self = self & *(m_saveVolume + selfShift/8);
-										break;
-									case EXCLUSION:
-										self = self & (~(*(m_saveVolume + selfShift/8)));
-										break;
-								}
-								m_fillVolume[selfShift/8] = self;
+								case INTERSECT:
+									self = self | (0x01 << (selfShift % 8));
+									self = self & *(m_saveVolume + selfShift/8);
+									break;
+								case EXCLUSION:
+									self = ~(0x01 << (selfShift % 8)) & *(m_saveVolume + selfShift/8);
+									break;
+								default:
+									break;
 							}
+							m_fillVolume[selfShift/8] = self;
 						}
 					}
 				}
@@ -388,15 +383,15 @@ bool FillVolume::get(uint64_t x, uint64_t y, uint64_t z) const
 void FillVolume::setSelectionMode(SelectionMode s)
 {
 	m_selectionMode = s;
+
     memcpy(m_saveVolume, m_fillVolume, (m_x*m_y*m_z+7)/8);
 
 	switch(s)
 	{
 		case INTERSECT:
-			m_fillVolume = memset(m_fillVolume, 0x00, (m_x*m_y*m_z+7)/8);
+			memset(m_fillVolume, 0x00, (m_x*m_y*m_z+7)/8);
 			break;
 		default:
 			break;
 	}
-
 }

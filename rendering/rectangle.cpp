@@ -3,8 +3,8 @@
 
 namespace
 {
-	GLfloat vertices[] = {1.0f, 1.0f, 0.0f,  0.0f, 1.0f, 0.0f,  0.0f,0.0f, 0.0f,      // v0-v1-v2 (front)
-						   0.0f,0.0f, 0.0f,   1.0f,-0.0f, 0.0f,   1.0f, 1.0f, 0.0f};
+	GLfloat vertices[] = {1.0f, 1.0f, -1.0f,  0.0f, 1.0f, -1.0f,  0.0f,0.0f, -1.0f,      // v0-v1-v2 (front)
+						   0.0f,0.0f, -1.0f,   1.0f,-0.0f, -1.0f,   1.0f, 1.0f, -1.0f};
 
 	const char* vertexShader =
 		"#ifndef GL_ES\n"
@@ -12,6 +12,7 @@ namespace
 		"#define mediump\n"
 		"#define lowp\n"
 		"#endif\n"
+
 		"uniform highp mat4 projection;\n"
 		"uniform highp mat4 modelView;\n"
 		"attribute highp vec3 vertex;\n"
@@ -26,10 +27,11 @@ namespace
 		"#define lowp\n"
 		"#endif\n"
 
-		"uniform lowp vec4 color;\n"
-		"void main() {\n"
+		"uniform mediump vec4 color;\n"
+		"void main()\n"
+		"{\n"
 		"  gl_FragColor = color;\n"
-		"}";
+		"}\n";
 } //namespace
 
 Rectangle::Rectangle(float width, float height) : m_width(width), m_height(height), m_material(new Material(vertexShader, fragmentShader)),
@@ -73,11 +75,12 @@ void Rectangle::render(const Matrix4& projectionMatrix, const Matrix4& modelView
 	// Uniforms
 	glUniformMatrix4fv(m_projectionUniform, 1, false, projectionMatrix.data_);
 	glUniformMatrix4fv(m_modelViewUniform, 1, false, (modelViewMatrix * Matrix4(Matrix4::identity()).rescale(Vector3(m_width, m_height, 1.0))).data_);
-	glUniform4f(m_colorUniform, m_color.x, m_color.y, m_color.z, 0.0f);
+	glUniform4f(m_colorUniform, m_color.x, m_color.y, m_color.z, m_opacity);
 
 	// Rendering
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 	glDisableVertexAttribArray(m_vertexAttrib);
+	glUseProgram(0);
 }
 
 void Rectangle::setSize(float w, float h)

@@ -152,6 +152,7 @@ int main()
 			app->getSettings()->showSelection = false;
 			app->clearSelection();
 			server.hasSelectionClear = false;
+			selectionID = -1;
 		}
 
 	/*  if(server.hasSelectionSet)
@@ -192,7 +193,13 @@ int main()
 		{
 			synchronized(server.tabletMatrix)
 			{
-				app->setTabletMatrix(server.tabletMatrix);
+				synchronized(server.modelTrans)
+				{
+					synchronized(server.modelRot)
+					{
+						app->setTabletMatrix(server.tabletMatrix, server.modelTrans, server.modelRot);
+					}
+				}
 			}
 		}
 

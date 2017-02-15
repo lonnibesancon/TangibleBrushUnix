@@ -42,6 +42,7 @@ class FillVolume
 		FillVolume(uint64_t x, uint64_t y, uint64_t z);
 		void init(const std::vector<Vector2_f>& p);
 		~FillVolume();
+		void clear();
 
 		FillVolume* createUnion(const FillVolume& fv) const;
 		FillVolume* createIntersection(const FillVolume& fv) const;

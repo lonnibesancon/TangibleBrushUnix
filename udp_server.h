@@ -74,6 +74,8 @@ public:
 	Synchronized<Quaternion> dataRot;
 	Synchronized<std::vector<Selection>> dataSelected;
 	Synchronized<Matrix4> tabletMatrix;
+	Synchronized<Vector3> modelTrans;
+	Synchronized<Quaternion> modelRot;
 private:
 
 	void initSocket();

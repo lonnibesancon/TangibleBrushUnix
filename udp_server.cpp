@@ -179,6 +179,10 @@ void udp_server::listen(){
 				{
 					selectionPoint.clear();
 				}
+				synchronized(dataSelected)
+				{
+					dataSelected.clear();
+				}
 				hasSelectionClear = true;
 			}
 		}
@@ -375,6 +379,29 @@ void udp_server::listen(){
 				tabletMatrix = Matrix4(data);
 			}
 
+			float mTrans[3];
+			float mRot[4];
+
+			for(uint32_t i=0; i < 3; i++)
+			{
+				getline(ss, tok, ';');
+				mTrans[i] = std::stof(tok.c_str());
+			}
+
+			for(uint32_t i=0; i < 4; i++)
+			{
+				getline(ss, tok, ';');
+				mRot[i] = std::stof(tok.c_str());
+			}
+
+			synchronized(modelTrans)
+			{
+				modelTrans = Vector3_f(mTrans);
+			}
+			synchronized(modelRot)
+			{
+				modelRot = Quaternion(mRot[0], mRot[1], mRot[2], mRot[3]);
+			}
 			hasSetTabletMatrix=true;
 		}
 

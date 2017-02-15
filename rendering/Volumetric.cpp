@@ -35,7 +35,7 @@ namespace
 		"varying highp vec3 vPos;\n"
 		"void main() {\n"
 		"  vPos = vertex;\n"
-		"  gl_Position = projection * modelView * (vec4(0.0, 0.0, 0.01, 1.0) + vec4(vertex, 1.0));\n"
+		"  gl_Position = projection * modelView * ((vec4(0.0, 0.0, 0.01, 1.0) + vec4(vertex+vertex, 1.0)));\n"
 		"}";
 
 	const char* fragmentShader =

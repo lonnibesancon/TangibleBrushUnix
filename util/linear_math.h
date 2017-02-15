@@ -969,6 +969,126 @@ struct Matrix4
 		T det = determinant();
 		assert(det != 0);
 
+		T inv[16];
+		int i;
+
+		inv[0] = data_[5]  * data_[10] * data_[15] - 
+				 data_[5]  * data_[11] * data_[14] - 
+				 data_[9]  * data_[6]  * data_[15] + 
+				 data_[9]  * data_[7]  * data_[14] +
+				 data_[13] * data_[6]  * data_[11] - 
+				 data_[13] * data_[7]  * data_[10];
+
+		inv[4] = -data_[4]  * data_[10] * data_[15] + 
+				  data_[4]  * data_[11] * data_[14] + 
+				  data_[8]  * data_[6]  * data_[15] - 
+				  data_[8]  * data_[7]  * data_[14] - 
+				  data_[12] * data_[6]  * data_[11] + 
+				  data_[12] * data_[7]  * data_[10];
+
+		inv[8] = data_[4]  * data_[9] * data_[15] - 
+				 data_[4]  * data_[11] * data_[13] - 
+				 data_[8]  * data_[5] * data_[15] + 
+				 data_[8]  * data_[7] * data_[13] + 
+				 data_[12] * data_[5] * data_[11] - 
+				 data_[12] * data_[7] * data_[9];
+
+		inv[12] = -data_[4]  * data_[9] * data_[14] + 
+				   data_[4]  * data_[10] * data_[13] +
+				   data_[8]  * data_[5] * data_[14] - 
+				   data_[8]  * data_[6] * data_[13] - 
+				   data_[12] * data_[5] * data_[10] + 
+				   data_[12] * data_[6] * data_[9];
+
+		inv[1] = -data_[1]  * data_[10] * data_[15] + 
+				  data_[1]  * data_[11] * data_[14] + 
+				  data_[9]  * data_[2] * data_[15] - 
+				  data_[9]  * data_[3] * data_[14] - 
+				  data_[13] * data_[2] * data_[11] + 
+				  data_[13] * data_[3] * data_[10];
+
+		inv[5] = data_[0]  * data_[10] * data_[15] - 
+				 data_[0]  * data_[11] * data_[14] - 
+				 data_[8]  * data_[2] * data_[15] + 
+				 data_[8]  * data_[3] * data_[14] + 
+				 data_[12] * data_[2] * data_[11] - 
+				 data_[12] * data_[3] * data_[10];
+
+		inv[9] = -data_[0]  * data_[9] * data_[15] + 
+				  data_[0]  * data_[11] * data_[13] + 
+				  data_[8]  * data_[1] * data_[15] - 
+				  data_[8]  * data_[3] * data_[13] - 
+				  data_[12] * data_[1] * data_[11] + 
+				  data_[12] * data_[3] * data_[9];
+
+		inv[13] = data_[0]  * data_[9] * data_[14] - 
+				  data_[0]  * data_[10] * data_[13] - 
+				  data_[8]  * data_[1] * data_[14] + 
+				  data_[8]  * data_[2] * data_[13] + 
+				  data_[12] * data_[1] * data_[10] - 
+				  data_[12] * data_[2] * data_[9];
+
+		inv[2] = data_[1]  * data_[6] * data_[15] - 
+				 data_[1]  * data_[7] * data_[14] - 
+				 data_[5]  * data_[2] * data_[15] + 
+				 data_[5]  * data_[3] * data_[14] + 
+				 data_[13] * data_[2] * data_[7] - 
+				 data_[13] * data_[3] * data_[6];
+
+		inv[6] = -data_[0]  * data_[6] * data_[15] + 
+				  data_[0]  * data_[7] * data_[14] + 
+				  data_[4]  * data_[2] * data_[15] - 
+				  data_[4]  * data_[3] * data_[14] - 
+				  data_[12] * data_[2] * data_[7] + 
+				  data_[12] * data_[3] * data_[6];
+
+		inv[10] = data_[0]  * data_[5] * data_[15] - 
+				  data_[0]  * data_[7] * data_[13] - 
+				  data_[4]  * data_[1] * data_[15] + 
+				  data_[4]  * data_[3] * data_[13] + 
+				  data_[12] * data_[1] * data_[7] - 
+				  data_[12] * data_[3] * data_[5];
+
+		inv[14] = -data_[0]  * data_[5] * data_[14] + 
+				   data_[0]  * data_[6] * data_[13] + 
+				   data_[4]  * data_[1] * data_[14] - 
+				   data_[4]  * data_[2] * data_[13] - 
+				   data_[12] * data_[1] * data_[6] + 
+				   data_[12] * data_[2] * data_[5];
+
+		inv[3] = -data_[1] * data_[6] * data_[11] + 
+				  data_[1] * data_[7] * data_[10] + 
+				  data_[5] * data_[2] * data_[11] - 
+				  data_[5] * data_[3] * data_[10] - 
+				  data_[9] * data_[2] * data_[7] + 
+				  data_[9] * data_[3] * data_[6];
+
+		inv[7] = data_[0] * data_[6] * data_[11] - 
+				 data_[0] * data_[7] * data_[10] - 
+				 data_[4] * data_[2] * data_[11] + 
+				 data_[4] * data_[3] * data_[10] + 
+				 data_[8] * data_[2] * data_[7] - 
+				 data_[8] * data_[3] * data_[6];
+
+		inv[11] = -data_[0] * data_[5] * data_[11] + 
+				   data_[0] * data_[7] * data_[9] + 
+				   data_[4] * data_[1] * data_[11] - 
+				   data_[4] * data_[3] * data_[9] - 
+				   data_[8] * data_[1] * data_[7] + 
+				   data_[8] * data_[3] * data_[5];
+
+		inv[15] = data_[0] * data_[5] * data_[10] - 
+				  data_[0] * data_[6] * data_[9] - 
+				  data_[4] * data_[1] * data_[10] + 
+				  data_[4] * data_[2] * data_[9] + 
+				  data_[8] * data_[1] * data_[6] - 
+				  data_[8] * data_[2] * data_[5];
+
+		for (i = 0; i < 16; i++)
+			result.data_[i] = inv[i]/det;
+
+		/* 
+
 		int sign = 1;
 
 		for (std::size_t i = 0; i < 4; ++i)
@@ -981,6 +1101,7 @@ struct Matrix4
 			}
 			sign *= -1;
 		}
+		*/
 
 		return result;
 	}
