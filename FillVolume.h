@@ -52,6 +52,8 @@ class FillVolume
 
 		bool get(uint64_t x, uint64_t y, uint64_t z) const;
 		bool get(uint64_t v) const{return m_fillVolume[v/8] & (1 << (v%8));}
+		bool getSave(uint64_t v) const{return m_saveVolume[v/8] & (1 << (v%8));}
+		SelectionMode getSelection() const{return m_selectionMode;}
 		void lock();
 		void unlock();
 

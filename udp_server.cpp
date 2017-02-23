@@ -163,10 +163,7 @@ void udp_server::listen(){
 		std::stringstream ss(msg);
 		std::cout << "Message = " << msg << std::endl ;
 
-		if(msg[0] == ' ')
-		{}
-
-		else if(msg[0] == '3' && msg.size() == 1)
+		if(msg[0] == '3' && msg.size() == 1)
 		{
 			if(!hasSelectionClear)
 			{
@@ -352,7 +349,7 @@ void udp_server::listen(){
 
 			synchronized(dataSelected)
 			{
-				dataSelected.push_back(Selection(mode, std::move(points)));
+				dataSelected.push_back(Selection((SelectionMode) mode, points));
 			}
 
 			hasSelectionSet = true;
@@ -405,7 +402,7 @@ void udp_server::listen(){
 			hasSetTabletMatrix=true;
 		}
 
-		else if(msg[0]=='1')
+		else if(msg[0]=='1' || msg[0] == '0')
 		{
 			std::string tok;
 			int nbOfElementsToParseFirst = 7 ;
@@ -417,6 +414,9 @@ void udp_server::listen(){
 			int datast = -1 ;
 
 			int tmpbool = -1 ;
+
+			//Useless one
+			getline(ss, tok, ';');
 			
 			//First we set the dataset
 			getline(ss, tok, ';');

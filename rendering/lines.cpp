@@ -31,13 +31,13 @@ namespace {
 		"}";
 } // namespace
 
-Lines::Lines()
+Lines::Lines(bool loop)
  : mMaterial(MaterialSharedPtr(new Material(wfVertexShader, wfFragmentShader))),
    mBound(false),
    mVertexAttrib(-1),
    mProjectionUniform(-1), mModelViewUniform(-1), mColorUniform(-1),
-   mColor(Vector3(0.5f)),
-   mOpacity(1.0f)
+   mColor(Vector3(1.0, 1.0, 0.0)),
+   mOpacity(1.0f),mLoop(loop)
 {}
 
 void Lines::setColor(const Vector3& color)
@@ -70,7 +70,7 @@ void Lines::bind()
 
 void Lines::setLines(const std::vector<Vector3>& lines)
 {
-	android_assert(!(lines.size() % 2));
+	//android_assert(!(lines.size() % 2));
 
 	synchronized (mLineData) {
 		mLineData.clear();
@@ -95,7 +95,7 @@ void Lines::render(const Matrix4& projectionMatrix, const Matrix4& modelViewMatr
 
 	if (mLineData.empty())
 		return;
-
+	glLineWidth(5.0);
 	glUseProgram(mMaterial->getHandle());
 
 	// Vertices
@@ -108,7 +108,10 @@ void Lines::render(const Matrix4& projectionMatrix, const Matrix4& modelViewMatr
 	glUniform4f(mColorUniform, mColor.x, mColor.y, mColor.z, mOpacity);
 
 	// Rendering
-	glDrawArrays(GL_LINES, 0, mLineData.size()/3);
+	if(mLoop)
+		glDrawArrays(GL_LINE_LOOP, 0, mLineData.size()/3);
+	else
+		glDrawArrays(GL_LINES, 0, mLineData.size()/3);
 
 	glDisableVertexAttribArray(mVertexAttrib);
 }

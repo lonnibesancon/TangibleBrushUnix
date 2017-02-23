@@ -8,7 +8,7 @@
 class Lines : public Renderable
 {
 public:
-	Lines();
+	Lines(bool loop=false);
 
 	// (GL context)
 	void bind();
@@ -30,6 +30,7 @@ private:
 	Vector3 mColor;
 	float mOpacity;
 	Synchronized<std::vector<GLfloat>> mLineData;
+	bool mLoop;
 };
 
 #endif /* LINES_H */

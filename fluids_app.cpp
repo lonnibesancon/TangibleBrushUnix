@@ -150,10 +150,12 @@ struct FluidMechanics::Impl
 	Quaternion modelRot;
 	Volumetric* volumetricRendering=NULL;
 	Rectangle tabletRect;
+	Lines screenLine;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
- : buttonIsPressed(false), tabletRect(3.0, 3.0)
+ : buttonIsPressed(false), tabletRect(3.0, 3.0),
+	screenLine(true)
 {
 	selectionCube.setColor(Vector3(220, 220, 0.0));
 	fillVolume=NULL;
@@ -314,11 +316,12 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 		volume.reset(new Volume(data));
 		LOGD("minValue : %f", volume->getMinValue());
 		LOGD("maxValue : %f", volume->getMaxValue());
-		// volume.reset(new Volume3d(data));
-		// if (fileName.find("FTLE7.vtk") != std::string::npos) { // HACK
-		// 	// volume->setOpacity(0.25f);
-		// 	volume->setOpacity(0.15f);
-		// }
+	/*  	 volume.reset(new Volume3d(data));
+		 if (fileName.find("FTLE7.vtk") != std::string::npos) { // HACK
+		 	// volume->setOpacity(0.25f);
+		 	volume->setOpacity(0.15f);
+		 }
+		 */
 	}
 
 	if (fileName.find("FTLE7.vtk") == std::string::npos) { // HACK
@@ -786,8 +789,8 @@ bool FluidMechanics::Impl::computeStylusClipPlane(Vector3& point, Vector3& norma
 		return false;
 	}
 #else
-	if (!state->stylusVisible)
-		return false;
+//	if (!state->stylusVisible)
+//		return false;
 #endif
 
 	// FIXME: state->stylusModelMatrix may be invalid (non-invertible) in some cases
@@ -1055,21 +1058,9 @@ void FluidMechanics::Impl::updateSlicePlanes()
 
 	bool clipPlaneSet = false;
 
-	if (settings->showSlice && slice) {
-		switch (settings->sliceType) {
-			case SLICE_CAMERA:
-				clipPlaneSet = computeCameraClipPlane(slicePoint, sliceNormal);
-				break;
-
-			case SLICE_AXIS:
-				clipPlaneSet = computeAxisClipPlane(slicePoint, sliceNormal);
-				break;
-
-			case SLICE_STYLUS:
+	if (settings->showStylus && slice) {
 				clipPlaneSet = computeStylusClipPlane(slicePoint, sliceNormal);
-				break;
 		}
-	}
 
 	if (clipPlaneSet) {
 		synchronized_if(isosurface) { isosurface->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint)); }
@@ -1156,23 +1147,7 @@ void FluidMechanics::Impl::updateSlicePlanes()
 
 void FluidMechanics::Impl::showParticules()
 {
-/*LOGD("dataMatrix = %s", Utility::toString(state->modelMatrix).c_str());
-LOGD("sliceMatrix = %s", Utility::toString(state->sliceModelMatrix).c_str());
-LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
-
-//	glClearColor(0, 0, 0, 1);
-//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	settings->showSlice = false;
-	settings->showSurface = false;
-	settings->zoomFactor = 1.0;
-
 	const Matrix4 proj = app->getProjMatrix();
-	
-	//if(selectionMatrix.size() > 0)
-	//	proj = selectionMatrix[selectionMatrix.size()-1];
-	//else 
-		//proj = app->getProjMatrix();
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -1189,39 +1164,18 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 		Vector3(settings->zoomFactor)
 	);
 
-	
 	glDisable(GL_BLEND);
 	synchronized_if(isosurface) {
 		glDepthMask(true);
 		glDisable(GL_CULL_FACE);
+		isosurface->render(proj, mm);
 	}
-	
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
 	glDepthMask(true); // requires "discard" in the shader where alpha == 0
 
-	if (settings->clipDist > 0.0f) {
-		// Set a depth value for the slicing plane
-		Matrix4 trans = Matrix4::identity();
-		// trans[3][2] = app->getDepthValue(settings->clipDist); // relative to trans[3][3], which is 1.0
-		trans[3][2] = app->getDepthValue(sliceDepth);
-		// LOGD("%s", Utility::toString(trans).c_str());
-
-		trans[1][1] *= -1; // flip the texture vertically, because of "orthoProjMatrix"
-
-		synchronized(slice) {
-			slice->setOpaque(false);
-			slice->render(app->getOrthoProjMatrix(), trans);
-		}
-	}
-
-
-	Matrix4 s2mm;
-	synchronized(state->sliceModelMatrix) {
-		s2mm = state->sliceModelMatrix;
-	}
 
 	bool exists = false;
 	synchronized (particles) {
@@ -1236,18 +1190,16 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 	if (!exists) {
 		synchronized(slice) {
 			slice->setOpaque(false);
-			slice->render(proj, s2mm);
+			slice->render(proj, state->stylusModelMatrix);
 		}
 	}
-
-	synchronized(slicePoints) {
+	
+/*	  synchronized(slicePoints) {
 		if (!slicePoints.empty()) {
 			std::vector<Vector3> lineVec;
 			std::map<unsigned int, std::map<unsigned int, float>> graph;
 			for (unsigned int i = 0; i < slicePoints.size(); ++i) {
 				for (unsigned int j = 0; j < slicePoints.size(); ++j) {
-					// std::pair<unsigned int, unsigned int> pair(i, j);
-					// if (i == j || pairs.count(pair))
 					if (i == j || (graph.count(j) && graph.at(j).count(i)))
 						continue;
 					const Vector3 pt1 = slicePoints.at(i);
@@ -1256,29 +1208,20 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 					const Vector3 dpt2 = posToDataCoords(pt2);
 					static const float epsilon = 0.1f;
 					if (std::abs(dpt1.x-dpt2.x) < epsilon || std::abs(dpt1.y-dpt2.y) < epsilon || std::abs(dpt1.z-dpt2.z) < epsilon) {
-						// float dot = (pt2 - pt1).normalized().dot((center - pt1).normalized());
-						// LOGD("dot = %f", dot);
-						// if (dot < 0.9f) {
 						lineVec.push_back(pt1);
 						lineVec.push_back(pt2);
 					}
-					// pairs.insert(pair);
-					// graph[i][j] = pt1.distance(pt2);
-					// }
 				}
 			}
 			lines->setLines(lineVec);
-			// glLineWidth(1.0f);
 			glLineWidth(5.0f);
 			lines->setColor(Vector3(0, 1, 0));
 			glDisable(GL_DEPTH_TEST);
 			lines->render(proj, Matrix4::identity());
 		}
 	}
+	*/
 
-	//printf("Render Particle %f, %f, %f", seedPoint.x, seedPoint.y, seedPoint.z);
-		//std::cout << "Render Particle " << seedPoint.x << " - " << seedPoint.y << " - " << seedPoint.z << std::endl ;
-		
 		synchronized (particles) {
 		for (Particle& p : particles) {
 			if (!p.valid)
@@ -1288,27 +1231,22 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 				continue;
 			Vector3 pos = p.pos;
 			pos -= Vector3(dataDim[0]/2, dataDim[1]/2, dataDim[2]/2) * dataSpacing;
-			// particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.3f)));
-			// particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.2f)));
 			particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.15f)));
 		}
 	}
 
-	glEnable(GL_DEPTH_TEST);
 
+	glEnable(GL_DEPTH_TEST);
 	synchronized_if(volume) {
-		// glDepthMask(false);
 		glDepthMask(true);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
-		// glBlendFunc(GL_SRC_ALPHA, GL_ONE); // additive
 		glDisable(GL_CULL_FACE);
 
 		volume->setOpacity(exists ? 0.025 : 1.0);
 		if (exists) volume->clearClipPlane();
 		volume->render(proj, mm);
 	}
-
 	synchronized_if(outline) {
 		glDepthMask(true);
 		glLineWidth(2.0f);
@@ -1318,6 +1256,54 @@ LOGD("settings->zoomFactor = %f", settings->zoomFactor);*/
 			                Quaternion::identity(),
 			                Vector3(1.01f)));
 	}
+
+#if 0
+	if (slice && settings->showSlice) {
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		glDisable(GL_CULL_FACE);
+		glDepthMask(true); // requires "discard" in the shader where alpha == 0
+
+		switch (settings->sliceType) {
+			case SLICE_CAMERA: {
+				if (settings->clipDist > 0.0f) {
+					// Set a depth value for the slicing plane
+					Matrix4 trans = Matrix4::identity();
+					// trans[3][2] = app->getDepthValue(settings->clipDist); // relative to trans[3][3], which is 1.0
+					trans[3][2] = app->getDepthValue(sliceDepth);
+					// LOGD("%s", Utility::toString(trans).c_str());
+
+					trans[1][1] *= -1; // flip the texture vertically, because of "orthoProjMatrix"
+
+					synchronized(slice) {
+						slice->setOpaque(false);
+						slice->render(app->getOrthoProjMatrix(), trans);
+					}
+				}
+
+				break;
+			}
+
+			case SLICE_AXIS:
+			case SLICE_STYLUS: {
+				if (settings->sliceType != SLICE_STYLUS || state->stylusVisible) {
+					Matrix4 s2mm;
+					synchronized(state->sliceModelMatrix) {
+						s2mm = state->sliceModelMatrix;
+					}
+
+					synchronized(slice) {
+						slice->setOpaque(true || slice->isEmpty() /*settings->sliceType == SLICE_STYLUS || slice->isEmpty()*/);
+						slice->render(proj, s2mm);
+					}
+				}
+				break;
+		   }
+		}
+	}
+#endif
+
+
 	return;
 }
 
@@ -1326,11 +1312,12 @@ void FluidMechanics::Impl::showSelection()
 //	if(!settings->showSelection)
 //		return;
 	glClear(GL_DEPTH_BUFFER_BIT);
+	settings->showSlice = false;
+	settings->showStylus = false;
+	updateSlicePlanes();
 	showParticules();
 
-	settings->showSlice = false;
-	settings->showSurface = false;
-	settings->zoomFactor = 1.0;
+//	settings->zoomFactor = 1.0;
 
 
 	glEnable(GL_DEPTH_TEST);
@@ -1355,7 +1342,7 @@ void FluidMechanics::Impl::showSelection()
 
 	const Matrix4 proj = app->getProjMatrix();
 
-	bool exists = false;
+/*	bool exists = false;
 	synchronized (particles) {
 		for (Particle& p : particles) {
 			if (p.valid) {
@@ -1364,6 +1351,7 @@ void FluidMechanics::Impl::showSelection()
 			}
 		}
 	}
+*/
 
 /*	for(uint32_t i=0; i < selectionMatrix.size(); i++)
 	{
@@ -1521,7 +1509,7 @@ void FluidMechanics::Impl::showSelection()
 	}
 #endif
 	glClear(GL_DEPTH_BUFFER_BIT);
-	volumetricRendering->render(proj, state->modelMatrix*fillVolumeMatrix);
+	volumetricRendering->render(proj, mm*fillVolumeMatrix);
 	
 	return;
 }
@@ -1529,15 +1517,35 @@ void FluidMechanics::Impl::showSelection()
 void FluidMechanics::Impl::showScreenPosition()
 {
 	glClear(GL_DEPTH_BUFFER_BIT);
+	settings->showSlice = true;
+	settings->showStylus = true;
+	updateSlicePlanes();
 
 	const Matrix4_f proj = app->getProjMatrix();
+
+	Matrix4 mm;
+	synchronized(state->modelMatrix) {
+		mm = state->modelMatrix;
+	}
+
+	// Apply the zoom factor
+	mm = mm * Matrix4::makeTransform(
+		Vector3::zero(),
+		Quaternion::identity(),
+		Vector3(settings->zoomFactor)
+	);
 
 	app->setProjMatrix(proj*Matrix4::makeTransform(Vector3(0.0, 0.0, 500.0), Quaternion(Vector3_f(1.0f, 1.0f, 1.0f), 3.14f/4.0f), Vector3(1.0, 1.0, 1.0)));
 	showParticules();
 
 	if(fillVolume && fillVolume->isInit())
+	{
 		tabletRect.render(app->getProjMatrix(), (tabletMatrix*Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse() * Matrix4::makeTransform(Vector3_f(-1.5, -1.5, 0.0), Quaternion::identity(), Vector3_f(1.0, 1.0, 1.0)));
-	volumetricRendering->render(app->getProjMatrix(), state->modelMatrix*fillVolumeMatrix);
+	}
+	volumetricRendering->render(app->getProjMatrix(), mm*fillVolumeMatrix);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	screenLine.render(app->getProjMatrix(), (tabletMatrix*Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse());
+	
 	app->setProjMatrix(proj);
 }
 
@@ -1546,6 +1554,7 @@ void FluidMechanics::Impl::renderObjects()
 {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glViewport(0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
+	updateSlicePlanes();
 	showSelection();
 
 	glViewport(SCREEN_WIDTH/2, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
@@ -1701,6 +1710,10 @@ void FluidMechanics::setTabletMatrix(const Matrix4& m, const Vector3_f& trans, c
 	impl->tabletMatrix = m;
 	impl->modelTrans = trans;
 	impl->modelRot = rot;
+
+	impl->state->stylusModelMatrix = (impl->tabletMatrix*Matrix4::makeTransform(impl->postTreatmentTrans, impl->postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse();
+
+	impl->setMatrices(impl->state->modelMatrix, impl->state->stylusModelMatrix);
 }
 
 void FluidMechanics::clearSelection()
@@ -1721,6 +1734,11 @@ void FluidMechanics::pushBackSelection(SelectionMode s, const std::vector<Vector
 	{
 		impl->fillVolume->init(points);
 		impl->fillVolume->setSelectionMode(s); 
+		std::vector<Vector3_f> pScreen;
+		for(uint32_t i=0; points.size()>i; i++)
+			pScreen.push_back(Vector3_f(points[i].x, points[i].y, -1));
+		impl->screenLine.setLines(pScreen);
+			 
 	}
 }
 
@@ -1730,7 +1748,18 @@ void FluidMechanics::updateCurrentSelection(const Matrix4_f* m, const Vector2_f*
 		return;
 
 //	Matrix4_f projMat = Matrix4::makeTransform(-impl->modelTrans, impl->modelRot.inverse(), Vector3_f(1.0, 1.0, 1.0))*(impl->tabletMatrix**m).inverse();
-	Matrix4_f projMat = (impl->tabletMatrix**m*state->modelMatrix).inverse();
+	Matrix4 mm;
+	synchronized(impl->state->modelMatrix) {
+		mm = impl->state->modelMatrix;
+	}
+
+	// Apply the zoom factor
+	mm = mm * Matrix4::makeTransform(
+		Vector3::zero(),
+		Quaternion::identity(),
+		Vector3(impl->settings->zoomFactor)
+	);
+	Matrix4_f projMat = (impl->tabletMatrix**m*mm).inverse();
 	projMat.translate(-impl->fillVolumeMatrix.position());
 	impl->fillVolume->fillWithSurface(METRICS, projMat, factor);
 	Vector3 temp(0.0, 0.0, -1.0);

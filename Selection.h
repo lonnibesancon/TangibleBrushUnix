@@ -16,7 +16,7 @@ class Selection
 	public:
 		//move constructor
 		//use std::move(vector). Don't use your vector then.
-		Selection(SelectionMode s, std::vector<Vector2_f>&& pointSelection): m_pointSelection(pointSelection), m_selectionMode(s){}
+		Selection(SelectionMode s, std::vector< Vector2_f >& pointSelection): m_pointSelection(pointSelection), m_selectionMode(s){}
 
 		void addPostTreatmentMatrix(SelectionMode s, double sx, double sy, const Matrix4& matrix);
 		int nextIndice(); //Return the next indice of the selection, -1 if none

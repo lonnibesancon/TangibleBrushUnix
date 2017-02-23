@@ -65,7 +65,7 @@ namespace {
 		"  if(selectionMode) gl_Position = projection * postTreatment * vec4(scale * (vertex * vec3(1.0, 1.0, -1.0)), 1.0);\n"
 		"  else              gl_Position = projection * viewSpacePos;\n"
 
-		"  v_clipDist = dot((postTreatment * vec4(scale * (vertex * vec3(1.0, 1.0, -1.0)), 1.0)).xyz, clipPlane.xyz) + clipPlane.w;\n"
+		"  v_clipDist = dot(viewSpacePos.xyz, clipPlane.xyz) + clipPlane.w;\n"
 		"  v_posNotModified = viewSpacePos;\n"
 		"}";
 

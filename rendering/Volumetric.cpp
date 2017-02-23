@@ -35,7 +35,8 @@ namespace
 		"varying highp vec3 vPos;\n"
 		"void main() {\n"
 		"  vPos = vertex;\n"
-		"  gl_Position = projection * modelView * ((vec4(0.0, 0.0, 0.01, 1.0) + vec4(vertex+vertex, 1.0)));\n"
+//		"  gl_Position = projection * modelView * ((vec4(0.0, 0.0, 0.005, 1.0) + vec4(vertex+vertex, 1.0)));\n"
+		"  gl_Position = projection * modelView * vec4(vertex, 1.0);\n"
 		"}";
 
 	const char* fragmentShader =
@@ -72,11 +73,34 @@ Volumetric::Volumetric(FillVolume* fill, const Vector3_f& c, float alpha) :
 
 	for(uint32_t i=0; i < bufferSize; i++)
 	{
-		bool v = fill->get(i);
-		chRGBABuffer[i*4] = c.x;
-		chRGBABuffer[i*4+1] = c.y;
-		chRGBABuffer[i*4+2] = c.z;
-		chRGBABuffer[i*4+3] = (v) ? alpha : 0.0;
+		if(fill->getSelection() == INTERSECT)
+		{
+			bool v2 = fill->getSave(i);
+			bool v = fill->get(i);
+
+			if(v)
+			{
+				chRGBABuffer[i*4] = c.x;
+				chRGBABuffer[i*4+1] = c.y;
+				chRGBABuffer[i*4+2] = c.z;
+				chRGBABuffer[i*4+3] = (v) ? alpha : 0.0;
+			}
+			else
+			{
+				chRGBABuffer[i*4] = 0.0f;
+				chRGBABuffer[i*4+1] = 1.0f;
+				chRGBABuffer[i*4+2] = 0.0f;
+				chRGBABuffer[i*4+3] = (v2) ? alpha : 0.0;
+			}
+		}
+		else
+		{
+			bool v = fill->get(i);
+			chRGBABuffer[i*4] = c.x;
+			chRGBABuffer[i*4+1] = c.y;
+			chRGBABuffer[i*4+2] = c.z;
+			chRGBABuffer[i*4+3] = (v) ? alpha : 0.0;
+		}
 	}
 
 	glBindTexture(GL_TEXTURE_3D, m_textureId);
