@@ -120,7 +120,7 @@ namespace {
 		// "  return clamp(vec3(min(a,b), min(c,d), min(e,f)), 0.0, 1.0);\n"
 		// "}\n"
 		"void main() {\n"
-		"if (v_clipDist > 0.0) discard;\n"
+		"if (v_clipDist <= 0.0) discard;\n"
 		//Selection !
 		"  if(selectionMode)\n"
 		"  {\n"
@@ -346,7 +346,7 @@ Volume::~Volume()
 bool Volume::hasClipPlane()
 {
 	// return !__isinf(mClipEq[3]);
-	return (mClipEq[3] > std::numeric_limits<float>::lowest());
+	return (mClipEq[3] < std::numeric_limits<float>::max());
 }
 
 void Volume::setClipPlane(float a, float b, float c, float d)
@@ -361,7 +361,7 @@ void Volume::clearClipPlane()
 {
 	mClipEq[0] = mClipEq[1] = mClipEq[2] = 0;
 	// mClipEq[3] = -std::numeric_limits<float>::infinity();
-	mClipEq[3] = std::numeric_limits<float>::lowest();
+	mClipEq[3] = std::numeric_limits<float>::max();
 }
 
 // (GL context)

@@ -15,8 +15,10 @@
 #include <vector>
 #include "Selection.h"
 
-#define BUFLEN 512
+#define BUFLEN 1024
 #define NUMBEROFITEMSINMESSAGE 35
+
+extern uint32_t userID;
 
 class udp_server{
 	
@@ -36,6 +38,7 @@ public:
 	bool hasSubDataChanged = false;
 	bool hasSetToSelection = false;
 	bool hasSetTabletMatrix=false;
+	bool hasUpdateTangoMove=false;
 
 	std::string previousMessage ;
 
@@ -76,6 +79,7 @@ public:
 	Synchronized<Matrix4> tabletMatrix;
 	Synchronized<Vector3> modelTrans;
 	Synchronized<Quaternion> modelRot;
+	bool tangoMove=false;
 private:
 
 	void initSocket();

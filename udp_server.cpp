@@ -402,7 +402,26 @@ void udp_server::listen(){
 			hasSetTabletMatrix=true;
 		}
 
-		else if(msg[0]=='1' || msg[0] == '0')
+		else if(msg[0] == '8')
+		{
+			std::string tok;
+			getline(ss, tok, ';');
+
+			getline(ss, tok, ';');
+			userID = std::stoi(tok.c_str());
+		}
+
+		else if(msg[0] == '9')
+		{
+			std::string tok;
+			getline(ss, tok, ';');
+
+			getline(ss, tok, ';');
+			tangoMove = std::stoi(tok.c_str());
+			hasUpdateTangoMove = true;
+		}
+
+		else if(msg[0] == '0')
 		{
 			std::string tok;
 			int nbOfElementsToParseFirst = 7 ;

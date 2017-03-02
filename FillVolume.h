@@ -40,6 +40,7 @@ class FillVolume
 {
 	public:
 		FillVolume(uint64_t x, uint64_t y, uint64_t z);
+		FillVolume(const std::string& filePath);
 		void init(const std::vector<Vector2_f>& p);
 		~FillVolume();
 		void clear();
@@ -68,6 +69,8 @@ class FillVolume
 		bool hasSomething8Bits(uint64_t x, uint64_t y, uint64_t z){return m_fillVolume[(x+ m_x*y + m_x*m_y*z)/8];}
 		bool isInit() const{return m_isInit;}
 		void setSelectionMode(SelectionMode s);
+
+		void saveToFile(const std::string& modelPath, uint32_t userID);
 	private:
 		bool m_isInit=false;
 
@@ -78,6 +81,7 @@ class FillVolume
 		pthread_mutex_t m_mutex;
 		std::vector<Vector2_f> m_selectionPoints;
 		SelectionMode m_selectionMode=UNION;
+		uint32_t m_nbWrite=0;
 };
 
 //The compare edge function, useful for sorting the edge table

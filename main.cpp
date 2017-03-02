@@ -215,6 +215,12 @@ int main()
 			server.hasSubDataChanged = false;
 		}
 */
+
+		if(server.hasUpdateTangoMove)
+		{
+			app->setTangoMove(server.tangoMove);
+			server.hasUpdateTangoMove = false;
+		}
 		
 		if(server.hasSetToSelection)
 		{

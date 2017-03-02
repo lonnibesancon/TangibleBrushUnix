@@ -5,6 +5,8 @@
 #include "FillVolume.h"
 #include "Selection.h"
 
+extern uint32_t userID;
+
 class FluidMechanics
 {
 public:
@@ -51,6 +53,7 @@ public:
 	void pushBackSelection(SelectionMode s, const std::vector<Vector2_f>& points);
 	void updateCurrentSelection(const Matrix4_f* m, const Vector2_f* factor);
 	void updateVolumetricRendering();
+	void setTangoMove(bool tm);
 private:
 	unsigned int getScreenWidth() const { return SCREEN_WIDTH; }
 	unsigned int getScreenHeight() const { return SCREEN_HEIGHT; }

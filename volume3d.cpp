@@ -121,7 +121,7 @@ namespace {
 
 		"void main() {\n"
 
-		"  if (v_clipDist > 0.0) discard;\n" // FIXME
+		"  if (v_clipDist <= 0.0) discard;\n" // FIXME
 
 		// "  highp vec3 exitPoint = texture2D(backFaceTexture, gl_FragCoord.st/screenSize).xyz;\n"
 		"  highp vec3 exitPoint = texture2D(backFaceTexture, ((v_pos.xy/v_pos.w)+1.0)/2.0).xyz;\n"
@@ -296,7 +296,7 @@ Volume3d::~Volume3d()
 bool Volume3d::hasClipPlane()
 {
 	// return !__isinf(mClipEq[3]);
-	return (mClipEq[3] > std::numeric_limits<float>::lowest());
+	return (mClipEq[3] < std::numeric_limits<float>::max());
 }
 
 void Volume3d::setClipPlane(float a, float b, float c, float d)
@@ -311,7 +311,7 @@ void Volume3d::clearClipPlane()
 {
 	mClipEq[0] = mClipEq[1] = mClipEq[2] = 0;
 	// mClipEq[3] = -std::numeric_limits<float>::infinity();
-	mClipEq[3] = std::numeric_limits<float>::lowest();
+	mClipEq[3] = std::numeric_limits<float>::max();
 }
 
 // (GL context)

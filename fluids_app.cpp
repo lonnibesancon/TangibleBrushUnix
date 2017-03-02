@@ -33,6 +33,8 @@
 
 #define VOLUME_METRICS 0.01f
 
+uint32_t userID=0;
+
 struct Particle
 {
 	Vector3 pos;
@@ -82,6 +84,8 @@ struct FluidMechanics::Impl
 	void updateSurfacePreview();
 	void setSeedPoint(float x, float y, float z);
 	void resetParticles();
+
+	void setTangoMove(bool tm);
 
 	FluidMechanics* app;
 	SettingsPtr settings;
@@ -141,6 +145,8 @@ struct FluidMechanics::Impl
 	std::vector<Vector3> dataTrans;
 	std::vector<Quaternion> dataRot;
 
+	std::string modelPath;
+
 	Cube selectionCube;
 	//Tells where the volume is filled. Very useful for binary option (intersect, union, etc.)
 	FillVolume* fillVolume=NULL;
@@ -151,6 +157,8 @@ struct FluidMechanics::Impl
 	Volumetric* volumetricRendering=NULL;
 	Rectangle tabletRect;
 	Lines screenLine;
+
+	bool tangoMove=false;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -240,6 +248,7 @@ void FluidMechanics::Impl::setSeedPoint(float x, float y, float z){
 
 bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 {
+	modelPath = fileName;
 	// // Unload mesh data
 	// mesh.reset();
 
@@ -1164,18 +1173,19 @@ void FluidMechanics::Impl::showParticules()
 		Vector3(settings->zoomFactor)
 	);
 
-	glDisable(GL_BLEND);
-	synchronized_if(isosurface) {
-		glDepthMask(true);
-		glDisable(GL_CULL_FACE);
-		isosurface->render(proj, mm);
-	}
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glDisable(GL_CULL_FACE);
 	glDepthMask(true); // requires "discard" in the shader where alpha == 0
 
+	//glEnable(GL_DEPTH_TEST);
+//	glDisable(GL_BLEND);
+	synchronized_if(isosurface) {
+		glDepthMask(true);
+		glDisable(GL_CULL_FACE);
+		isosurface->render(proj, mm);
+	}
 
 	bool exists = false;
 	synchronized (particles) {
@@ -1187,12 +1197,13 @@ void FluidMechanics::Impl::showParticules()
 		}
 	}
 
-	if (!exists) {
+/* 	if (!exists) {
 		synchronized(slice) {
 			slice->setOpaque(false);
 			slice->render(proj, state->stylusModelMatrix);
 		}
 	}
+	*/
 	
 /*	  synchronized(slicePoints) {
 		if (!slicePoints.empty()) {
@@ -1222,7 +1233,7 @@ void FluidMechanics::Impl::showParticules()
 	}
 	*/
 
-		synchronized (particles) {
+	synchronized (particles) {
 		for (Particle& p : particles) {
 			if (!p.valid)
 				continue;
@@ -1236,7 +1247,6 @@ void FluidMechanics::Impl::showParticules()
 	}
 
 
-	glEnable(GL_DEPTH_TEST);
 	synchronized_if(volume) {
 		glDepthMask(true);
 		glEnable(GL_BLEND);
@@ -1312,7 +1322,7 @@ void FluidMechanics::Impl::showSelection()
 //	if(!settings->showSelection)
 //		return;
 	glClear(GL_DEPTH_BUFFER_BIT);
-	settings->showSlice = false;
+//	settings->showSlice = false;
 	settings->showStylus = false;
 	updateSlicePlanes();
 	showParticules();
@@ -1563,6 +1573,18 @@ void FluidMechanics::Impl::renderObjects()
 	return;
 }
 
+void FluidMechanics::Impl::setTangoMove(bool tm)
+{
+	tangoMove=tm;
+	if(tm == false)
+	{
+		if(fillVolume)
+		{
+			fillVolume->saveToFile(modelPath, userID);
+		}
+	}
+}
+
 void FluidMechanics::Impl::updateSurfacePreview()
 {
 	if (!settings->surfacePreview) {
@@ -1770,4 +1792,9 @@ void FluidMechanics::updateVolumetricRendering()
 	if(impl->volumetricRendering)
 		delete impl->volumetricRendering;
 	impl->volumetricRendering = new Volumetric(impl->fillVolume, Vector3_f(1.0, 1.0, 0.0), 1.0);
+}
+
+void FluidMechanics::setTangoMove(bool tm)
+{
+	impl->setTangoMove(tm);
 }

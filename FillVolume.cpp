@@ -1,5 +1,7 @@
 #include "FillVolume.h"
 #include "math.h"
+#include "sys/stat.h"
+#include <cstdlib>
 
 Edge::Edge(const Vector2_f& a, const Vector2_f& b) : m_a(a), m_b(b)
 {
@@ -53,6 +55,25 @@ FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x*METRICS), m_y
 
 //	for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
 //		m_fillVolume[i] = 0xff;
+}
+
+
+FillVolume::FillVolume(const std::string& path)
+{
+	FILE* f = fopen(path.c_str(), "r");
+	float buf;
+	fread(&buf, sizeof(float), 1, f);
+	fread(&m_x, sizeof(uint64_t), 1, f);
+	fread(&m_y, sizeof(uint64_t), 1, f);
+	fread(&m_z, sizeof(uint64_t), 1, f);
+
+	m_fillVolume = (uint8_t*)malloc((m_x*m_y*m_z+7)/8);
+	m_saveVolume = (uint8_t*)malloc((m_x*m_y*m_z+7)/8);
+
+	fread(m_fillVolume, sizeof(uint8_t), (m_x*m_y*m_z+7)/8, f);
+	memcpy(m_saveVolume, m_fillVolume, (m_x*m_y*m_z+7)/8);
+
+	fclose(f);
 }
 
 void FillVolume::clear()
@@ -394,4 +415,35 @@ void FillVolume::setSelectionMode(SelectionMode s)
 		default:
 			break;
 	}
+}
+
+void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID)
+{
+	char userIDString[3];
+	sprintf(userIDString, "%d", userID);
+	mkdir(userIDString, S_IRWXU | S_IRWXG);
+
+	char nbWriteString[4];
+	sprintf(nbWriteString, "%d", m_nbWrite);
+	std::string path = std::string(userIDString) + "/" + nbWriteString;
+
+	FILE* f = fopen(path.c_str(), "w");
+
+	//Write the user ID
+	fwrite(&userID, sizeof(uint32_t), 1, f);
+	//Write the model Path
+	fwrite(modelPath.c_str(), sizeof(char), modelPath.size(), f);
+
+	//Write volume size
+	float m = METRICS;
+	fwrite(&m, sizeof(float), 1, f);
+	fwrite(&m_x, sizeof(uint64_t), 1, f);
+	fwrite(&m_y, sizeof(uint64_t), 1, f);
+	fwrite(&m_z, sizeof(uint64_t), 1, f);
+
+	//Write data
+	fwrite(m_fillVolume, sizeof(char), (m_x*m_y*m_z+7)/8, f);
+
+	fclose(f);
+	m_nbWrite++;
 }

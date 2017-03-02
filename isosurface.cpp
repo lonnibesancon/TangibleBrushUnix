@@ -114,7 +114,7 @@ namespace {
 		// // "if (v_depth < 450.0) gl_FragColor.a = 0.0; else {\n"
 		// // "if (gl_FragCoord.z < 450.0) gl_FragColor.a = 0.0; else {\n"
 
-		"if (v_clipDist > 0.0) discard;\n"
+		"if (v_clipDist <= 0.0) discard;\n"
 		
 		//Selection !
 		"  if(selectionMode)\n"
@@ -392,7 +392,7 @@ void IsoSurface::clearClipPlane()
 {
 	mClipEq[0] = mClipEq[1] = mClipEq[2] = 0;
 	// mClipEq[3] = -std::numeric_limits<float>::infinity();
-	mClipEq[3] = std::numeric_limits<float>::lowest();
+	mClipEq[3] = std::numeric_limits<float>::max();
 }
 
 // (GL context)
