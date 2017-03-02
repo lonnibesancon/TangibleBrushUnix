@@ -216,6 +216,10 @@ int main()
 		}
 */
 
+		if(server.hasInit)
+		{
+			app->initFromClient();
+		}
 		if(server.hasUpdateTangoMove)
 		{
 			app->setTangoMove(server.tangoMove);
@@ -224,7 +228,6 @@ int main()
 		
 		if(server.hasSetToSelection)
 		{
-
 			if(selectionID == -1)
 			{
 				selectionID=0;

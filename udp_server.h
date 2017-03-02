@@ -39,6 +39,7 @@ public:
 	bool hasSetToSelection = false;
 	bool hasSetTabletMatrix=false;
 	bool hasUpdateTangoMove=false;
+	bool hasInit=false;
 
 	std::string previousMessage ;
 

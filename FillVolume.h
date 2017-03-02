@@ -70,7 +70,10 @@ class FillVolume
 		bool isInit() const{return m_isInit;}
 		void setSelectionMode(SelectionMode s);
 
-		void saveToFile(const std::string& modelPath, uint32_t userID);
+		void saveToFile(const std::string& modelPath, uint32_t userID, uint32_t nbTrial);
+		void saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial);
+
+		void reinitTime();
 	private:
 		bool m_isInit=false;
 
@@ -82,6 +85,11 @@ class FillVolume
 		std::vector<Vector2_f> m_selectionPoints;
 		SelectionMode m_selectionMode=UNION;
 		uint32_t m_nbWrite=0;
+		uint64_t m_ns=0;
+		uint64_t m_initNs=0;
+		uint32_t m_nbInter=0;
+		uint32_t m_nbUnion=0;
+		uint32_t m_nbDiff=0;
 };
 
 //The compare edge function, useful for sorting the edge table

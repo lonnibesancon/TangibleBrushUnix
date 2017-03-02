@@ -402,16 +402,17 @@ void udp_server::listen(){
 			hasSetTabletMatrix=true;
 		}
 
-		else if(msg[0] == '8')
+		else if(msg[0] == '9')
 		{
 			std::string tok;
 			getline(ss, tok, ';');
 
 			getline(ss, tok, ';');
 			userID = std::stoi(tok.c_str());
+			hasInit=true;
 		}
 
-		else if(msg[0] == '9')
+		else if(msg[0] == '8')
 		{
 			std::string tok;
 			getline(ss, tok, ';');

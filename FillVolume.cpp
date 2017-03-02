@@ -417,22 +417,51 @@ void FillVolume::setSelectionMode(SelectionMode s)
 	}
 }
 
-void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID)
+void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint32_t nbTrial)
 {
+	char nbTrialString[4];
+	sprintf(nbTrialString, "%d", nbTrial);
 	char userIDString[3];
 	sprintf(userIDString, "%d", userID);
-	mkdir(userIDString, S_IRWXU | S_IRWXG);
+
+	mkdir(userIDString, 0755);
+	mkdir((std::string(userIDString) + "/" + std::string(nbTrialString)).c_str(), 0755);
 
 	char nbWriteString[4];
 	sprintf(nbWriteString, "%d", m_nbWrite);
-	std::string path = std::string(userIDString) + "/" + nbWriteString;
+
+	std::string path = std::string(userIDString) + "/" + std::string(nbTrialString) + "/" + nbWriteString;
 
 	FILE* f = fopen(path.c_str(), "w");
 
 	//Write the user ID
 	fwrite(&userID, sizeof(uint32_t), 1, f);
 	//Write the model Path
+	uint32_t n = modelPath.size();
+	fwrite(&n, sizeof(uint32_t), 1, f);
 	fwrite(modelPath.c_str(), sizeof(char), modelPath.size(), f);
+
+
+	//Get the timer in Nano seconds
+	struct timespec spec;
+    clock_gettime(CLOCK_REALTIME, &spec);
+
+	uint64_t diffNS = spec.tv_nsec - m_ns;
+	fwrite(&diffNS, sizeof(uint64_t), 1, f);
+
+	m_ns = spec.tv_nsec;
+	switch(m_selectionMode)
+	{
+		case UNION:
+			m_nbUnion++;
+			break;
+		case INTERSECT:
+			m_nbInter++;
+			break;
+		case EXCLUSION:
+			m_nbDiff++;
+			break;
+	}
 
 	//Write volume size
 	float m = METRICS;
@@ -446,4 +475,61 @@ void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID)
 
 	fclose(f);
 	m_nbWrite++;
+}
+
+void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial)
+{
+	char nbTrialString[4];
+	sprintf(nbTrialString, "%d", nbTrial);
+	char userIDString[3];
+	sprintf(userIDString, "%d", userID);
+
+	mkdir(userIDString, 0755);
+	mkdir((std::string(userIDString) + "/" + std::string(nbTrialString)).c_str(), 0755);
+
+	std::string path = std::string(userIDString) + "/" + std::string(nbTrialString) + "/final";
+
+	FILE* f = fopen(path.c_str(), "w");
+
+	//Write the user ID
+	fwrite(&userID, sizeof(uint32_t), 1, f);
+	//Write the model Path
+	uint32_t n = modelPath.size();
+	fwrite(&n, sizeof(uint32_t), 1, f);
+	fwrite(modelPath.c_str(), sizeof(char), modelPath.size(), f);
+
+
+	//Get the timer in Nano seconds
+	struct timespec spec;
+    clock_gettime(CLOCK_REALTIME, &spec);
+	m_ns = spec.tv_nsec;
+	uint64_t diffNS = m_initNs - m_ns;
+	fwrite(&diffNS, sizeof(uint64_t), 1, f);
+
+	//Write the number of operation
+	fwrite(&m_nbUnion, sizeof(uint32_t), 1, f);
+	fwrite(&m_nbInter, sizeof(uint32_t), 1, f);
+	fwrite(&m_nbDiff, sizeof(uint32_t), 1, f);
+
+	//Write volume size
+	float m = METRICS;
+	fwrite(&m, sizeof(float), 1, f);
+	fwrite(&m_x, sizeof(uint64_t), 1, f);
+	fwrite(&m_y, sizeof(uint64_t), 1, f);
+	fwrite(&m_z, sizeof(uint64_t), 1, f);
+
+	//Write data
+	fwrite(m_fillVolume, sizeof(char), (m_x*m_y*m_z+7)/8, f);
+
+	fclose(f);
+	m_nbWrite++;
+
+}
+
+void FillVolume::reinitTime()
+{
+	//Get the timer in Nano seconds
+	struct timespec spec;
+    clock_gettime(CLOCK_REALTIME, &spec);
+	m_initNs = m_ns = spec.tv_nsec;
 }

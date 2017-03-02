@@ -54,6 +54,7 @@ public:
 	void updateCurrentSelection(const Matrix4_f* m, const Vector2_f* factor);
 	void updateVolumetricRendering();
 	void setTangoMove(bool tm);
+	void initFromClient();
 private:
 	unsigned int getScreenWidth() const { return SCREEN_WIDTH; }
 	unsigned int getScreenHeight() const { return SCREEN_HEIGHT; }

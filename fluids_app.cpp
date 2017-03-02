@@ -159,6 +159,7 @@ struct FluidMechanics::Impl
 	Lines screenLine;
 
 	bool tangoMove=false;
+	uint32_t nbTrial=0;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -281,10 +282,12 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	//Init the fill volume.
 	if(fillVolume)
 	{
+		fillVolume->saveFinalFiles(modelPath, userID, nbTrial);
 		fillVolume->lock();
 		{
 			delete fillVolume;
 		}
+		nbTrial++;
 	}
 
 	fillVolume       = new FillVolume(dataDim[0]*spacing[0], dataDim[1]*spacing[1], dataDim[2]*spacing[2]);
@@ -1580,7 +1583,7 @@ void FluidMechanics::Impl::setTangoMove(bool tm)
 	{
 		if(fillVolume)
 		{
-			fillVolume->saveToFile(modelPath, userID);
+			fillVolume->saveToFile(modelPath, userID, nbTrial);
 		}
 	}
 }
@@ -1797,4 +1800,10 @@ void FluidMechanics::updateVolumetricRendering()
 void FluidMechanics::setTangoMove(bool tm)
 {
 	impl->setTangoMove(tm);
+}
+
+void FluidMechanics::initFromClient()
+{
+	if(impl->fillVolume)
+		impl->fillVolume->reinitTime();
 }
