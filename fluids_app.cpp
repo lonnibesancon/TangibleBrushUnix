@@ -1548,17 +1548,17 @@ void FluidMechanics::Impl::showScreenPosition()
 		Vector3(settings->zoomFactor)
 	);
 
-	app->setProjMatrix(proj*Matrix4::makeTransform(Vector3(0.0, 0.0, 500.0), Quaternion(Vector3_f(1.0f, 1.0f, 1.0f), 3.14f/4.0f), Vector3(1.0, 1.0, 1.0)));
+	app->setProjMatrix(proj*Matrix4::makeTransform(Vector3(-50.0, 0, 300.0), Quaternion(Vector3_f(1.0f, 1.0f, 1.0f), 3.14f/4.0f), Vector3(1.0, 1.0, 1.0)));
+
 	showParticules();
 
+	tabletRect.render(app->getProjMatrix(), (tabletMatrix*Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse() * Matrix4::makeTransform(Vector3_f(-1.5, -1.5, 0.0), Quaternion::identity(), Vector3_f(1.0, 1.0, 1.0)));
 	if(fillVolume && fillVolume->isInit())
 	{
-		tabletRect.render(app->getProjMatrix(), (tabletMatrix*Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse() * Matrix4::makeTransform(Vector3_f(-1.5, -1.5, 0.0), Quaternion::identity(), Vector3_f(1.0, 1.0, 1.0)));
+		screenLine.render(app->getProjMatrix(), (tabletMatrix*Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse());
+		volumetricRendering->render(app->getProjMatrix(), mm*fillVolumeMatrix);
 	}
-	volumetricRendering->render(app->getProjMatrix(), mm*fillVolumeMatrix);
 	glClear(GL_DEPTH_BUFFER_BIT);
-	screenLine.render(app->getProjMatrix(), (tabletMatrix*Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse());
-	
 	app->setProjMatrix(proj);
 }
 
@@ -1739,6 +1739,11 @@ void FluidMechanics::setTabletMatrix(const Matrix4& m, const Vector3_f& trans, c
 	impl->state->stylusModelMatrix = (impl->tabletMatrix*Matrix4::makeTransform(impl->postTreatmentTrans, impl->postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse();
 
 	impl->setMatrices(impl->state->modelMatrix, impl->state->stylusModelMatrix);
+}
+
+Matrix4 FluidMechanics::getSliceMatrix() const
+{
+	return impl->state->stylusModelMatrix;
 }
 
 void FluidMechanics::clearSelection()

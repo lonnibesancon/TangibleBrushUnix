@@ -52,7 +52,7 @@ namespace
 
 		"void main() {\n"
 		"  vec4 c = texture(volume, vPos);\n"
-		"  if(c.a == 0.0) discard;\n"
+		"  if(c.a == 0.0 || vPos.x > 1.0 || vPos.y > 1.0 || vPos.z > 1.0 || vPos.z < 0.005 || vPos.y < 0.005 || vPos.x < 0.005) discard;\n"
 		"  gl_FragColor = c;"
 		"}";
 }
@@ -106,11 +106,11 @@ Volumetric::Volumetric(FillVolume* fill, const Vector3_f& c, float alpha) :
 	glBindTexture(GL_TEXTURE_3D, m_textureId);
 	{
 		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+  //      glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    //    glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 
         glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA,
 			fill->getMetricsSizeX(), fill->getMetricsSizeY(), fill->getMetricsSizeZ(),
@@ -144,7 +144,7 @@ void Volumetric::render(const Matrix4& projectionMatrix, const Matrix4& modelVie
 
 	glUseProgram(m_material->getHandle());
 	{
-		for(float i=0; i < 2.0; i+=0.005f)
+		for(float i=0; i < 1.0f; i=fmin(1.0, i+0.005))
 		{
 			GLfloat vertices[] = { 1, 1, i+0.005f,  0, 1, i+0.005f,  0,0, i+0.005f,      // v0-v1-v2 (front)
 						   0,0, i+0.005f,   1,0, i+0.005f,   1, 1, i+0.005f,      // v2-v3-v0

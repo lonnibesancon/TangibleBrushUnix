@@ -55,6 +55,7 @@ public:
 	void updateVolumetricRendering();
 	void setTangoMove(bool tm);
 	void initFromClient();
+	Matrix4 getSliceMatrix() const;
 private:
 	unsigned int getScreenWidth() const { return SCREEN_WIDTH; }
 	unsigned int getScreenHeight() const { return SCREEN_HEIGHT; }

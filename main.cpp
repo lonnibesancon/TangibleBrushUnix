@@ -297,6 +297,7 @@ int main()
 		//sliceMatrix = dataMatrix * sliceMatrix ;
 		seedPoint = server.getSeedPoint();
 		app->setMatrices(dataMatrix,sliceMatrix);
+
 		/*app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 380), Quaternion(Vector3::unitX(), -M_PI/4)*Quaternion(Vector3::unitZ(), t)),
 		                 // Matrix4::identity()
 		                 Matrix4::makeTransform(Vector3(0, 0, 400)));*/

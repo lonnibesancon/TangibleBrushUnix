@@ -140,11 +140,11 @@ FillVolume* FillVolume::createUnion(const FillVolume& fv) const
 FillVolume* FillVolume::createIntersection(const FillVolume& fv) const
 {
 	FillVolume* result = new FillVolume(m_x, m_y, m_z);
-	for(uint64_t i=0; i < fmin(m_x, fv.m_x); i++)
+	for(uint64_t k=0; k < fmin(m_z, fv.m_z); k+=8)
 	{
 		for(uint64_t j=0; j < fmin(m_y, fv.m_y); j++)
 		{
-			for(uint64_t k=0; k < fmin(m_z, fv.m_z); k+=8)
+			for(uint64_t i=0; i < fmin(m_x, fv.m_x); i++)
 			{
 				uint8_t diff = fmin(fv.m_z - k, m_z - k);
 				if(diff < 8)
@@ -299,17 +299,17 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 				Vector3_f pos2 = matrix*Vector3(i+0.02, j+0.02, -1.0f);
 				pos2 = pos2;
 
-				for(int32_t x=std::max(0.0f, std::min(pos.x, pos2.x)); x <= std::max(pos.x, pos2.x)+1; x+=1)
+				for(int32_t z=std::max(0.0f, std::min(pos.z, pos2.z)); z <= std::max(pos.z, pos2.z)+1+depth; z+=1)
 				{
-					if(x > m_x)
+					if(z > m_z)
 						break;
 					for(int32_t y=std::max(0.0f, std::min(pos.y, pos2.y)); y <= std::max(pos.y, pos2.y)+1; y+=1)
 					{
 						if(y > m_y)
 							break;
-						for(int32_t z=std::max(0.0f, std::min(pos.z, pos2.z)); z <= std::max(pos.z, pos2.z)+1+depth; z+=1)
+						for(int32_t x=std::max(0.0f, std::min(pos.x, pos2.x)); x <= std::max(pos.x, pos2.x)+1; x+=1)
 						{
-							if(z > m_z)
+							if(x > m_x)
 								break;
 
 							int64_t selfShift = x + m_x*y + m_x*m_y*z;
@@ -324,7 +324,7 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 									self = self & *(m_saveVolume + selfShift/8);
 									break;
 								case EXCLUSION:
-									self = ~(0x01 << (selfShift % 8)) & *(m_saveVolume + selfShift/8);
+									self = self & (~(0x01 << (selfShift % 8)) & *(m_saveVolume + selfShift/8));
 									break;
 								default:
 									break;
