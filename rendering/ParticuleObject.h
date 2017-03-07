@@ -35,6 +35,8 @@ class ParticuleObject : public Renderable
 		char*  mPointsStats;
 		uint32_t mNbParticules;
 
+		Vector3 mMin;
+		Vector3 mMax;
 };
 
 #endif

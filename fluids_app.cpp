@@ -28,6 +28,7 @@
 #include <vtkProbeFilter.h>
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
+#include "rendering/ParticuleObject.h"
 
 #define NEW_STYLUS_RENDER
 
@@ -160,6 +161,8 @@ struct FluidMechanics::Impl
 
 	bool tangoMove=false;
 	uint32_t nbTrial=0;
+
+	ParticuleObject* particuleObject=NULL;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -203,17 +206,19 @@ void FluidMechanics::Impl::pushBackSelection()
 
 void FluidMechanics::Impl::rebind()
 {
-	cube->bind();
+/*	cube->bind();
 	axisCube->bind();
 	lines->bind();
 	particleSphere->bind();
 	cylinder->bind();
+*/
 
-	synchronized_if(volume) { volume->bind(); }
+/*	synchronized_if(volume) { volume->bind(); }
 	synchronized_if(isosurface) { isosurface->bind(); }
 	synchronized_if(isosurfaceLow) { isosurfaceLow->bind(); }
 	synchronized_if(slice) { slice->bind(); }
 	synchronized_if(outline) { outline->bind(); }
+*/
 }
 
 template <typename T>
@@ -264,7 +269,9 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 
 	VTKOutputWindow::install();
 
-	const std::string ext = fileName.substr(fileName.find_last_of(".") + 1);
+	particuleObject = new ParticuleObject(fileName + "/ids", fileName + "/data.d");
+
+/*	const std::string ext = fileName.substr(fileName.find_last_of(".") + 1);
 
 	if (ext == "vtk")
 		data = loadTypedDataSet<vtkDataSetReader>(fileName);
@@ -278,6 +285,7 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	double spacing[3];
 	data->GetSpacing(spacing);
 	dataSpacing = Vector3(spacing[0], spacing[1], spacing[2]);
+*/
 
 	//Init the fill volume.
 	if(fillVolume)

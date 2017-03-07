@@ -75,6 +75,24 @@ ParticuleObject::ParticuleObject(const std::string& fileStats, const std::string
 	fclose(fdPoints);
 	fclose(fdStats);
 
+	mMin.x = std::numeric_limits<float>::max();
+	mMin.y = std::numeric_limits<float>::max();
+	mMin.z = std::numeric_limits<float>::max();
+
+	mMax.x = std::numeric_limits<float>::min();
+	mMax.y = std::numeric_limits<float>::min();
+	mMax.z = std::numeric_limits<float>::min();
+
+	for(uint32_t i=0; i < mNbParticules*3; i+=3)
+	{
+		if(mMin.x > mPoints[i]) mMin.x = mPoints[i];
+		if(mMax.x < mPoints[i]) mMax.x = mPoints[i];
+		if(mMin.y > mPoints[i+1]) mMin.y = mPoints[i+1];
+		if(mMax.x < mPoints[i+1]) mMax.x = mPoints[i+1];
+		if(mMin.z > mPoints[i+2]) mMin.z = mPoints[i+2];
+		if(mMax.x < mPoints[i+2]) mMax.x = mPoints[i+2];
+	}
+
 	clearClipPlane();
 }
 
