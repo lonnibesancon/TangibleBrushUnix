@@ -1,7 +1,7 @@
 #ifndef  FILLVOLUME_INC
 #define  FILLVOLUME_INC
 
-#define METRICS 1.0
+#define METRICS .01
 
 #include "stdint.h"
 #include "stdlib.h"

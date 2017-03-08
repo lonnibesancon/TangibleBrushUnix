@@ -53,8 +53,8 @@ FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x*METRICS), m_y
 	m_fillVolume = (uint8_t*)calloc((m_x*m_y*m_z+7)/8, sizeof(uint8_t));
 	m_saveVolume = (uint8_t*)calloc((m_x*m_y*m_z+7)/8, sizeof(uint8_t));
 
-//	for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
-//		m_fillVolume[i] = 0xff;
+	for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
+		m_fillVolume[i] = 0xff;
 }
 
 
@@ -295,9 +295,9 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 			if(enable)
 			{
 				Vector3_f pos = matrix*Vector3(i, j, -1.0f);
-				pos =  pos;
+				pos =  pos / METRICS;
 				Vector3_f pos2 = matrix*Vector3(i+0.02, j+0.02, -1.0f);
-				pos2 = pos2;
+				pos2 = pos2 / METRICS;
 
 				for(int32_t z=std::max(0.0f, std::min(pos.z, pos2.z)); z <= std::max(pos.z, pos2.z)+1+depth; z+=1)
 				{

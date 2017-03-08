@@ -80,10 +80,10 @@ int main()
 	std::unique_ptr<FluidMechanics> app(new FluidMechanics("data"));
 	app->rebind();
 
-	app->loadDataSet("data/head.vti");
-	app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 400), Quaternion(Vector3::unitX(), -M_PI/4)),
+	app->loadDataSet("data/data/galaxy");
+	app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 120), Quaternion(Vector3::unitX(), -M_PI/4)),
 	                 // Matrix4::identity()
-	                 Matrix4::makeTransform(Vector3(0, 0, 400))
+	                 Matrix4::makeTransform(Vector3(0, 0, 120))
 					 );
   
 	float t = 0;
@@ -296,7 +296,7 @@ int main()
 		app->getSettings()->zoomFactor = server.getZoomFactor();
 		//sliceMatrix = dataMatrix * sliceMatrix ;
 		seedPoint = server.getSeedPoint();
-		app->setMatrices(dataMatrix,sliceMatrix);
+//		app->setMatrices(dataMatrix,sliceMatrix);
 
 		/*app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 380), Quaternion(Vector3::unitX(), -M_PI/4)*Quaternion(Vector3::unitZ(), t)),
 		                 // Matrix4::identity()

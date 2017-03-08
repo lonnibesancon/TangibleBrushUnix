@@ -15,6 +15,9 @@ class ParticuleObject : public Renderable
 
 		void setClipPlane(float a, float b, float c, float d); // plane equation: ax+by+cz+d=0
 		void clearClipPlane();
+
+		Vector3 getSize() const{return mMax - mMin;}
+		Vector3 getMiddle() const{return (mMax + mMin)*0.5;}
 	private:
 		bool hasClipPlane();
 
@@ -25,14 +28,14 @@ class ParticuleObject : public Renderable
 
 
 		MaterialSharedPtr mMaterial;
-		GLint mVertexAttrib, mSliceAttrib, mProjectionUniform, mModelViewUniform, mColorUniform;
+		GLint mVertexAttrib, mSliceAttrib, mProjectionUniform, mModelViewUniform, mColorUniform, mDimensionsUniform, mStatusAttrib;
 
 		bool mBound;
 		float mClipEq[4];
 		float mColor[4];
 
 		float* mPoints;
-		char*  mPointsStats;
+		int*   mPointsStats;
 		uint32_t mNbParticules;
 
 		Vector3 mMin;

@@ -94,11 +94,11 @@ struct FluidMechanics::Impl
 
 	CubePtr cube, axisCube;
 
-	vtkSmartPointer<vtkImageData> data, dataLow;
+//	vtkSmartPointer<vtkImageData> data, dataLow;
 	int dataDim[3];
 	Vector3 dataSpacing;
 
-	vtkSmartPointer<vtkImageData> velocityData;
+//	vtkSmartPointer<vtkImageData> velocityData;
 
 	typedef LinearMath::Vector3<int> DataCoords;
 	// std::array<Particle, 10> particles;
@@ -115,9 +115,9 @@ struct FluidMechanics::Impl
 	static constexpr float stylusEffectorDist = 24.0f;
 	// static constexpr float stylusEffectorDist = 30.0f;
 
-	Synchronized<VolumePtr> volume;
+//	Synchronized<VolumePtr> volume;
 	// Synchronized<Volume3dPtr> volume; // true volumetric rendering
-	Synchronized<IsoSurfacePtr> isosurface, isosurfaceLow;
+//	Synchronized<IsoSurfacePtr> isosurface, isosurfaceLow;
 	Synchronized<SlicePtr> slice;
 	Synchronized<CubePtr> outline;
 	Vector3 slicePoint, sliceNormal;
@@ -129,7 +129,7 @@ struct FluidMechanics::Impl
 
 	Vector3 seedPoint;
 
-	vtkSmartPointer<vtkProbeFilter> probeFilter;
+	//vtkSmartPointer<vtkProbeFilter> probeFilter;
 
 	Synchronized<Vector3> effectorIntersection;
 	// Vector3 effectorIntersectionNormal;
@@ -258,7 +258,7 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	// // Unload mesh data
 	// mesh.reset();
 
-	synchronized (particles) {
+/*	synchronized (particles) {
 		// Unload velocity data
 		velocityData = nullptr;
 
@@ -266,9 +266,12 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 		for (Particle& p : particles)
 			p.valid = false;
 	}
+	*/
 
 	VTKOutputWindow::install();
 
+	if(particuleObject)
+		delete particuleObject;
 	particuleObject = new ParticuleObject(fileName + "/ids", fileName + "/data.d");
 
 /*	const std::string ext = fileName.substr(fileName.find_last_of(".") + 1);
@@ -298,9 +301,12 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 		nbTrial++;
 	}
 
-	fillVolume       = new FillVolume(dataDim[0]*spacing[0], dataDim[1]*spacing[1], dataDim[2]*spacing[2]);
-	fillVolumeMatrix = Matrix4_f::makeTransform(Vector3_f(-dataDim[0]*spacing[0]/2.0, -dataDim[1]*spacing[1]/2.0, -dataDim[2]*spacing[2]/2.0), Quaternion_f::identity(), Vector3_f(1.0, 1.0, 1.0));
-	fillVolumeMatrix.rescale(dataDim[0]*spacing[0], dataDim[1]*spacing[1], dataDim[2]*spacing[2]);
+	fillVolume       = new FillVolume(particuleObject->getSize().x, particuleObject->getSize().y, particuleObject->getSize().z);
+//	fillVolumeMatrix = Matrix4_f::makeTransform(Vector3_f(-dataDim[0]*spacing[0]/2.0, -dataDim[1]*spacing[1]/2.0, -dataDim[2]*spacing[2]/2.0), Quaternion_f::identity(), Vector3_f(1.0, 1.0, 1.0));
+
+	//TODO need to be checked
+	fillVolumeMatrix = Matrix4_f::makeTransform(-particuleObject->getSize()/2.0, Quaternion_f::identity(), Vector3_f(1.0, 1.0, 1.0));
+	fillVolumeMatrix.rescale(particuleObject->getSize());
 
 	if(volumetricRendering)
 		delete volumetricRendering;
@@ -309,42 +315,45 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	// Compute a default zoom value according to the data dimensions
 	// static const float nativeSize = 128.0f;
 	static const float nativeSize = 110.0f;
-	state->computedZoomFactor = nativeSize / std::max(dataSpacing.x*dataDim[0], std::max(dataSpacing.y*dataDim[1], dataSpacing.z*dataDim[2]));
+	Vector3 size = particuleObject->getSize();
+	state->computedZoomFactor = nativeSize / std::max(size.x, std::max(size.y, size.z));
 	// FIXME: hardcoded value: 0.25 (minimum zoom level, see the
 	// onTouch() handler in Java code)
 	state->computedZoomFactor = std::max(state->computedZoomFactor, 0.25f);
+//	settings->zoomFactor = state->computedZoomFactor * 0.75;
 
-	dataLow = vtkSmartPointer<vtkImageData>::New();
-	vtkNew<vtkImageResize> resizeFilter;
-	resizeFilter->SetInputData(data.GetPointer());
-	resizeFilter->SetOutputDimensions(std::max(dataDim[0]/3, 1), std::max(dataDim[1]/3, 1), std::max(dataDim[2]/3, 1));
-	resizeFilter->InterpolateOn();
-	resizeFilter->Update();
-	dataLow->DeepCopy(resizeFilter->GetOutput());
+//	dataLow = vtkSmartPointer<vtkImageData>::New();
+//	vtkNew<vtkImageResize> resizeFilter;
+//	resizeFilter->SetInputData(data.GetPointer());
+//	resizeFilter->SetOutputDimensions(std::max(dataDim[0]/3, 1), std::max(dataDim[1]/3, 1), std::max(dataDim[2]/3, 1));
+//	resizeFilter->InterpolateOn();
+//	resizeFilter->Update();
+//	dataLow->DeepCopy(resizeFilter->GetOutput());
 
-	probeFilter = vtkSmartPointer<vtkProbeFilter>::New();
-	probeFilter->SetSourceData(data.GetPointer());
+//	probeFilter = vtkSmartPointer<vtkProbeFilter>::New();
+//	probeFilter->SetSourceData(data.GetPointer());
 
-	synchronized(outline) {
-		LOGD("creating outline...");
-		outline.reset(new Cube(true));
-		outline->setScale(Vector3(dataDim[0]/2, dataDim[1]/2, dataDim[2]/2) * dataSpacing);
-	}
+//	synchronized(outline) {
+//		LOGD("creating outline...");
+//		outline.reset(new Cube(true));
+//		outline->setScale(Vector3(dataDim[0]/2, dataDim[1]/2, dataDim[2]/2) * dataSpacing);
+//	}
 
-	synchronized(volume) {
-		LOGD("creating volume...");
-		volume.reset(new Volume(data));
-		LOGD("minValue : %f", volume->getMinValue());
-		LOGD("maxValue : %f", volume->getMaxValue());
+//	synchronized(volume) {
+//		LOGD("creating volume...");
+//		volume.reset(new Volume(data));
+//		LOGD("minValue : %f", volume->getMinValue());
+//		LOGD("maxValue : %f", volume->getMaxValue());
 	/*  	 volume.reset(new Volume3d(data));
 		 if (fileName.find("FTLE7.vtk") != std::string::npos) { // HACK
 		 	// volume->setOpacity(0.25f);
 		 	volume->setOpacity(0.15f);
 		 }
-		 */
+		 
 	}
+	*/
 
-	if (fileName.find("FTLE7.vtk") == std::string::npos) { // HACK
+/* 	if (fileName.find("FTLE7.vtk") == std::string::npos) { // HACK
 		synchronized(isosurface) {
 			LOGD("creating isosurface...");
 			isosurface.reset(new IsoSurface(data));
@@ -365,13 +374,14 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 		LOGD("creating slice...");
 		slice.reset(new Slice(data));
 	}
+*/
 
 	return true;
 }
 
 bool FluidMechanics::Impl::loadVelocityDataSet(const std::string& fileName)
 {
-	if (!data)
+/*	if (!data)
 		throw std::runtime_error("No dataset currently loaded");
 
 	VTKOutputWindow::install();
@@ -405,6 +415,7 @@ bool FluidMechanics::Impl::loadVelocityDataSet(const std::string& fileName)
 
 	if (!velocityData->GetPointData() || !velocityData->GetPointData()->GetVectors())
 		throw std::runtime_error("Invalid velocity data: no vectors found");
+*/
 
 	return true;
 }
@@ -579,7 +590,7 @@ void FluidMechanics::Impl::releaseParticles()
 
 void FluidMechanics::Impl::integrateParticleMotion(Particle& p)
 {
-	if (!p.valid)
+/*	if (!p.valid)
 		return;
 
 	// Pause particle motion when the data is not visible
@@ -639,6 +650,7 @@ void FluidMechanics::Impl::integrateParticleMotion(Particle& p)
 			break;
 		}
 	}
+	*/
 }
 
 bool FluidMechanics::Impl::computeCameraClipPlane(Vector3& point, Vector3& normal)
@@ -1034,7 +1046,7 @@ void FluidMechanics::Impl::updateSlicePlanes()
 
 				if (buttonIsPressed) {
 					// settings->showSurface = true;
-					settings->surfacePreview = true;
+				/*	settings->surfacePreview = true;
 
 					vtkNew<vtkPoints> points;
 					points->InsertNextPoint(dataPos.x, dataPos.y, dataPos.z);
@@ -1065,6 +1077,7 @@ void FluidMechanics::Impl::updateSlicePlanes()
 					synchronized_if(isosurfaceLow) {
 						isosurfaceLow->setValue(value);
 					}
+					*/
 				}
 			} else {
 				effectorIntersectionValid = false;
@@ -1083,9 +1096,10 @@ void FluidMechanics::Impl::updateSlicePlanes()
 		}
 
 	if (clipPlaneSet) {
-		synchronized_if(isosurface) { isosurface->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint)); }
-		synchronized_if(isosurfaceLow) { isosurfaceLow->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint)); }
-		synchronized_if(volume) { volume->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint)); }
+//		synchronized_if(isosurface) { isosurface->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint)); }
+//		synchronized_if(isosurfaceLow) { isosurfaceLow->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint)); }
+//		synchronized_if(volume) { volume->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint)); }
+		particuleObject->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint));
 
 		// pt: data space
 		// dir: eye space
@@ -1159,9 +1173,10 @@ void FluidMechanics::Impl::updateSlicePlanes()
 			// LOGD("slicePoints.size() = %d", slicePoints.size());
 		}
 	} else {
-		synchronized_if(isosurface) { isosurface->clearClipPlane(); }
-		synchronized_if(isosurfaceLow) { isosurfaceLow->clearClipPlane(); }
-		synchronized_if(volume) { volume->clearClipPlane(); }
+//		synchronized_if(isosurface) { isosurface->clearClipPlane(); }
+//		synchronized_if(isosurfaceLow) { isosurfaceLow->clearClipPlane(); }
+//		synchronized_if(volume) { volume->clearClipPlane(); }
+		particuleObject->clearClipPlane();
 	}
 }
 
@@ -1181,9 +1196,8 @@ void FluidMechanics::Impl::showParticules()
 	mm = mm * Matrix4::makeTransform(
 		Vector3::zero(),
 		Quaternion::identity(),
-		Vector3(settings->zoomFactor)
+		Vector3(state->computedZoomFactor)
 	);
-
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1192,14 +1206,14 @@ void FluidMechanics::Impl::showParticules()
 
 	//glEnable(GL_DEPTH_TEST);
 //	glDisable(GL_BLEND);
-	synchronized_if(isosurface) {
-		glDepthMask(true);
-		glDisable(GL_CULL_FACE);
-		isosurface->render(proj, mm);
-	}
+//	synchronized_if(isosurface) {
+//		glDepthMask(true);
+//		glDisable(GL_CULL_FACE);
+//		isosurface->render(proj, mm);
+//	}
 
 	bool exists = false;
-	synchronized (particles) {
+/*	synchronized (particles) {
 		for (Particle& p : particles) {
 			if (p.valid) {
 				exists = true;
@@ -1207,6 +1221,7 @@ void FluidMechanics::Impl::showParticules()
 			}
 		}
 	}
+*/
 
 /* 	if (!exists) {
 		synchronized(slice) {
@@ -1244,7 +1259,7 @@ void FluidMechanics::Impl::showParticules()
 	}
 	*/
 
-	synchronized (particles) {
+/*	synchronized (particles) {
 		for (Particle& p : particles) {
 			if (!p.valid)
 				continue;
@@ -1256,9 +1271,10 @@ void FluidMechanics::Impl::showParticules()
 			particleSphere->render(proj, mm * Matrix4::makeTransform(pos, Quaternion::identity(), Vector3(0.15f)));
 		}
 	}
+*/
 
 
-	synchronized_if(volume) {
+/*	synchronized_if(volume) {
 		glDepthMask(true);
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA); // modulate
@@ -1268,6 +1284,9 @@ void FluidMechanics::Impl::showParticules()
 		if (exists) volume->clearClipPlane();
 		volume->render(proj, mm);
 	}
+*/
+	particuleObject->render(proj, mm);
+	/*
 	synchronized_if(outline) {
 		glDepthMask(true);
 		glLineWidth(2.0f);
@@ -1277,6 +1296,7 @@ void FluidMechanics::Impl::showParticules()
 			                Quaternion::identity(),
 			                Vector3(1.01f)));
 	}
+	*/
 
 #if 0
 	if (slice && settings->showSlice) {
@@ -1353,8 +1373,9 @@ void FluidMechanics::Impl::showSelection()
 	mm = mm * Matrix4::makeTransform(
 		Vector3::zero(),
 		Quaternion::identity(),
-		Vector3(settings->zoomFactor)
+		Vector3(state->computedZoomFactor)
 	);
+
 
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -1553,7 +1574,8 @@ void FluidMechanics::Impl::showScreenPosition()
 	mm = mm * Matrix4::makeTransform(
 		Vector3::zero(),
 		Quaternion::identity(),
-		Vector3(settings->zoomFactor)
+//		Vector3(state->computedZoomFactor*0.75)
+		Vector3(1.0)
 	);
 
 	app->setProjMatrix(proj*Matrix4::makeTransform(Vector3(-50.0, 0, 300.0), Quaternion(Vector3_f(1.0f, 1.0f, 1.0f), 3.14f/4.0f), Vector3(1.0, 1.0, 1.0)));
@@ -1598,7 +1620,7 @@ void FluidMechanics::Impl::setTangoMove(bool tm)
 
 void FluidMechanics::Impl::updateSurfacePreview()
 {
-	if (!settings->surfacePreview) {
+/*	if (!settings->surfacePreview) {
 		synchronized_if(isosurface) {
 			isosurface->setPercentage(settings->surfacePercentage);
 		}
@@ -1607,6 +1629,7 @@ void FluidMechanics::Impl::updateSurfacePreview()
 			isosurfaceLow->setPercentage(settings->surfacePercentage);
 		}
 	}
+*/
 	
 	if(settings->considerX+settings->considerY+settings->considerZ == 3){
 		state->clipAxis = CLIP_NONE ;
@@ -1698,6 +1721,7 @@ void FluidMechanics::setMatrices(const Matrix4& volumeMatrix, const Matrix4& sty
 void FluidMechanics::render()
 {
 	impl->renderObjects();
+	std::cout << "finish render\n"<<std::endl;
 }
 
 void FluidMechanics::updateSurfacePreview()
