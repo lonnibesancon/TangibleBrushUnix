@@ -1578,14 +1578,14 @@ void FluidMechanics::Impl::renderObjects()
 
 void FluidMechanics::Impl::setTangoMove(bool tm)
 {
-	tangoMove=tm;
-	if(tm == false)
+	if(tm == false && tangoMove == true)
 	{
 		if(fillVolume)
 		{
 			fillVolume->saveToFile(modelPath, userID, nbTrial);
 		}
 	}
+	tangoMove=tm;
 }
 
 void FluidMechanics::Impl::updateSurfacePreview()
