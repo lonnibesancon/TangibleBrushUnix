@@ -85,10 +85,81 @@ void FillVolume::clear()
 
 void FillVolume::init(const std::vector<Vector2_f>& p)
 {
+	m_scanline.clear();
+	m_isInit = false;
+	m_selectionPoints.clear();
 	if(p.size() > 0)
 	{
 		m_selectionPoints = p;
 		m_isInit          = true;
+
+		//Create the edge table
+		std::vector<Edge> et;
+		for(int i=0; i < (int)(m_selectionPoints.size()-1); i++)
+			et.push_back(Edge(m_selectionPoints[i], m_selectionPoints[i+1]));
+		et.push_back(Edge(m_selectionPoints[0], m_selectionPoints[m_selectionPoints.size()-1]));
+
+		std::sort(et.begin(), et.end(), compareYEdge);
+
+		//Determine the yMin
+		double yMin = m_selectionPoints[0].y;
+		for(uint32_t i=0; i < m_selectionPoints.size(); i++)
+			yMin = fmin(yMin, m_selectionPoints[i].y);
+
+		//Now we need the Active Edge Table
+		std::vector<const Edge*> aet;
+		uint32_t etIndice=0;
+
+		//For each scanline
+		for(double j=yMin; et.rbegin()->m_yMax >= j; j+=.02)
+		{
+			//Update the Active Edge Table
+			//
+			//Delete the useless edge
+
+			for(uint32_t k=0; k < aet.size(); k++)
+			{
+				if(aet[k]->m_yMax >= j)
+					break;
+				aet.erase(aet.begin() + k);
+			}
+
+			//Add the new edge to handle
+			while(etIndice < et.size() && et[etIndice].m_yMin <= j)
+			{
+				aet.push_back(&(et[etIndice]));
+				etIndice++;
+			}
+
+			//Sort the aet table to the x component
+			std::vector<const Edge*> aetSorted = aet;
+			if(aetSorted.size() == 1)
+				continue;
+			std::sort(aetSorted.begin(), aetSorted.end(), compareXEdge);
+
+			if(aet.size() == 0)
+				continue;
+
+			uint8_t enable = true;
+			uint32_t aetIndice = 0;
+
+			//Go along the scanline, don't forget that the x = startX * (y - yMin) * incr
+			for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size() && i <= (*aetSorted.rbegin())->computeX(j); i+=0.02)
+			{
+				//Make a step
+				while(aetIndice+1 < aetSorted.size() && aetSorted[aetIndice+1]->computeX(j) < i)
+				{
+					if(i < aetSorted[aetIndice]->m_endX)
+						enable = !enable;
+					aetIndice++;
+				}
+
+				if(enable)
+				{
+					m_scanline.push_back(Vector2(i, j));
+				}
+			}
+		}
 	}
 }
 
@@ -226,113 +297,49 @@ void FillVolume::unlock()
 	pthread_mutex_unlock(&m_mutex);
 }
 
-void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Vector2_f* factor)
+void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 {
 	if(!m_isInit || m_selectionPoints.size() < 2)
 		return;
 
-	//Create the edge table
-	std::vector<Edge> et;
-	for(int i=0; i < (int)(m_selectionPoints.size()-1); i++)
-		et.push_back(Edge(m_selectionPoints[i], m_selectionPoints[i+1]));
-	et.push_back(Edge(m_selectionPoints[0], m_selectionPoints[m_selectionPoints.size()-1]));
-
-	std::sort(et.begin(), et.end(), compareYEdge);
-
-
-	//Determine the yMin
-	double yMin = m_selectionPoints[0].y*factor->y;
-	for(uint32_t i=0; i < m_selectionPoints.size(); i++)
-		yMin = fmin(yMin, m_selectionPoints[i].y*factor->y);
-
-	//Now we need the Active Edge Table
-	std::vector<const Edge*> aet;
-	uint32_t etIndice=0;
-
-	//For each scanline
-	for(double j=yMin; et.rbegin()->m_yMax >= j; j+=.02)
+	for(Vector2_f& point : m_scanline)
 	{
-		//Update the Active Edge Table
-		//
-		//Delete the useless edge
+		Vector3_f pos = matrix*Vector3(point.x, point.y, -1.0f);
+		pos =  pos*METRICS;
+		Vector3_f pos2 = matrix*Vector3(point.x+0.02, point.y+0.02, -1.0f);
+		pos2 = pos2*METRICS;
 
-		for(uint32_t k=0; k < aet.size(); k++)
+		for(int32_t z=std::max(0.0f, std::min(pos.z, pos2.z)); z <= std::max(pos.z, pos2.z)+1+depth; z+=1)
 		{
-			if(aet[k]->m_yMax >= j)
+			if(z > m_z)
 				break;
-			aet.erase(aet.begin() + k);
-		}
-
-		//Add the new edge to handle
-		while(etIndice < et.size() && et[etIndice].m_yMin <= j)
-		{
-			aet.push_back(&(et[etIndice]));
-			etIndice++;
-		}
-
-		//Sort the aet table to the x component
-		std::vector<const Edge*> aetSorted = aet;
-		if(aetSorted.size() == 1)
-			continue;
-		std::sort(aetSorted.begin(), aetSorted.end(), compareXEdge);
-
-		if(aet.size() == 0)
-			continue;
-
-		uint8_t enable = true;
-		uint32_t aetIndice = 0;
-
-		//Go along the scanline, don't forget that the x = startX * (y - yMin) * incr
-		for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size() && i <= (*aetSorted.rbegin())->computeX(j); i+=0.02)
-		{
-			//Make a step
-			while(aetIndice+1 < aetSorted.size() && aetSorted[aetIndice+1]->computeX(j) < i)
+			for(int32_t y=std::max(0.0f, std::min(pos.y, pos2.y)); y <= std::max(pos.y, pos2.y)+1; y+=1)
 			{
-				if(i < aetSorted[aetIndice]->m_endX)
-					enable = !enable;
-				aetIndice++;
-			}
-
-			if(enable)
-			{
-				Vector3_f pos = matrix*Vector3(i, j, -1.0f);
-				pos =  pos*METRICS;
-				Vector3_f pos2 = matrix*Vector3(i+0.02, j+0.02, -1.0f);
-				pos2 = pos2*METRICS;
-
-				for(int32_t z=std::max(0.0f, std::min(pos.z, pos2.z)); z <= std::max(pos.z, pos2.z)+1+depth; z+=1)
+				if(y > m_y)
+					break;
+				for(int32_t x=std::max(0.0f, std::min(pos.x, pos2.x)); x <= std::max(pos.x, pos2.x)+1; x+=1)
 				{
-					if(z > m_z)
+					if(x > m_x)
 						break;
-					for(int32_t y=std::max(0.0f, std::min(pos.y, pos2.y)); y <= std::max(pos.y, pos2.y)+1; y+=1)
-					{
-						if(y > m_y)
-							break;
-						for(int32_t x=std::max(0.0f, std::min(pos.x, pos2.x)); x <= std::max(pos.x, pos2.x)+1; x+=1)
-						{
-							if(x > m_x)
-								break;
 
-							int64_t selfShift = x + m_x*y + m_x*m_y*z;
-							uint8_t self      = *(m_fillVolume + (selfShift)/8);
-							switch(m_selectionMode)
-							{
-								case UNION:
-									self = self | (0x01 << (selfShift % 8));
-									break;
-								case INTERSECT:
-									self = self | (0x01 << (selfShift % 8));
-									self = self & *(m_saveVolume + selfShift/8);
-									break;
-								case EXCLUSION:
-									self = self & (~(0x01 << (selfShift % 8)) & *(m_saveVolume + selfShift/8));
-									break;
-								default:
-									break;
-							}
-							m_fillVolume[selfShift/8] = self;
-						}
+					int64_t selfShift = x + m_x*y + m_x*m_y*z;
+					uint8_t self      = *(m_fillVolume + (selfShift)/8);
+					switch(m_selectionMode)
+					{
+						case UNION:
+							self = self | (0x01 << (selfShift % 8));
+							break;
+						case INTERSECT:
+							self = self | (0x01 << (selfShift % 8));
+							self = self & *(m_saveVolume + selfShift/8);
+							break;
+						case EXCLUSION:
+							self = self & (~(0x01 << (selfShift % 8)) & *(m_saveVolume + selfShift/8));
+							break;
+						default:
+							break;
 					}
+					m_fillVolume[selfShift/8] = self;
 				}
 			}
 		}

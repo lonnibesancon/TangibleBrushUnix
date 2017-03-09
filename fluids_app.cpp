@@ -30,6 +30,7 @@
 #include <vtkPoints.h>
 #include <vtkPolyData.h>
 #include "rendering/ParticuleObject.h"
+#include <time.h>
 
 #define NEW_STYLUS_RENDER
 
@@ -165,6 +166,7 @@ struct FluidMechanics::Impl
 
 	ParticuleObject* particuleObject=NULL;
 	int interactionMode=-1;
+	long t;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -1609,6 +1611,15 @@ void FluidMechanics::Impl::renderObjects()
 	glViewport(SCREEN_WIDTH/2, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT);
 	showScreenPosition();
 
+
+
+    struct timespec spec;
+    clock_gettime(CLOCK_REALTIME, &spec);
+
+    long t2 = spec.tv_nsec;
+	std::cout << "fps : " << (double)1e9/(t2-t) << std::endl;
+	t = t2;
+
 	return;
 }
 
@@ -1787,7 +1798,7 @@ void FluidMechanics::setTabletMatrix(const Matrix4& m, const Vector3_f& trans, c
 
 	impl->state->stylusModelMatrix = (impl->tabletMatrix*Matrix4::makeTransform(impl->postTreatmentTrans, impl->postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse();
 
-	impl->setMatrices(impl->state->modelMatrix, impl->state->stylusModelMatrix);
+//	impl->setMatrices(impl->state->modelMatrix, impl->state->stylusModelMatrix);
 }
 
 Matrix4 FluidMechanics::getSliceMatrix() const
@@ -1821,7 +1832,7 @@ void FluidMechanics::pushBackSelection(SelectionMode s, const std::vector<Vector
 	}
 }
 
-void FluidMechanics::updateCurrentSelection(const Matrix4_f* m, const Vector2_f* factor)
+void FluidMechanics::updateCurrentSelection(const Matrix4_f* m)
 {
 	if(!impl->fillVolume)
 		return;
@@ -1840,7 +1851,7 @@ void FluidMechanics::updateCurrentSelection(const Matrix4_f* m, const Vector2_f*
 	);
 	Matrix4_f projMat = (impl->tabletMatrix**m*mm).inverse();
 	projMat.translate(-impl->fillVolumeMatrix.position());
-	impl->fillVolume->fillWithSurface(METRICS, projMat, factor);
+	impl->fillVolume->fillWithSurface(METRICS, projMat);
 	Vector3 temp(0.0, 0.0, -1.0);
 }
 

@@ -49,25 +49,19 @@ Matrix4 udp_server::getDataMatrix(){
 	hasDataChanged = false ;
 	
 	Matrix4 m ;
-	synchronized(dataMatrix){
-		m = dataMatrix ;
-	}
+	m = dataMatrix ;
 	return m ;
 }
 
 Matrix4 udp_server::getSliceMatrix(){
 	Matrix4 m ;
-	synchronized(sliceMatrix){
-		m = sliceMatrix ;
-	}
+	m = sliceMatrix ;
 	return sliceMatrix;
 }
 
 Vector3 udp_server::getSeedPoint(){
 	Vector3 v ;
-	synchronized(seedPoint){
-		v = seedPoint ;
-	}
+	v = seedPoint ;
 	return udp_server::seedPoint ;
 }
 
@@ -167,19 +161,9 @@ void udp_server::listen(){
 		{
 			if(!hasSelectionClear)
 			{
-				synchronized(selectionMatrix)
-				{
-					selectionMatrix.clear();
-				}
-
-				synchronized(selectionPoint)
-				{
-					selectionPoint.clear();
-				}
-				synchronized(dataSelected)
-				{
-					dataSelected.clear();
-				}
+				selectionMatrix.clear();
+				selectionPoint.clear();
+				dataSelected.clear();
 				hasSelectionClear = true;
 			}
 		}
@@ -260,29 +244,16 @@ void udp_server::listen(){
 				data[i] = std::stof(tok.c_str());
 			}
 
-			synchronized(postTreatmentTrans)
-			{
-				postTreatmentTrans = Vector3_f(data[0], data[1], data[2]);
-			}
-
-			synchronized(postTreatmentRot)
-			{
-				postTreatmentRot = Quaternion_f(data[3], data[4], data[5], data[6]);
-			}
+			postTreatmentTrans = Vector3_f(data[0], data[1], data[2]);
+			postTreatmentRot = Quaternion_f(data[3], data[4], data[5], data[6]);
 
 			//Need to position the tablet position on the screen
-			synchronized(postTreatmentMat)
-			{
-				postTreatmentMat = Matrix4_f::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3_f(1.0, 1.0, 1.0));
-			}
+			postTreatmentMat = Matrix4_f::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3_f(1.0, 1.0, 1.0));
 
 			if(hasSelectionSet)
 			{
-				synchronized(dataSelected)
-				{
-					if(dataSelected.size() > 0)
-						dataSelected.rbegin()->addPostTreatmentMatrix(s, scaleFactorX, scaleFactorY, postTreatmentMat);
-				}
+				if(dataSelected.size() > 0)
+					dataSelected.rbegin()->addPostTreatmentMatrix(s, scaleFactorX, scaleFactorY, postTreatmentMat);
 				hasSetToSelection = true;
 			}
 
@@ -347,10 +318,7 @@ void udp_server::listen(){
 			for(uint32_t i=0; i < datas.size(); i+= 2)
 				points.push_back(Vector2_f(datas[i], datas[i+1]));
 
-			synchronized(dataSelected)
-			{
-				dataSelected.push_back(Selection((SelectionMode) mode, points));
-			}
+			dataSelected.push_back(Selection((SelectionMode) mode, points));
 
 			hasSelectionSet = true;
 		}
@@ -371,10 +339,7 @@ void udp_server::listen(){
 				data[i] = std::stof(tok.c_str());
 			}
 
-			synchronized(tabletMatrix)
-			{
-				tabletMatrix = Matrix4(data);
-			}
+			tabletMatrix = Matrix4(data);
 
 			float mTrans[3];
 			float mRot[4];
@@ -391,14 +356,8 @@ void udp_server::listen(){
 				mRot[i] = std::stof(tok.c_str());
 			}
 
-			synchronized(modelTrans)
-			{
-				modelTrans = Vector3_f(mTrans);
-			}
-			synchronized(modelRot)
-			{
-				modelRot = Quaternion(mRot[0], mRot[1], mRot[2], mRot[3]);
-			}
+			modelTrans = Vector3_f(mTrans);
+			modelRot = Quaternion(mRot[0], mRot[1], mRot[2], mRot[3]);
 			hasSetTabletMatrix=true;
 		}
 
@@ -496,17 +455,11 @@ void udp_server::listen(){
 			//std::cout << "Seed Point Constructed " << std::endl ;
 
 
-			synchronized(dataMatrix){
-				dataMatrix = Matrix4(oMatrix) ;
-				//printAny(dataMatrix, "dataMatrix = ");
-			}
-			synchronized(sliceMatrix){
-				sliceMatrix = Matrix4(pMatrix) ;
-				//printAny(sliceMatrix, "sliceMatrix = ");
-			}
-			synchronized(seedPoint){
-				seedPoint = Vector3(seed) ;
-			}
+			dataMatrix = Matrix4(oMatrix) ;
+			//printAny(dataMatrix, "dataMatrix = ");
+			sliceMatrix = Matrix4(pMatrix) ;
+			//printAny(sliceMatrix, "sliceMatrix = ");
+			seedPoint = Vector3(seed) ;
 			if(dataset!= datast){
 				dataset = datast ;
 				hasDataSetChanged = true ;
