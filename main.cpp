@@ -112,6 +112,7 @@ int main()
 	        case SDL_WINDOWEVENT: // Événement de la fenêtre
 	            if ( event.window.event == SDL_WINDOWEVENT_CLOSE ) 
 	            {
+					app->saveFinalFile();
 	                quit = true ;
 	            }
 	            break;
@@ -133,17 +134,17 @@ int main()
 		if(server.hasDataSetChanged ){
 			int dataset = server.getDataSet();
 			if(dataset == ftle){
-				app->loadDataSet("data/ftlelog.vtk");
+				app->loadDataSet("data/hemisphere");
 			}
 			else if(dataset == ironProt){
-				app->loadDataSet("data/ironProt.vtk");
+//				app->loadDataSet("data/ironProt.vtk");
 			}
 			else if(dataset == head){
-				app->loadDataSet("data/head.vti");
+				app->loadDataSet("data/galaxy");
 			}
 			else if(dataset == velocity){
-				app->loadDataSet("data/FTLE7.vtk");
-				app->loadVelocityDataSet("data/Velocities7.vtk");
+//				app->loadDataSet("data/FTLE7.vtk");
+//				app->loadVelocityDataSet("data/Velocities7.vtk");
 			}
 		}
 
@@ -222,7 +223,7 @@ int main()
 		}
 		if(server.hasUpdateTangoMove)
 		{
-			app->setTangoMove(server.tangoMove);
+			app->setTangoMove(server.tangoMove, server.interactionMode);
 			server.hasUpdateTangoMove = false;
 		}
 		
@@ -296,7 +297,7 @@ int main()
 		app->getSettings()->zoomFactor = server.getZoomFactor();
 		//sliceMatrix = dataMatrix * sliceMatrix ;
 		seedPoint = server.getSeedPoint();
-//		app->setMatrices(dataMatrix,sliceMatrix);
+		app->setMatrices(dataMatrix,sliceMatrix);
 
 		/*app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 380), Quaternion(Vector3::unitX(), -M_PI/4)*Quaternion(Vector3::unitZ(), t)),
 		                 // Matrix4::identity()
@@ -308,7 +309,8 @@ int main()
 		app->getSettings()->sliceType = SLICE_STYLUS;
 		//app->getSettings()->sliceType = SLICE_CAMERA;
 		//app->getSettings()->showSlice = true;
-		app->getSettings()->showSlice = server.getShowSlice();
+//		app->getSettings()->showSlice = server.getShowSlice();
+		app->getSettings()->showSlice = true;
 		app->getSettings()->clipDist = t2;
 
 		if(prevSeedPoint != seedPoint){

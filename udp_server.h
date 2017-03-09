@@ -14,6 +14,7 @@
 #include "global.h"
 #include <vector>
 #include "Selection.h"
+#include "interactionMode.h"
 
 #define BUFLEN 1024
 #define NUMBEROFITEMSINMESSAGE 35
@@ -81,6 +82,7 @@ public:
 	Synchronized<Vector3> modelTrans;
 	Synchronized<Quaternion> modelRot;
 	bool tangoMove=false;
+	int interactionMode=0;
 private:
 
 	void initSocket();

@@ -1,7 +1,7 @@
 #ifndef  FILLVOLUME_INC
 #define  FILLVOLUME_INC
 
-#define METRICS .01
+#define METRICS 20
 
 #include "stdint.h"
 #include "stdlib.h"
@@ -11,6 +11,8 @@
 #include <algorithm>
 #include "Selection.h"
 #include <cstring>
+
+class ParticuleObject;
 
 //Structure which contain a Edge
 struct Edge
@@ -71,9 +73,10 @@ class FillVolume
 		void setSelectionMode(SelectionMode s);
 
 		void saveToFile(const std::string& modelPath, uint32_t userID, uint32_t nbTrial);
-		void saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial);
+		void saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial, ParticuleObject* po);
 
 		void reinitTime();
+		void commitIntersection();
 	private:
 		bool m_isInit=false;
 

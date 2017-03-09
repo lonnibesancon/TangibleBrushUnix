@@ -23,14 +23,15 @@ namespace
 
 		"uniform highp vec4 clipPlane;\n"
 		"varying highp float v_clipDist;\n"
+		"varying highp vec4 v_color;\n"
 
 		"void main() {\n"
 		"  highp vec4 viewSpacePos = modelView * vec4(vertex * vec3(1.0, 1.0, -1.0), 1.0);\n"
 
 		"  gl_Position = projection * viewSpacePos;\n"
-		"  if(status == 0) gl_FrontColor = gl_BackColor = vec4(0.0, 1.0, 0.0, 1.0);\n"
-		"  else if(status == 1) gl_FrontColor = gl_BackColor = vec4(1.0, 0.0, 0.0, 1.0);\n"
-		"  else if(status == 2){gl_FrontColor = gl_BackColor = vec4(0.0, 0.0, 1.0, 1.0);}\n"
+		"  if(status == 0) v_color = vec4(0.0, 1.0, 0.0, 1.0);\n"
+		"  else if(status == 1) v_color = vec4(1.0, 0.0, 0.0, 1.0);\n"
+		"  else if(status == 2){v_color = vec4(0.0, 0.0, 1.0, 1.0);}\n"
 //		"  gl_Size = 2.0;\n"
 
 		"  v_clipDist = dot(viewSpacePos.xyz, clipPlane.xyz) + clipPlane.w;\n"
@@ -49,11 +50,12 @@ namespace
 		"uniform highp mat4 modelView;\n"
 		"uniform highp vec4 uColor;\n"
 		"varying highp float v_clipDist;\n"
+		"varying highp vec4 v_color;\n"
 
 		"void main() {\n"
 		"if (v_clipDist <= 0.0) discard;\n"
 	//	"if(gl_Color.b > 0.5) discard;\n"
-		"gl_FragColor = gl_Color;\n"
+		"gl_FragColor = v_color;\n"
 		"}";
 }
 
@@ -186,4 +188,32 @@ void ParticuleObject::render(const Matrix4& projectionMatrix, const Matrix4& mod
 	glDisableVertexAttribArray(mVertexAttrib);
 	glDisableVertexAttribArray(mStatusAttrib);
 	glUseProgram(0);
+}
+
+void ParticuleObject::getStats(ParticuleStats* ps, FillVolume* fv)
+{
+	memset(ps, 0x00, sizeof(ps));
+	ps->nbParticule = mNbParticules;
+	for(uint32_t i=0; i < mNbParticules; i++)
+	{
+		Vector3 size = getSize();
+		if(fv->get((size.x/2.0 + mPoints[3*i])*METRICS, (size.y/2.0 + mPoints[3*i+1])*METRICS, (size.z/2.0 + mPoints[3*i+2])*METRICS))
+		{
+			switch(mPointsStats[i])
+			{
+				case 0:
+					ps->valid++;
+					break;
+
+				case 1:
+					ps->incorrect++;
+					break;
+
+				case 2:
+					ps->inNoise++;
+					break;
+			}
+			ps->volume++;
+		}
+	}
 }

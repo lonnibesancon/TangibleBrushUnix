@@ -1,5 +1,6 @@
 #include "fluids_app.h"
 #include "rendering/Volumetric.h"
+#include "interactionMode.h"
 
 #include "vtk_output_window.h"
 #include "vtk_error_observer.h"
@@ -86,7 +87,7 @@ struct FluidMechanics::Impl
 	void setSeedPoint(float x, float y, float z);
 	void resetParticles();
 
-	void setTangoMove(bool tm);
+	void setTangoMove(bool tm, int intMode);
 
 	FluidMechanics* app;
 	SettingsPtr settings;
@@ -163,6 +164,7 @@ struct FluidMechanics::Impl
 	uint32_t nbTrial=0;
 
 	ParticuleObject* particuleObject=NULL;
+	int interactionMode=-1;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -191,7 +193,10 @@ FluidMechanics::Impl::~Impl()
 	fillVolume->lock();
 	{
 		if(fillVolume)
+		{
+			fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject);
 			delete fillVolume;
+		}
 	}
 }
 
@@ -293,7 +298,7 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	//Init the fill volume.
 	if(fillVolume)
 	{
-		fillVolume->saveFinalFiles(modelPath, userID, nbTrial);
+		fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject);
 		fillVolume->lock();
 		{
 			delete fillVolume;
@@ -1196,7 +1201,7 @@ void FluidMechanics::Impl::showParticules()
 	mm = mm * Matrix4::makeTransform(
 		Vector3::zero(),
 		Quaternion::identity(),
-		Vector3(state->computedZoomFactor)
+		Vector3(settings->zoomFactor)
 	);
 
 	glEnable(GL_BLEND);
@@ -1373,7 +1378,7 @@ void FluidMechanics::Impl::showSelection()
 	mm = mm * Matrix4::makeTransform(
 		Vector3::zero(),
 		Quaternion::identity(),
-		Vector3(state->computedZoomFactor)
+		Vector3(settings->zoomFactor)
 	);
 
 
@@ -1575,7 +1580,8 @@ void FluidMechanics::Impl::showScreenPosition()
 		Vector3::zero(),
 		Quaternion::identity(),
 //		Vector3(state->computedZoomFactor*0.75)
-		Vector3(1.0)
+		Vector3(settings->zoomFactor)
+//		Vector3(1.0)
 	);
 
 	app->setProjMatrix(proj*Matrix4::makeTransform(Vector3(-50.0, 0, 300.0), Quaternion(Vector3_f(1.0f, 1.0f, 1.0f), 3.14f/4.0f), Vector3(1.0, 1.0, 1.0)));
@@ -1606,16 +1612,28 @@ void FluidMechanics::Impl::renderObjects()
 	return;
 }
 
-void FluidMechanics::Impl::setTangoMove(bool tm)
+void FluidMechanics::Impl::setTangoMove(bool tm, int intMode)
 {
 	tangoMove=tm;
-	if(tm == false)
+	if(interactionMode == -1)
+	{
+		interactionMode = intMode;
+		return;
+	}
+
+	if((interactionMode == planeTangible ||
+		interactionMode == planeTouchTangible ||
+		interactionMode == dataPlaneTouchTangible) &&
+		tm == false)
 	{
 		if(fillVolume)
 		{
 			fillVolume->saveToFile(modelPath, userID, nbTrial);
 		}
 	}
+	else if(tm == false)
+		fillVolume->commitIntersection();
+	interactionMode = intMode;
 }
 
 void FluidMechanics::Impl::updateSurfacePreview()
@@ -1721,7 +1739,6 @@ void FluidMechanics::setMatrices(const Matrix4& volumeMatrix, const Matrix4& sty
 void FluidMechanics::render()
 {
 	impl->renderObjects();
-	std::cout << "finish render\n"<<std::endl;
 }
 
 void FluidMechanics::updateSurfacePreview()
@@ -1834,13 +1851,19 @@ void FluidMechanics::updateVolumetricRendering()
 	impl->volumetricRendering = new Volumetric(impl->fillVolume, Vector3_f(1.0, 1.0, 0.0), 1.0);
 }
 
-void FluidMechanics::setTangoMove(bool tm)
+void FluidMechanics::setTangoMove(bool tm, int intMode)
 {
-	impl->setTangoMove(tm);
+	impl->setTangoMove(tm, intMode);
 }
 
 void FluidMechanics::initFromClient()
 {
 	if(impl->fillVolume)
 		impl->fillVolume->reinitTime();
+}
+
+void FluidMechanics::saveFinalFile()
+{
+	if(impl->fillVolume)
+		impl->fillVolume->saveFinalFiles(impl->modelPath, userID, impl->nbTrial, impl->particuleObject);
 }

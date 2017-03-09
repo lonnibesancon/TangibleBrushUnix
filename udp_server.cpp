@@ -419,6 +419,9 @@ void udp_server::listen(){
 
 			getline(ss, tok, ';');
 			tangoMove = std::stoi(tok.c_str());
+
+			getline(ss, tok, ';');
+			interactionMode = std::stoi(tok.c_str());
 			hasUpdateTangoMove = true;
 		}
 

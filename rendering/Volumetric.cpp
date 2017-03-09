@@ -54,7 +54,7 @@ namespace
 		"  vec4 c = texture(volume, vPos);\n"
 		"  if(c.a == 0.0 || vPos.x > 1.0 || vPos.y > 1.0 || vPos.z > 1.0 || vPos.z < 0.005 || vPos.y < 0.005 || vPos.x < 0.005) discard;\n"
 		"  gl_FragColor = c;\n"
-		"  gl_FragColor.a = 0.05;\n"
+//		"  gl_FragColor.a = 0.05;\n"
 		"}";
 }
 

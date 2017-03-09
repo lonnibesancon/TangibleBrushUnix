@@ -2,6 +2,7 @@
 #include "math.h"
 #include "sys/stat.h"
 #include <cstdlib>
+#include "rendering/ParticuleObject.h"
 
 Edge::Edge(const Vector2_f& a, const Vector2_f& b) : m_a(a), m_b(b)
 {
@@ -53,8 +54,8 @@ FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x*METRICS), m_y
 	m_fillVolume = (uint8_t*)calloc((m_x*m_y*m_z+7)/8, sizeof(uint8_t));
 	m_saveVolume = (uint8_t*)calloc((m_x*m_y*m_z+7)/8, sizeof(uint8_t));
 
-	for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
-		m_fillVolume[i] = 0xff;
+//	for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
+//		m_fillVolume[i] = 0xff;
 }
 
 
@@ -295,9 +296,9 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix, const Ve
 			if(enable)
 			{
 				Vector3_f pos = matrix*Vector3(i, j, -1.0f);
-				pos =  pos / METRICS;
+				pos =  pos*METRICS;
 				Vector3_f pos2 = matrix*Vector3(i+0.02, j+0.02, -1.0f);
-				pos2 = pos2 / METRICS;
+				pos2 = pos2*METRICS;
 
 				for(int32_t z=std::max(0.0f, std::min(pos.z, pos2.z)); z <= std::max(pos.z, pos2.z)+1+depth; z+=1)
 				{
@@ -403,18 +404,21 @@ bool FillVolume::get(uint64_t x, uint64_t y, uint64_t z) const
 
 void FillVolume::setSelectionMode(SelectionMode s)
 {
-	m_selectionMode = s;
-
-    memcpy(m_saveVolume, m_fillVolume, (m_x*m_y*m_z+7)/8);
-
 	switch(s)
 	{
 		case INTERSECT:
-			memset(m_fillVolume, 0x00, (m_x*m_y*m_z+7)/8);
+			if(m_selectionMode != INTERSECT)
+			{
+				memcpy(m_saveVolume, m_fillVolume, (m_x*m_y*m_z+7)/8);
+				memset(m_fillVolume, 0x00, (m_x*m_y*m_z+7)/8);
+			}
 			break;
 		default:
+			memcpy(m_saveVolume, m_fillVolume, (m_x*m_y*m_z+7)/8);
 			break;
 	}
+
+	m_selectionMode = s;
 }
 
 void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint32_t nbTrial)
@@ -477,7 +481,7 @@ void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint3
 	m_nbWrite++;
 }
 
-void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial)
+void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial, ParticuleObject* particuleObject)
 {
 	char nbTrialString[4];
 	sprintf(nbTrialString, "%d", nbTrial);
@@ -498,6 +502,9 @@ void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, u
 	fwrite(&n, sizeof(uint32_t), 1, f);
 	fwrite(modelPath.c_str(), sizeof(char), modelPath.size(), f);
 
+	//Write METRICS
+	int metrics = METRICS;
+	fwrite(&metrics, sizeof(int), 1, f);
 
 	//Get the timer in Nano seconds
 	struct timespec spec;
@@ -518,6 +525,15 @@ void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, u
 	fwrite(&m_y, sizeof(uint64_t), 1, f);
 	fwrite(&m_z, sizeof(uint64_t), 1, f);
 
+	//Write statistics
+	ParticuleStats ps;
+	particuleObject->getStats(&ps, this);
+	fwrite(&(ps.volume), sizeof(int), 1, f);
+	fwrite(&(ps.nbParticule), sizeof(int), 1, f);
+	fwrite(&(ps.valid), sizeof(int), 1, f);
+	fwrite(&(ps.incorrect), sizeof(int), 1, f);
+	fwrite(&(ps.inNoise), sizeof(int), 1, f);
+
 	//Write data
 	fwrite(m_fillVolume, sizeof(char), (m_x*m_y*m_z+7)/8, f);
 
@@ -532,4 +548,14 @@ void FillVolume::reinitTime()
 	struct timespec spec;
     clock_gettime(CLOCK_REALTIME, &spec);
 	m_initNs = m_ns = spec.tv_nsec;
+}
+
+void FillVolume::commitIntersection()
+{
+
+	if(m_selectionMode == INTERSECT)
+	{
+		memcpy(m_saveVolume, m_fillVolume, (m_x*m_y*m_z+7)/8);
+		memset(m_fillVolume, 0x00, (m_x*m_y*m_z+7)/8);
+	}
 }

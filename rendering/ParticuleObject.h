@@ -3,6 +3,17 @@
 
 #include "rendering/renderable.h"
 #include "global.h"
+#include "FillVolume.h"
+
+
+struct ParticuleStats
+{
+	int valid=0;
+	int inNoise=0;
+	int incorrect=0;
+	int nbParticule=0;
+	int volume=0;
+};
 
 class ParticuleObject : public Renderable
 {
@@ -18,6 +29,7 @@ class ParticuleObject : public Renderable
 
 		Vector3 getSize() const{return mMax - mMin;}
 		Vector3 getMiddle() const{return (mMax + mMin)*0.5;}
+		void getStats(ParticuleStats* ps, FillVolume* fv);
 	private:
 		bool hasClipPlane();
 
