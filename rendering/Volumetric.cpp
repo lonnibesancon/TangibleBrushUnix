@@ -1,5 +1,7 @@
 #include "rendering/Volumetric.h"
-#include "material.h"
+
+MaterialSharedPtr Volumetric::m_material;
+bool Volumetric::m_materialInit = false;
 
 namespace
 {
@@ -35,7 +37,7 @@ namespace
 		"varying highp vec3 vPos;\n"
 		"void main() {\n"
 		"  vPos = vertex;\n"
-//		"  gl_Position = projection * modelView * ((vec4(0.0, 0.0, 0.005, 1.0) + vec4(vertex+vertex, 1.0)));\n"
+//		"  gl_Position = projection * modelView * ((vec4(0.0, 0.0, 0.01, 1.0) + vec4(vertex+vertex, 1.0)));\n"
 		"  gl_Position = projection * modelView * vec4(vertex, 1.0);\n"
 		"}";
 
@@ -52,18 +54,22 @@ namespace
 
 		"void main() {\n"
 		"  vec4 c = texture(volume, vPos);\n"
-		"  if(c.a == 0.0 || vPos.x > 1.0 || vPos.y > 1.0 || vPos.z > 1.0 || vPos.z < 0.005 || vPos.y < 0.005 || vPos.x < 0.005) discard;\n"
+		"  if(c.a == 0.0 || vPos.x > 1.0 || vPos.y > 1.0 || vPos.z > 1.0 || vPos.z < 0.01 || vPos.y < 0.01 || vPos.x < 0.01) discard;\n"
 		"  gl_FragColor = c;\n"
 //		"  gl_FragColor.a = 0.05;\n"
 		"}";
 }
 
 Volumetric::Volumetric(FillVolume* fill, const Vector3_f& c, float alpha) :
-	m_material(MaterialSharedPtr(new Material(vertexShader, fragmentShader))),
    	m_bound(false),
     m_vertexAttrib(-1), m_normalAttrib(-1),
     m_projectionUniform(-1), m_modelViewUniform(-1), m_normalMatrixUniform(-1), m_volumeUniform(-1)
 {
+	if(!m_materialInit)
+	{
+		m_materialInit = true;
+		m_material = MaterialSharedPtr(new Material(vertexShader, fragmentShader));
+	}
 	glGenTextures(1, &m_textureId);
 	uint32_t bufferSize = fill->getMetricsSizeX()*fill->getMetricsSizeY()*fill->getMetricsSizeZ();
 	m_x = fill->getMetricsSizeX();
@@ -76,7 +82,6 @@ Volumetric::Volumetric(FillVolume* fill, const Vector3_f& c, float alpha) :
 	{
 		if(fill->getSelection() == INTERSECT)
 		{
-			bool v2 = fill->getSave(i);
 			bool v = fill->get(i);
 
 			if(v)
@@ -88,6 +93,7 @@ Volumetric::Volumetric(FillVolume* fill, const Vector3_f& c, float alpha) :
 			}
 			else
 			{
+				bool v2 = fill->getSave(i);
 				chRGBABuffer[i*4] = 0.0f;
 				chRGBABuffer[i*4+1] = 1.0f;
 				chRGBABuffer[i*4+2] = 0.0f;
@@ -145,22 +151,22 @@ void Volumetric::render(const Matrix4& projectionMatrix, const Matrix4& modelVie
 
 	glUseProgram(m_material->getHandle());
 	{
-		for(float i=0; i < 1.0f; i=fmin(1.0, i+0.005))
+		for(float i=0; i < 1.0f; i=fmin(1.0, i+0.01))
 		{
-			GLfloat vertices[] = { 1, 1, i+0.005f,  0, 1, i+0.005f,  0,0, i+0.005f,      // v0-v1-v2 (front)
-						   0,0, i+0.005f,   1,0, i+0.005f,   1, 1, i+0.005f,      // v2-v3-v0
+			GLfloat vertices[] = { 1, 1, i+0.01f,  0, 1, i+0.01f,  0,0, i+0.01f,      // v0-v1-v2 (front)
+						   0,0, i+0.01f,   1,0, i+0.01f,   1, 1, i+0.01f,      // v2-v3-v0
 
-							1, 1, i+0.005f,   1,0, i+0.005f,   1,0,i,      // v0-v3-v4 (right)
-							1,0,i,   1, 1,i,   1, 1, i+0.005f,      // v4-v5-v0
+							1, 1, i+0.01f,   1,0, i+0.01f,   1,0,i,      // v0-v3-v4 (right)
+							1,0,i,   1, 1,i,   1, 1, i+0.01f,      // v4-v5-v0
 
-							1, 1, i+0.005f,   1, 1,i,  0, 1,i,      // v0-v5-v6 (top)
-						   0, 1,i,  0, 1, i+0.005f,   1, 1, i+0.005f,      // v6-v1-v0
+							1, 1, i+0.01f,   1, 1,i,  0, 1,i,      // v0-v5-v6 (top)
+						   0, 1,i,  0, 1, i+0.01f,   1, 1, i+0.01f,      // v6-v1-v0
 
-						   0, 1, i+0.005f,  0, 1,i,  0,0,i,      // v1-v6-v7 (left)
-						   0,0,i,  0,0, i+0.005f,  0, 1, i+0.005f,      // v7-v2-v1
+						   0, 1, i+0.01f,  0, 1,i,  0,0,i,      // v1-v6-v7 (left)
+						   0,0,i,  0,0, i+0.01f,  0, 1, i+0.01f,      // v7-v2-v1
 
-						   0,0,i,   1,0,i,   1,0, i+0.005f,      // v7-v4-v3 (bottom)
-							1,0, i+0.005f,  0,0, i+0.005f,  0,0,i,      // v3-v2-v7
+						   0,0,i,   1,0,i,   1,0, i+0.01f,      // v7-v4-v3 (bottom)
+							1,0, i+0.01f,  0,0, i+0.01f,  0,0,i,      // v3-v2-v7
 
 							1,0,i,  0,0,i,  0, 1,i,      // v4-v7-v6 (back)
 						   0, 1,i,   1, 1,i,   1,0,i 	};    // v6-v5-v4

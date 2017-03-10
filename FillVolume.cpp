@@ -309,15 +309,15 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 		Vector3_f pos2 = matrix*Vector3(point.x+0.02, point.y+0.02, -1.0f);
 		pos2 = pos2*METRICS;
 
-		for(int32_t z=std::max(0.0f, std::min(pos.z, pos2.z)); z <= std::max(pos.z, pos2.z)+1+depth; z+=1)
+		for(int32_t z=std::max(0.0f, std::min(pos.z, pos2.z)); z <= std::max(pos.z, pos2.z)+depth; z+=1)
 		{
 			if(z > m_z)
 				break;
-			for(int32_t y=std::max(0.0f, std::min(pos.y, pos2.y)); y <= std::max(pos.y, pos2.y)+1; y+=1)
+			for(int32_t y=std::max(0.0f, std::min(pos.y, pos2.y)); y <= std::max(pos.y, pos2.y); y+=1)
 			{
 				if(y > m_y)
 					break;
-				for(int32_t x=std::max(0.0f, std::min(pos.x, pos2.x)); x <= std::max(pos.x, pos2.x)+1; x+=1)
+				for(int32_t x=std::max(0.0f, std::min(pos.x, pos2.x)); x <= std::max(pos.x, pos2.x); x+=1)
 				{
 					if(x > m_x)
 						break;
@@ -345,7 +345,6 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 		}
 	}
 }
-
 
 Rectangle3f computeRectangle(double x, double y, double z, const Matrix4_f& matrix)
 {

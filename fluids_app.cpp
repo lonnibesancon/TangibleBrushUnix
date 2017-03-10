@@ -917,15 +917,10 @@ T lowPassFilter(const T& cur, const T& prev, float alpha)
 
 void FluidMechanics::Impl::setMatrices(const Matrix4& volumeMatrix, const Matrix4& stylusMatrix)
 {
-	synchronized(state->modelMatrix) {
-		state->modelMatrix = volumeMatrix;
-	}
+	state->modelMatrix = volumeMatrix;
+	state->stylusModelMatrix = stylusMatrix;
 
-	synchronized(state->stylusModelMatrix) {
-		state->stylusModelMatrix = stylusMatrix;
-	}
-
-	updateSlicePlanes();
+//	updateSlicePlanes();
 }
 
 void FluidMechanics::Impl::updateSlicePlanes()
@@ -1798,7 +1793,7 @@ void FluidMechanics::setTabletMatrix(const Matrix4& m, const Vector3_f& trans, c
 
 	impl->state->stylusModelMatrix = (impl->tabletMatrix*Matrix4::makeTransform(impl->postTreatmentTrans, impl->postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse();
 
-//	impl->setMatrices(impl->state->modelMatrix, impl->state->stylusModelMatrix);
+	impl->setMatrices(impl->state->modelMatrix, impl->state->stylusModelMatrix);
 }
 
 Matrix4 FluidMechanics::getSliceMatrix() const
@@ -1810,12 +1805,14 @@ void FluidMechanics::clearSelection()
 {
 	if(impl->fillVolume)
 		impl->fillVolume->clear();
+	 
+	impl->selectionMatrix.clear();
+	impl->selectionPoint.clear();
+	impl->pushBackSelection();
 
-	/* 
-		impl->selectionMatrix.clear();
-		impl->selectionPoint.clear();
-		impl->pushBackSelection();
-	*/
+	if(impl->volumetricRendering)
+		delete impl->volumetricRendering;
+	impl->volumetricRendering = new Volumetric(impl->fillVolume, Vector3(1.0), 1.0f);
 }
 
 void FluidMechanics::pushBackSelection(SelectionMode s, const std::vector<Vector2_f>& points)
@@ -1838,10 +1835,7 @@ void FluidMechanics::updateCurrentSelection(const Matrix4_f* m)
 		return;
 
 //	Matrix4_f projMat = Matrix4::makeTransform(-impl->modelTrans, impl->modelRot.inverse(), Vector3_f(1.0, 1.0, 1.0))*(impl->tabletMatrix**m).inverse();
-	Matrix4 mm;
-	synchronized(impl->state->modelMatrix) {
-		mm = impl->state->modelMatrix;
-	}
+	Matrix4 mm = impl->state->modelMatrix;
 
 	// Apply the zoom factor
 	mm = mm * Matrix4::makeTransform(
@@ -1852,7 +1846,6 @@ void FluidMechanics::updateCurrentSelection(const Matrix4_f* m)
 	Matrix4_f projMat = (impl->tabletMatrix**m*mm).inverse();
 	projMat.translate(-impl->fillVolumeMatrix.position());
 	impl->fillVolume->fillWithSurface(METRICS, projMat);
-	Vector3 temp(0.0, 0.0, -1.0);
 }
 
 void FluidMechanics::updateVolumetricRendering()

@@ -91,6 +91,7 @@ int main()
 
 	//Thread creation
 	std::thread th(&udp_server::listen,&server);
+	th.detach();
 	//th.join();
 
 	Matrix4 dataMatrix = Matrix4::makeTransform(Vector3(0, 0, 400), Quaternion(Vector3::unitX(), -M_PI/4)) ;
@@ -187,6 +188,7 @@ int main()
 		if(server.hasSetTabletMatrix)
 		{
 			app->setTabletMatrix(server.tabletMatrix, server.modelTrans, server.modelRot);
+			server.hasSetTabletMatrix = false;
 		}
 
 /*  	if(server.hasSubDataChanged)
@@ -221,7 +223,6 @@ int main()
 				s = server.dataSelected[selectionID].getSelectionMode();
 				const std::vector<Vector2_f>* points = &(server.dataSelected[selectionID].getSelectionPoint());
 				app->pushBackSelection(s, *points);
-				continue;
 			}
 
 			int32_t dataSelectedSize=0;
@@ -259,6 +260,16 @@ int main()
 
 		if(server.hasDataChanged)
 		{
+			server.hasDataChanged = false;
+
+			t2 = 360;
+			app->getSettings()->sliceType = SLICE_STYLUS;
+			//app->getSettings()->sliceType = SLICE_CAMERA;
+			//app->getSettings()->showSlice = true;
+	//		app->getSettings()->showSlice = server.getShowSlice();
+			app->getSettings()->showSlice = true;
+			app->getSettings()->clipDist = t2;
+
 			dataMatrix = server.getDataMatrix();
 			sliceMatrix = server.getSliceMatrix();
 			//LOGD("dataMatrix = %s", Utility::toString(dataMatrix).c_str());
@@ -267,9 +278,23 @@ int main()
 
 			app->getSettings()->zoomFactor = server.getZoomFactor();
 			//sliceMatrix = dataMatrix * sliceMatrix ;
-			seedPoint = server.getSeedPoint();
+	//			seedPoint = server.getSeedPoint();
 			app->setMatrices(dataMatrix,sliceMatrix);
-			server.hasDataChanged = false;
+
+		/*  if(prevSeedPoint != seedPoint){
+				if(seedPoint == Vector3(-1000000,-1000000,-1000000) || seedPoint == Vector3(-1,-1,-1)){
+					std::cout << "Reset Particles" << std::endl ;
+					app->resetParticles();
+				}
+				app->setSeedPoint(seedPoint.x, seedPoint.y, seedPoint.z);
+				prevSeedPoint = seedPoint ;
+				app->releaseParticles();
+			}
+		*/
+			
+			app->getSettings()->considerX = server.getConsiderX();
+			app->getSettings()->considerY = server.getConsiderY();
+			app->getSettings()->considerZ = server.getConsiderZ();
 		}
 
 
@@ -279,28 +304,6 @@ int main()
 		
 		t += 0.005;
 		// t2 = 400+std::cos(t)*200;
-		t2 = 360;
-		app->getSettings()->sliceType = SLICE_STYLUS;
-		//app->getSettings()->sliceType = SLICE_CAMERA;
-		//app->getSettings()->showSlice = true;
-//		app->getSettings()->showSlice = server.getShowSlice();
-		app->getSettings()->showSlice = true;
-		app->getSettings()->clipDist = t2;
-
-	/*  if(prevSeedPoint != seedPoint){
-			if(seedPoint == Vector3(-1000000,-1000000,-1000000) || seedPoint == Vector3(-1,-1,-1)){
-				std::cout << "Reset Particles" << std::endl ;
-				app->resetParticles();
-			}
-			app->setSeedPoint(seedPoint.x, seedPoint.y, seedPoint.z);
-			prevSeedPoint = seedPoint ;
-			app->releaseParticles();
-		}
-	*/
-		
-		app->getSettings()->considerX = server.getConsiderX();
-		app->getSettings()->considerY = server.getConsiderY();
-		app->getSettings()->considerZ = server.getConsiderZ();
 		
 		//LOGD("%f", t2);
 

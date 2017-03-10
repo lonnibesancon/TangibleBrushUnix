@@ -250,7 +250,7 @@ void udp_server::listen(){
 			//Need to position the tablet position on the screen
 			postTreatmentMat = Matrix4_f::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3_f(1.0, 1.0, 1.0));
 
-			if(hasSelectionSet)
+			if(tangoMove && hasSelectionSet)
 			{
 				if(dataSelected.size() > 0)
 					dataSelected.rbegin()->addPostTreatmentMatrix(s, scaleFactorX, scaleFactorY, postTreatmentMat);
