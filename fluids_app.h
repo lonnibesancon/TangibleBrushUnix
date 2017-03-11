@@ -57,6 +57,7 @@ public:
 	void initFromClient();
 	Matrix4 getSliceMatrix() const;
 	void saveFinalFile();
+	void nextTrial();
 private:
 	unsigned int getScreenWidth() const { return SCREEN_WIDTH; }
 	unsigned int getScreenHeight() const { return SCREEN_HEIGHT; }

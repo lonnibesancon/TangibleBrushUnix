@@ -97,7 +97,7 @@ void FillVolume::init(const std::vector<Vector2_f>& p)
 		std::vector<Edge> et;
 		for(int i=0; i < (int)(m_selectionPoints.size()-1); i++)
 			et.push_back(Edge(m_selectionPoints[i], m_selectionPoints[i+1]));
-		et.push_back(Edge(m_selectionPoints[0], m_selectionPoints[m_selectionPoints.size()-1]));
+		et.push_back(Edge(m_selectionPoints[m_selectionPoints.size()-1], m_selectionPoints[0]));
 
 		std::sort(et.begin(), et.end(), compareYEdge);
 
@@ -111,7 +111,7 @@ void FillVolume::init(const std::vector<Vector2_f>& p)
 		uint32_t etIndice=0;
 
 		//For each scanline
-		for(double j=yMin; et.rbegin()->m_yMax >= j; j+=.02)
+		for(double j=yMin; et.rbegin()->m_yMax >= j; j+=.015)
 		{
 			//Update the Active Edge Table
 			//
@@ -144,7 +144,7 @@ void FillVolume::init(const std::vector<Vector2_f>& p)
 			uint32_t aetIndice = 0;
 
 			//Go along the scanline, don't forget that the x = startX * (y - yMin) * incr
-			for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size() && i <= (*aetSorted.rbegin())->computeX(j); i+=0.02)
+			for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size() && i <= (*aetSorted.rbegin())->computeX(j); i+=0.015)
 			{
 				//Make a step
 				while(aetIndice+1 < aetSorted.size() && aetSorted[aetIndice+1]->computeX(j) < i)
@@ -306,7 +306,7 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 	{
 		Vector3_f pos = matrix*Vector3(point.x, point.y, -1.0f);
 		pos =  pos*METRICS;
-		Vector3_f pos2 = matrix*Vector3(point.x+0.02, point.y+0.02, -1.0f);
+		Vector3_f pos2 = matrix*Vector3(point.x+0.015, point.y+0.015, -1.0f);
 		pos2 = pos2*METRICS;
 
 		for(int32_t z=std::max(0.0f, std::min(pos.z, pos2.z)); z <= std::max(pos.z, pos2.z)+depth; z+=1)
@@ -429,7 +429,7 @@ void FillVolume::setSelectionMode(SelectionMode s)
 
 void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint32_t nbTrial)
 {
-	char nbTrialString[4];
+    char nbTrialString[4];
 	sprintf(nbTrialString, "%d", nbTrial);
 	char userIDString[3];
 	sprintf(userIDString, "%d", userID);
@@ -443,7 +443,7 @@ void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint3
 	std::string path = std::string(userIDString) + "/" + std::string(nbTrialString) + "/" + nbWriteString;
 
 	FILE* f = fopen(path.c_str(), "w");
-
+/*
 	//Write the user ID
 	fwrite(&userID, sizeof(uint32_t), 1, f);
 	//Write the model Path
@@ -485,22 +485,49 @@ void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint3
 
 	fclose(f);
 	m_nbWrite++;
+	*/
+
+	//Get the timer in Nano seconds
+	struct timespec spec;
+    clock_gettime(CLOCK_REALTIME, &spec);
+
+	uint64_t diffNS = spec.tv_nsec - m_ns;
+	m_ns = spec.tv_nsec;
+
+	switch(m_selectionMode)
+	{
+		case UNION:
+			m_nbUnion++;
+			break;
+		case INTERSECT:
+			m_nbInter++;
+			break;
+		case EXCLUSION:
+			m_nbDiff++;
+			break;
+	}
+
+	fprintf(f, "UserID, modelPath, timer (ns), volumeSize(x), volumeSize(y), volumeSize(z)\n");
+	fprintf(f, "%d;%s;%lu;%lu;%lu;%lu\n", userID, modelPath.c_str(), diffNS, m_x, m_y, m_z);
+	fclose(f);
+	m_nbWrite++;
 }
 
 void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial, ParticuleObject* particuleObject)
 {
-	char nbTrialString[4];
+    char nbTrialString[4];
 	sprintf(nbTrialString, "%d", nbTrial);
 	char userIDString[3];
 	sprintf(userIDString, "%d", userID);
 
-	mkdir(userIDString, 0755);
+    mkdir(userIDString, 0755);
 	mkdir((std::string(userIDString) + "/" + std::string(nbTrialString)).c_str(), 0755);
 
 	std::string path = std::string(userIDString) + "/" + std::string(nbTrialString) + "/final";
 
 	FILE* f = fopen(path.c_str(), "w");
 
+/*
 	//Write the user ID
 	fwrite(&userID, sizeof(uint32_t), 1, f);
 	//Write the model Path
@@ -542,10 +569,26 @@ void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, u
 
 	//Write data
 	fwrite(m_fillVolume, sizeof(char), (m_x*m_y*m_z+7)/8, f);
+*/
+	//Get the timer in Nano seconds
+	struct timespec spec;
+    clock_gettime(CLOCK_REALTIME, &spec);
+	m_ns = spec.tv_nsec;
+	uint64_t diffNS = m_initNs - m_ns;
 
+	//Write the number of operation
+	fwrite(&m_nbUnion, sizeof(uint32_t), 1, f);
+	fwrite(&m_nbInter, sizeof(uint32_t), 1, f);
+	fwrite(&m_nbDiff, sizeof(uint32_t), 1, f);
+
+	//Write statistics
+	ParticuleStats ps;
+	particuleObject->getStats(&ps, this);
+
+	fprintf(f, "UserID, modelPath, timer (ns), volumeSize(x), volumeSize(y), volumeSize(z), nbUnion, nbIntersection, nbDiff, volume, nbParticule, nbValidSelected, nbIncorrectSelected, nbNoiseSelected\n");
+	fprintf(f, "%d;%s;%lu;%lu;%lu;%lu;%d;%d;%d;%d;%d;%d;%d;%d\n", userID, modelPath.c_str(), diffNS, m_x, m_y, m_z, m_nbUnion, m_nbInter, m_nbDiff, ps.volume, ps.nbParticule, ps.valid, ps.incorrect, ps.inNoise);
 	fclose(f);
 	m_nbWrite++;
-
 }
 
 void FillVolume::reinitTime()

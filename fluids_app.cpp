@@ -89,6 +89,7 @@ struct FluidMechanics::Impl
 	void resetParticles();
 
 	void setTangoMove(bool tm, int intMode);
+	void nextTrial();
 
 	FluidMechanics* app;
 	SettingsPtr settings;
@@ -443,6 +444,13 @@ Vector3 FluidMechanics::Impl::posToDataCoords(const Vector3& pos)
 	result += Vector3(dataDim[0]/2, dataDim[1]/2, dataDim[2]/2) * dataSpacing;
 
 	return result;
+}
+
+void FluidMechanics::Impl::nextTrial()
+{
+	char nbTrialString[3];
+	sprintf(nbTrialString, "%d", nbTrial);
+	loadDataSet("data/data/"+std::string(nbTrialString));
 }
 
 Vector3 FluidMechanics::Impl::particleJitter()
@@ -814,34 +822,10 @@ bool FluidMechanics::Impl::computeAxisClipPlane(Vector3& point, Vector3& normal)
 
 bool FluidMechanics::Impl::computeStylusClipPlane(Vector3& point, Vector3& normal)
 {
-#if 0
-	// static const float posWeight = 0.7f;
-	// static const float rotWeight = 0.8f;
-	static const float posWeight = 0.8f;
-	static const float rotWeight = 0.8f;
-
-	static bool wasVisible = false;
-	static Matrix4 prevMatrix;
-
-	if (!state->stylusVisible) {
-		wasVisible = false;
-		return false;
-	}
-#else
-//	if (!state->stylusVisible)
-//		return false;
-#endif
-
-	// FIXME: state->stylusModelMatrix may be invalid (non-invertible) in some cases
 	try {
 
-	// Vector3 pt = state->stylusModelMatrix * Vector3::zero();
-	// LOGD("normal = %s", Utility::toString(normal).c_str());
-	// LOGD("pt = %s", Utility::toString(pt).c_str());
-
-	// static const float size = 128.0f;
-	// static const float size = 180.0f;
-	const float size = 0.5f * (60.0f + std::max(dataSpacing.x*dataDim[0], std::max(dataSpacing.y*dataDim[1], dataSpacing.z*dataDim[2])));
+	Vector3 particuleSize = particuleObject->getSize();
+	const float size = 0.5f * (60.0f + std::max(particuleSize.x, std::max(particuleSize.y, particuleSize.z)));
 
 	Matrix4 planeMatrix = state->stylusModelMatrix;
 
@@ -849,7 +833,7 @@ bool FluidMechanics::Impl::computeStylusClipPlane(Vector3& point, Vector3& norma
 	// // planeMatrix = planeMatrix * Matrix4::makeTransform(Vector3(-size, 0, 0)*settings->zoomFactor);
 
 	// Project the stylus->data vector onto the stylus X axis
-	Vector3 dataPosInStylusSpace = state->stylusModelMatrix.inverse() * state->modelMatrix * Vector3::zero();
+	Vector3 dataPosInStylusSpace = (state->stylusModelMatrix).inverse()*state->modelMatrix * Vector3(0.0, 0.0, 0.0);
 
 	// Shift the clip plane along the stylus X axis in order to
 	// reach the data, even if the stylus is far away
@@ -867,23 +851,23 @@ bool FluidMechanics::Impl::computeStylusClipPlane(Vector3& point, Vector3& norma
 	planeMatrix = planeMatrix * Matrix4::makeTransform(offset);
 
 	// The slice will be rendered from the viewpoint of the plane
-	Matrix4 proj = app->getProjMatrix(); proj[0][0] = -proj[1][1] / 1.0f; // same as "projMatrix", but with aspect = 1
-	Matrix4 slicingMatrix = Matrix4((proj * planeMatrix.inverse() * state->modelMatrix).inverse().get3x3Matrix());
+//	Matrix4 proj = app->getProjMatrix(); proj[0][0] = -proj[1][1] / 1.0f; // same as "projMatrix", but with aspect = 1
+//²	Matrix4 slicingMatrix = Matrix4((proj * planeMatrix.inverse() * state->modelMatrix).inverse().get3x3Matrix());
 
-	Vector3 pt2 = planeMatrix * Vector3::zero();
+	Vector3 pt2 = planeMatrix * Vector3(0.0, 0.0, 0.0);
 
 	// Position of the stylus tip, in data coordinates
-	Vector3 dataCoords = posToDataCoords(pt2);
+//	Vector3 dataCoords = posToDataCoords(pt2);
 	// LOGD("dataCoords = %s", Utility::toString(dataCoords).c_str());
-	slicingMatrix.setPosition(dataCoords);
+//	slicingMatrix.setPosition(dataCoords);
 
-	synchronized(slice) {
-		slice->setSlice(slicingMatrix, -proj[1][1]*size*settings->zoomFactor, settings->zoomFactor);
-	}
+//	synchronized(slice) {
+//		slice->setSlice(slicingMatrix, -proj[1][1]*size*settings->zoomFactor, settings->zoomFactor);
+//	}
 
-	synchronized(state->sliceModelMatrix) {
-		state->sliceModelMatrix = Matrix4(planeMatrix * Matrix4::makeTransform(Vector3::zero(), Quaternion::identity(), settings->zoomFactor*Vector3(size, size, 0.0f)));
-	}
+//	synchronized(state->sliceModelMatrix) {
+	//	state->sliceModelMatrix = Matrix4(planeMatrix * Matrix4::makeTransform(Vector3::zero(), Quaternion::identity(), settings->zoomFactor*Vector3(size, size, 0.0f)));
+//	}
 
 	point = pt2;
 	normal = state->stylusModelMatrix.inverse().transpose().get3x3Matrix() * Vector3::unitZ();
@@ -920,12 +904,12 @@ void FluidMechanics::Impl::setMatrices(const Matrix4& volumeMatrix, const Matrix
 	state->modelMatrix = volumeMatrix;
 	state->stylusModelMatrix = stylusMatrix;
 
-//	updateSlicePlanes();
+	updateSlicePlanes();
 }
 
 void FluidMechanics::Impl::updateSlicePlanes()
 {
-	if (state->stylusVisible) {
+/*  if (state->stylusVisible) {
 		if (state->tangibleVisible) { // <-- because of posToDataCoords()
 			// Effector 2
 			const float size = 0.5f * (stylusEffectorDist + std::max(dataSpacing.x*dataDim[0], std::max(dataSpacing.y*dataDim[1], dataSpacing.z*dataDim[2])));
@@ -1048,7 +1032,7 @@ void FluidMechanics::Impl::updateSlicePlanes()
 
 				if (buttonIsPressed) {
 					// settings->showSurface = true;
-				/*	settings->surfacePreview = true;
+					settings->surfacePreview = true;
 
 					vtkNew<vtkPoints> points;
 					points->InsertNextPoint(dataPos.x, dataPos.y, dataPos.z);
@@ -1079,7 +1063,7 @@ void FluidMechanics::Impl::updateSlicePlanes()
 					synchronized_if(isosurfaceLow) {
 						isosurfaceLow->setValue(value);
 					}
-					*/
+					
 				}
 			} else {
 				effectorIntersectionValid = false;
@@ -1090,10 +1074,11 @@ void FluidMechanics::Impl::updateSlicePlanes()
 			}
 		}
 	}
+*/
 
 	bool clipPlaneSet = false;
 
-	if (settings->showStylus && slice) {
+	if (settings->showStylus) {
 				clipPlaneSet = computeStylusClipPlane(slicePoint, sliceNormal);
 		}
 
@@ -1103,7 +1088,7 @@ void FluidMechanics::Impl::updateSlicePlanes()
 //		synchronized_if(volume) { volume->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint)); }
 		particuleObject->setClipPlane(sliceNormal.x, sliceNormal.y, sliceNormal.z, -sliceNormal.dot(slicePoint));
 
-		// pt: data space
+/*		// pt: data space
 		// dir: eye space
 		const auto rayPlaneIntersection = [this](const Vector3& pt, const Vector3& dir, float& t) -> bool {
 			// float dot = dir.dot(posToDataCoords(sliceNormal));
@@ -1174,6 +1159,7 @@ void FluidMechanics::Impl::updateSlicePlanes()
 
 			// LOGD("slicePoints.size() = %d", slicePoints.size());
 		}
+		*/
 	} else {
 //		synchronized_if(isosurface) { isosurface->clearClipPlane(); }
 //		synchronized_if(isosurfaceLow) { isosurfaceLow->clearClipPlane(); }
@@ -1563,6 +1549,9 @@ void FluidMechanics::Impl::showScreenPosition()
 	glClear(GL_DEPTH_BUFFER_BIT);
 	settings->showSlice = true;
 	settings->showStylus = true;
+
+//	state->stylusModelMatrix = (tabletMatrix*Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse();
+
 	updateSlicePlanes();
 
 	const Matrix4_f proj = app->getProjMatrix();
@@ -1585,7 +1574,7 @@ void FluidMechanics::Impl::showScreenPosition()
 
 	showParticules();
 
-	tabletRect.render(app->getProjMatrix(), (tabletMatrix*Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse() * Matrix4::makeTransform(Vector3_f(-1.5, -1.5, 0.0), Quaternion::identity(), Vector3_f(1.0, 1.0, 1.0)));
+	tabletRect.render(app->getProjMatrix(), (tabletMatrix*Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse()* Matrix4::makeTransform(Vector3_f(-1.5, -1.5, 0.0), Quaternion::identity(), Vector3_f(1.0, 1.0, 1.0)));
 	if(fillVolume && fillVolume->isInit())
 	{
 		screenLine.render(app->getProjMatrix(), (tabletMatrix*Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse());
@@ -1612,8 +1601,8 @@ void FluidMechanics::Impl::renderObjects()
     clock_gettime(CLOCK_REALTIME, &spec);
 
     long t2 = spec.tv_nsec;
-	std::cout << "fps : " << (double)1e9/(t2-t) << std::endl;
-	t = t2;
+//	std::cout << "fps : " << (double)1e9/(t2-t) << std::endl;
+//	t = t2;
 
 	return;
 }
@@ -1791,9 +1780,9 @@ void FluidMechanics::setTabletMatrix(const Matrix4& m, const Vector3_f& trans, c
 	impl->modelTrans = trans;
 	impl->modelRot = rot;
 
-	impl->state->stylusModelMatrix = (impl->tabletMatrix*Matrix4::makeTransform(impl->postTreatmentTrans, impl->postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse();
+//	impl->state->stylusModelMatrix = (impl->tabletMatrix*Matrix4::makeTransform(impl->postTreatmentTrans, impl->postTreatmentRot, Vector3(1.0, 1.0, 1.0)));
 
-	impl->setMatrices(impl->state->modelMatrix, impl->state->stylusModelMatrix);
+//	impl->setMatrices(impl->state->modelMatrix, impl->state->stylusModelMatrix);
 }
 
 Matrix4 FluidMechanics::getSliceMatrix() const
@@ -1853,6 +1842,7 @@ void FluidMechanics::updateVolumetricRendering()
 	if(impl->volumetricRendering)
 		delete impl->volumetricRendering;
 	impl->volumetricRendering = new Volumetric(impl->fillVolume, Vector3_f(1.0, 1.0, 0.0), 1.0);
+	impl->particuleObject->updateStatus(impl->fillVolume);
 }
 
 void FluidMechanics::setTangoMove(bool tm, int intMode)
@@ -1870,4 +1860,9 @@ void FluidMechanics::saveFinalFile()
 {
 	if(impl->fillVolume)
 		impl->fillVolume->saveFinalFiles(impl->modelPath, userID, impl->nbTrial, impl->particuleObject);
+}
+
+void FluidMechanics::nextTrial()
+{
+	impl->nextTrial();
 }
