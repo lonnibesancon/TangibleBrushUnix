@@ -1538,8 +1538,8 @@ void FluidMechanics::Impl::showSelection()
 		}
 	}
 #endif
-	glClear(GL_DEPTH_BUFFER_BIT);
-	volumetricRendering->render(proj, mm*fillVolumeMatrix);
+//	glClear(GL_DEPTH_BUFFER_BIT);
+//	volumetricRendering->render(proj, mm*fillVolumeMatrix);
 	
 	return;
 }
@@ -1578,7 +1578,7 @@ void FluidMechanics::Impl::showScreenPosition()
 	if(fillVolume && fillVolume->isInit())
 	{
 		screenLine.render(app->getProjMatrix(), (tabletMatrix*Matrix4::makeTransform(postTreatmentTrans, postTreatmentRot, Vector3(1.0, 1.0, 1.0))).inverse());
-		volumetricRendering->render(app->getProjMatrix(), mm*fillVolumeMatrix);
+		//volumetricRendering->render(app->getProjMatrix(), mm*fillVolumeMatrix);
 	}
 	glClear(GL_DEPTH_BUFFER_BIT);
 	app->setProjMatrix(proj);
@@ -1834,7 +1834,7 @@ void FluidMechanics::updateCurrentSelection(const Matrix4_f* m)
 	);
 	Matrix4_f projMat = (impl->tabletMatrix**m*mm).inverse();
 	projMat.translate(-impl->fillVolumeMatrix.position());
-	impl->fillVolume->fillWithSurface(METRICS, projMat);
+	impl->fillVolume->fillWithSurface(1.2*METRICS, projMat);
 }
 
 void FluidMechanics::updateVolumetricRendering()

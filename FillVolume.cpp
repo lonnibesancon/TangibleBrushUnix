@@ -111,7 +111,7 @@ void FillVolume::init(const std::vector<Vector2_f>& p)
 		uint32_t etIndice=0;
 
 		//For each scanline
-		for(double j=yMin; et.rbegin()->m_yMax >= j; j+=.015)
+		for(double j=yMin; et.rbegin()->m_yMax >= j; j+=.010)
 		{
 			//Update the Active Edge Table
 			//
@@ -306,7 +306,7 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 	{
 		Vector3_f pos = matrix*Vector3(point.x, point.y, -1.0f);
 		pos =  pos*METRICS;
-		Vector3_f pos2 = matrix*Vector3(point.x+0.015, point.y+0.015, -1.0f);
+		Vector3_f pos2 = matrix*Vector3(point.x+0.015, point.y+0.010, -1.0f);
 		pos2 = pos2*METRICS;
 
 		for(int32_t z=std::max(0.0f, std::min(pos.z, pos2.z)); z <= std::max(pos.z, pos2.z)+depth; z+=1)
@@ -574,19 +574,14 @@ void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, u
 	struct timespec spec;
     clock_gettime(CLOCK_REALTIME, &spec);
 	m_ns = spec.tv_nsec;
-	uint64_t diffNS = m_initNs - m_ns;
-
-	//Write the number of operation
-	fwrite(&m_nbUnion, sizeof(uint32_t), 1, f);
-	fwrite(&m_nbInter, sizeof(uint32_t), 1, f);
-	fwrite(&m_nbDiff, sizeof(uint32_t), 1, f);
+	uint64_t diffNS = m_ns - m_initNs;
 
 	//Write statistics
 	ParticuleStats ps;
 	particuleObject->getStats(&ps, this);
 
-	fprintf(f, "UserID, modelPath, timer (ns), volumeSize(x), volumeSize(y), volumeSize(z), nbUnion, nbIntersection, nbDiff, volume, nbParticule, nbValidSelected, nbIncorrectSelected, nbNoiseSelected\n");
-	fprintf(f, "%d;%s;%lu;%lu;%lu;%lu;%d;%d;%d;%d;%d;%d;%d;%d\n", userID, modelPath.c_str(), diffNS, m_x, m_y, m_z, m_nbUnion, m_nbInter, m_nbDiff, ps.volume, ps.nbParticule, ps.valid, ps.incorrect, ps.inNoise);
+	fprintf(f, "UserID, modelPath, timer (ns), METRICS, volumeSize(x), volumeSize(y), volumeSize(z), nbUnion, nbIntersection, nbDiff, volume, nbParticule, nbValidSelected, nbIncorrectSelected, nbNoiseSelected\n");
+	fprintf(f, "%d;%s;%lu;%d;%lu;%lu;%lu;%d;%d;%d;%d;%d;%d;%d;%d\n", userID, modelPath.c_str(), diffNS, METRICS, m_x, m_y, m_z, m_nbUnion, m_nbInter, m_nbDiff, ps.volume, ps.nbParticule, ps.valid, ps.incorrect, ps.inNoise);
 	fclose(f);
 	m_nbWrite++;
 }
