@@ -30,6 +30,7 @@ class ParticuleObject : public Renderable
 		Vector3 getSize() const{return mMax - mMin;}
 		Vector3 getMiddle() const{return (mMax + mMin)*0.5;}
 		void getStats(ParticuleStats* ps, FillVolume* fv);
+		void updateStatus(FillVolume* fv);
 	private:
 		bool hasClipPlane();
 

@@ -1,7 +1,7 @@
 #ifndef  FILLVOLUME_INC
 #define  FILLVOLUME_INC
 
-#define METRICS 20
+#define METRICS 15
 
 #include "stdint.h"
 #include "stdlib.h"
@@ -51,7 +51,7 @@ class FillVolume
 		FillVolume* createIntersection(const FillVolume& fv) const;
 		FillVolume* createExclusion(const FillVolume& fv) const;
 
-		void fillWithSurface(double depth, const Matrix4_f& matrix, const Vector2_f* factor);
+		void fillWithSurface(double depth, const Matrix4_f& matrix);
 
 		bool get(uint64_t x, uint64_t y, uint64_t z) const;
 		bool get(uint64_t v) const{return m_fillVolume[v/8] & (1 << (v%8));}
@@ -86,6 +86,7 @@ class FillVolume
 		uint64_t m_x, m_y, m_z;
 		pthread_mutex_t m_mutex;
 		std::vector<Vector2_f> m_selectionPoints;
+		std::vector<Vector2_f> m_scanline;
 		SelectionMode m_selectionMode=UNION;
 		uint32_t m_nbWrite=0;
 		uint64_t m_ns=0;

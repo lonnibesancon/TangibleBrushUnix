@@ -91,6 +91,7 @@ int main()
 
 	//Thread creation
 	std::thread th(&udp_server::listen,&server);
+	th.detach();
 	//th.join();
 
 	Matrix4 dataMatrix = Matrix4::makeTransform(Vector3(0, 0, 400), Quaternion(Vector3::unitX(), -M_PI/4)) ;
@@ -180,28 +181,14 @@ int main()
 
 		if(server.hasPostTreatmentSet)
 		{
-			synchronized(server.postTreatmentTrans)
-			{
-				synchronized(server.postTreatmentRot)
-				{
-					app->setPostTreatment(server.postTreatmentTrans, server.postTreatmentRot);
-				}
-			}
+			app->setPostTreatment(server.postTreatmentTrans, server.postTreatmentRot);
 			server.hasPostTreatmentSet = false;
 		}
 
 		if(server.hasSetTabletMatrix)
 		{
-			synchronized(server.tabletMatrix)
-			{
-				synchronized(server.modelTrans)
-				{
-					synchronized(server.modelRot)
-					{
-						app->setTabletMatrix(server.tabletMatrix, server.modelTrans, server.modelRot);
-					}
-				}
-			}
+			app->setTabletMatrix(server.tabletMatrix, server.modelTrans, server.modelRot);
+			server.hasSetTabletMatrix = false;
 		}
 
 /*  	if(server.hasSubDataChanged)
@@ -233,71 +220,83 @@ int main()
 			{
 				selectionID=0;
 				SelectionMode s;
-				synchronized(server.dataSelected)
-				{
-					s = server.dataSelected[selectionID].getSelectionMode();
-					const std::vector<Vector2_f>* points = &(server.dataSelected[selectionID].getSelectionPoint());
-					app->pushBackSelection(s, *points);
-					continue;
-				}
+				s = server.dataSelected[selectionID].getSelectionMode();
+				const std::vector<Vector2_f>* points = &(server.dataSelected[selectionID].getSelectionPoint());
+				app->pushBackSelection(s, *points);
 			}
 
 			int32_t dataSelectedSize=0;
-			synchronized(server.dataSelected)
-			{
-				dataSelectedSize = server.dataSelected.size();
-			}
+			dataSelectedSize = server.dataSelected.size();
 
 			for(int32_t i=selectionID; i < dataSelectedSize; i++)
 			{
 				const Matrix4_f* m=NULL;
-				const Vector2_f* factor;
 
 				do
 				{
-					synchronized(server.dataSelected)
-					{
-						int i = server.dataSelected[selectionID].nextIndice();
-						m = server.dataSelected[selectionID].getMatrix(i);
-						factor = server.dataSelected[selectionID].getScaleFactor(i);
-					}
+					int i = server.dataSelected[selectionID].nextIndice();
+					m = server.dataSelected[selectionID].getMatrix(i);
 
 					if(m == NULL && dataSelectedSize > selectionID+1)
 					{
 						selectionID++;
 						SelectionMode s;
-						synchronized(server.dataSelected)
-						{
-							s = server.dataSelected[selectionID].getSelectionMode();
-							const std::vector<Vector2_f>* points = &(server.dataSelected[selectionID].getSelectionPoint());
-							app->pushBackSelection(s, *points);
-							continue;
-						}
+						s = server.dataSelected[selectionID].getSelectionMode();
+						const std::vector<Vector2_f>* points = &(server.dataSelected[selectionID].getSelectionPoint());
+						app->pushBackSelection(s, *points);
+						continue;
 					}
 
 					else if(m != NULL)
 					{
-						synchronized(server.dataSelected)
-						{
-							app->updateCurrentSelection(m, factor);
-						}
+						app->updateCurrentSelection(m);
 					}
+					std::cout << "m coming" << std::endl;
 				}while(m != NULL);
 			}
 			app->updateVolumetricRendering();
 			server.hasSetToSelection = false;
 		}
 
-		dataMatrix = server.getDataMatrix();
-		sliceMatrix = server.getSliceMatrix();
-		//LOGD("dataMatrix = %s", Utility::toString(dataMatrix).c_str());
-		//LOGD("sliceMatrix = %s", Utility::toString(sliceMatrix).c_str());
-		//LOGD("server.getZoomFactor() = %f", server.getZoomFactor());
+		if(server.hasDataChanged)
+		{
+			server.hasDataChanged = false;
 
-		app->getSettings()->zoomFactor = server.getZoomFactor();
-		//sliceMatrix = dataMatrix * sliceMatrix ;
-		seedPoint = server.getSeedPoint();
-		app->setMatrices(dataMatrix,sliceMatrix);
+			t2 = 360;
+			app->getSettings()->sliceType = SLICE_STYLUS;
+			//app->getSettings()->sliceType = SLICE_CAMERA;
+			//app->getSettings()->showSlice = true;
+	//		app->getSettings()->showSlice = server.getShowSlice();
+			app->getSettings()->showSlice = true;
+			app->getSettings()->clipDist = t2;
+
+			dataMatrix = server.getDataMatrix();
+			sliceMatrix = server.getSliceMatrix();
+			//LOGD("dataMatrix = %s", Utility::toString(dataMatrix).c_str());
+			//LOGD("sliceMatrix = %s", Utility::toString(sliceMatrix).c_str());
+			//LOGD("server.getZoomFactor() = %f", server.getZoomFactor());
+
+			app->getSettings()->zoomFactor = server.getZoomFactor();
+			//sliceMatrix = dataMatrix * sliceMatrix ;
+	//			seedPoint = server.getSeedPoint();
+			app->setMatrices(dataMatrix,sliceMatrix);
+
+		/*  if(prevSeedPoint != seedPoint){
+				if(seedPoint == Vector3(-1000000,-1000000,-1000000) || seedPoint == Vector3(-1,-1,-1)){
+					std::cout << "Reset Particles" << std::endl ;
+					app->resetParticles();
+				}
+				app->setSeedPoint(seedPoint.x, seedPoint.y, seedPoint.z);
+				prevSeedPoint = seedPoint ;
+				app->releaseParticles();
+			}
+		*/
+			
+			app->getSettings()->considerX = server.getConsiderX();
+			app->getSettings()->considerY = server.getConsiderY();
+			app->getSettings()->considerZ = server.getConsiderZ();
+		}
+
 
 		/*app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 380), Quaternion(Vector3::unitX(), -M_PI/4)*Quaternion(Vector3::unitZ(), t)),
 		                 // Matrix4::identity()
@@ -305,27 +304,6 @@ int main()
 		
 		t += 0.005;
 		// t2 = 400+std::cos(t)*200;
-		t2 = 360;
-		app->getSettings()->sliceType = SLICE_STYLUS;
-		//app->getSettings()->sliceType = SLICE_CAMERA;
-		//app->getSettings()->showSlice = true;
-//		app->getSettings()->showSlice = server.getShowSlice();
-		app->getSettings()->showSlice = true;
-		app->getSettings()->clipDist = t2;
-
-		if(prevSeedPoint != seedPoint){
-			if(seedPoint == Vector3(-1000000,-1000000,-1000000) || seedPoint == Vector3(-1,-1,-1)){
-				std::cout << "Reset Particles" << std::endl ;
-				app->resetParticles();
-			}
-			app->setSeedPoint(seedPoint.x, seedPoint.y, seedPoint.z);
-			prevSeedPoint = seedPoint ;
-			app->releaseParticles();
-		}
-		
-		app->getSettings()->considerX = server.getConsiderX();
-		app->getSettings()->considerY = server.getConsiderY();
-		app->getSettings()->considerZ = server.getConsiderZ();
 		
 		//LOGD("%f", t2);
 

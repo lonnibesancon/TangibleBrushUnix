@@ -4,6 +4,7 @@
 #include "global.h"
 #include "renderable.h"
 #include "FillVolume.h"
+#include "material.h"
 
 class Volumetric : public Renderable
 {
@@ -17,7 +18,8 @@ class Volumetric : public Renderable
 	private:
 		GLuint m_textureId;
 
-		MaterialSharedPtr m_material;
+		static MaterialSharedPtr m_material;
+		static bool m_materialInit;
 		bool m_bound;
 		GLint m_vertexAttrib, m_normalAttrib;
 		GLint m_projectionUniform, m_modelViewUniform, m_normalMatrixUniform, m_volumeUniform;

@@ -51,12 +51,13 @@ public:
 	void setTabletMatrix(const Matrix4& mat, const Vector3_f& trans, const Quaternion& rot);
 	void clearSelection();
 	void pushBackSelection(SelectionMode s, const std::vector<Vector2_f>& points);
-	void updateCurrentSelection(const Matrix4_f* m, const Vector2_f* factor);
+	void updateCurrentSelection(const Matrix4_f* m);
 	void updateVolumetricRendering();
 	void setTangoMove(bool tm, int intMode);
 	void initFromClient();
 	Matrix4 getSliceMatrix() const;
 	void saveFinalFile();
+	void nextTrial();
 private:
 	unsigned int getScreenWidth() const { return SCREEN_WIDTH; }
 	unsigned int getScreenHeight() const { return SCREEN_HEIGHT; }

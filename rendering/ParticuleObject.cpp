@@ -29,9 +29,11 @@ namespace
 		"  highp vec4 viewSpacePos = modelView * vec4(vertex, 1.0);\n"
 
 		"  gl_Position = projection * viewSpacePos;\n"
-		"  if(status == 0) v_color = vec4(0.0, 1.0, 0.0, 1.0);\n"
-		"  else if(status == 1) v_color = vec4(1.0, 0.0, 0.0, 1.0);\n"
-		"  else if(status == 2){v_color = vec4(0.0, 0.0, 1.0, 1.0);}\n"
+		"  if(status == 0) v_color = vec4(0.0, 1.0, 0.0, 0.7);\n"
+		"  else if(status == 1) v_color = vec4(1.0, 0.7, 0.0, 0.7);\n"
+		"  else if(status == 2){v_color = vec4(0.0, 0.0, 1.0, 0.7);}\n"
+		"  else if(status == 3){v_color = vec4(1.0, 1.0, 1.0, 1.0);}\n"
+		"  else if(status == 4){v_color = vec4(1.0, 0.0, 0.0, 1.0);}\n"
 //		"  gl_Size = 2.0;\n"
 
 		"  v_clipDist = dot(viewSpacePos.xyz, clipPlane.xyz) + clipPlane.w;\n"
@@ -53,7 +55,7 @@ namespace
 		"varying highp vec4 v_color;\n"
 
 		"void main() {\n"
-		"if (v_clipDist <= 0.0) discard;\n"
+		"if (v_clipDist <= 50.0) discard;\n" //Hardcoded value. Correspond to the near clipping plane of the tablet matrix
 	//	"if(gl_Color.b > 0.5) discard;\n"
 		"gl_FragColor = v_color;\n"
 		"}";
@@ -202,10 +204,12 @@ void ParticuleObject::getStats(ParticuleStats* ps, FillVolume* fv)
 			switch(mPointsStats[i])
 			{
 				case 0:
+				case 3:
 					ps->valid++;
 					break;
 
 				case 1:
+				case 4:
 					ps->incorrect++;
 					break;
 
@@ -213,7 +217,50 @@ void ParticuleObject::getStats(ParticuleStats* ps, FillVolume* fv)
 					ps->inNoise++;
 					break;
 			}
+		}
+	}
+
+	std::cout << "getStats" << std::endl;
+	const uint64_t fvSize = fv->getMetricsSizeX()*fv->getMetricsSizeY()*fv->getMetricsSizeZ();
+	for(uint32_t i=0; i < fvSize; i++)
+		if(fv->get(i))
 			ps->volume++;
+}
+
+void ParticuleObject::updateStatus(FillVolume* fv)
+{
+	for(uint32_t i=0; i < mNbParticules; i++)
+	{
+		Vector3 size = getSize();
+		if(fv->get((size.x/2.0 + mPoints[3*i])*METRICS, (size.y/2.0 + mPoints[3*i+1])*METRICS, (size.z/2.0 + mPoints[3*i+2])*METRICS))
+		{
+			switch(mPointsStats[i])
+			{
+				case 0:
+					mPointsStats[i]=3;
+					break;
+
+				case 1:
+					mPointsStats[i]=4;
+					break;
+
+				default:
+					break;
+			}
+		}
+		else
+		{
+			switch(mPointsStats[i])
+			{
+				case 3:
+					mPointsStats[i]=0;
+					break;
+				case 4:
+					mPointsStats[i]=1;
+					break;
+				default:
+					break;
+			}
 		}
 	}
 }

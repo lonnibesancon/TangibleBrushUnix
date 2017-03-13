@@ -31,7 +31,9 @@
 
 #include "fwd.h"
 
-static const int SCREEN_WIDTH = 800, SCREEN_HEIGHT = 600;
+//static const int SCREEN_WIDTH = 800, SCREEN_HEIGHT = 600;
 //static const int SCREEN_WIDTH = 3840, SCREEN_HEIGHT = 2160;
+static const int SCREEN_WIDTH = 1920, SCREEN_HEIGHT = 900;
+
 
 #endif /* GLOBAL_H */
