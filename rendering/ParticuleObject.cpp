@@ -26,7 +26,7 @@ namespace
 		"varying highp vec4 v_color;\n"
 
 		"void main() {\n"
-		"  highp vec4 viewSpacePos = modelView * vec4(vertex * vec3(1.0, 1.0, -1.0), 1.0);\n"
+		"  highp vec4 viewSpacePos = modelView * vec4(vertex, 1.0);\n"
 
 		"  gl_Position = projection * viewSpacePos;\n"
 		"  if(status == 0) v_color = vec4(0.0, 1.0, 0.0, 1.0);\n"
