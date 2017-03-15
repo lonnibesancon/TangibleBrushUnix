@@ -198,10 +198,7 @@ FluidMechanics::Impl::~Impl()
 	fillVolume->lock();
 	{
 		if(fillVolume)
-		{
-			fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject);
 			delete fillVolume;
-		}
 	}
 }
 
@@ -1362,7 +1359,7 @@ void FluidMechanics::Impl::showSelection()
 //	settings->zoomFactor = 1.0;
 
 
-	glEnable(GL_DEPTH_TEST);
+/*	glEnable(GL_DEPTH_TEST);
 
 	// XXX: test
 	Matrix4 mm;
@@ -1384,6 +1381,7 @@ void FluidMechanics::Impl::showSelection()
 	glDepthMask(true); // requires "discard" in the shader where alpha == 0
 
 	const Matrix4 proj = app->getProjMatrix();
+*/
 
 /*	bool exists = false;
 	synchronized (particles) {
@@ -1814,9 +1812,9 @@ void FluidMechanics::clearSelection()
 
 	impl->particuleObject->updateStatus(impl->fillVolume);
 
-	if(impl->volumetricRendering)
-		delete impl->volumetricRendering;
-	impl->volumetricRendering = new Volumetric(impl->fillVolume, Vector3(1.0), 1.0f);
+//	if(impl->volumetricRendering)
+//		delete impl->volumetricRendering;
+//	impl->volumetricRendering = new Volumetric(impl->fillVolume, Vector3(1.0), 1.0f);
 }
 
 void FluidMechanics::pushBackSelection(SelectionMode s, const std::vector<Vector2_f>& points)
@@ -1829,7 +1827,6 @@ void FluidMechanics::pushBackSelection(SelectionMode s, const std::vector<Vector
 		for(uint32_t i=0; points.size()>i; i++)
 			pScreen.push_back(Vector3_f(points[i].x, points[i].y, -1));
 		impl->screenLine.setLines(pScreen);
-			 
 	}
 }
 
@@ -1866,10 +1863,12 @@ void FluidMechanics::setTangoMove(bool tm, int intMode)
 
 void FluidMechanics::initFromClient()
 {
+	clearSelection();
 	impl->loadDataSet("data/data/" + std::to_string(datasetorder[0]));
 	if(impl->fillVolume)
 		impl->fillVolume->reinitTime();
 	impl->nbTrial = 0;
+	impl->canLog = 0;
 }
 
 void FluidMechanics::saveFinalFile()
@@ -1881,5 +1880,4 @@ void FluidMechanics::saveFinalFile()
 void FluidMechanics::nextTrial()
 {
 	impl->nextTrial();
-	std::cout << "nextTrial" << std::endl;
 }
