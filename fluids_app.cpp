@@ -462,6 +462,7 @@ void FluidMechanics::Impl::nextTrial()
 		fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject);
 		nbTrial++;
 		loadDataSet("data/data/"+std::to_string(datasetorder[nbTrial]));
+		canLog = false;
 	}
 }
 
