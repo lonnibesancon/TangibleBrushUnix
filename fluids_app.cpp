@@ -456,10 +456,19 @@ void FluidMechanics::Impl::nextTrial()
 	}
 	else
 	{
-		fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject);
-		nbTrial++;
-		if(nbTrial < 4)
-			loadDataSet("data/data/"+std::to_string(datasetorder[nbTrial]));
+		if(!inTraining)
+		{
+			fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject);
+			nbTrial++;
+			if(nbTrial < 4)
+				loadDataSet("data/data/"+std::to_string(datasetorder[nbTrial]));
+		}
+		else
+		{
+			nbTrial++;
+			if(nbTrial < 4)
+				loadDataSet("data/data/training"+std::to_string(datasetorder[nbTrial]));
+		}
 		canLog = false;
 	}
 }
