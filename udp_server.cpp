@@ -440,6 +440,11 @@ void udp_server::listen(){
 			hasUpdateNextTrial = true;
 		}
 
+		else if(msg[0] == 'b')
+		{
+			hasChangeInTraining = true;
+		}
+
 		else if(msg[0] == '0')
 		{
 			std::string tok;

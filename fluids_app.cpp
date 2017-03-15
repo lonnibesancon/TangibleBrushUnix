@@ -170,6 +170,7 @@ struct FluidMechanics::Impl
 	long t;
 
 	bool canLog=false;
+	bool inTraining = true;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -307,7 +308,6 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 		{
 			delete fillVolume;
 		}
-		nbTrial++;
 	}
 
 	fillVolume       = new FillVolume(particuleObject->getSize().x, particuleObject->getSize().y, particuleObject->getSize().z);
@@ -458,7 +458,8 @@ void FluidMechanics::Impl::nextTrial()
 	{
 		fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject);
 		nbTrial++;
-		loadDataSet("data/data/"+std::to_string(datasetorder[nbTrial]));
+		if(nbTrial < 4)
+			loadDataSet("data/data/"+std::to_string(datasetorder[nbTrial]));
 		canLog = false;
 	}
 }
@@ -1864,11 +1865,15 @@ void FluidMechanics::setTangoMove(bool tm, int intMode)
 void FluidMechanics::initFromClient()
 {
 	clearSelection();
-	impl->loadDataSet("data/data/" + std::to_string(datasetorder[0]));
+	if(impl->inTraining)
+		impl->loadDataSet("data/data/training" + std::to_string(datasetorder[0]));
+	else
+		impl->loadDataSet("data/data/" + std::to_string(datasetorder[0]));
+
 	if(impl->fillVolume)
 		impl->fillVolume->reinitTime();
 	impl->nbTrial = 0;
-	impl->canLog = 0;
+	impl->canLog = false;
 }
 
 void FluidMechanics::saveFinalFile()
@@ -1880,4 +1885,10 @@ void FluidMechanics::saveFinalFile()
 void FluidMechanics::nextTrial()
 {
 	impl->nextTrial();
+}
+
+void FluidMechanics::changeInTraining()
+{
+	impl->inTraining = !impl->inTraining;
+	initFromClient();
 }

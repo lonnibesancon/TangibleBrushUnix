@@ -43,6 +43,7 @@ public:
 	bool hasUpdateTangoMove=false;
 	bool hasUpdateNextTrial=false;
 	bool hasInit=false;
+	bool hasChangeInTraining = false;
 
 	std::string previousMessage ;
 

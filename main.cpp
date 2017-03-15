@@ -160,6 +160,11 @@ int main()
 			selectionID = -1;
 		}
 
+		if(server.hasChangeInTraining)
+		{
+			app->changeInTraining();
+		}
+
 	/*  if(server.hasSelectionSet)
 		{
 			synchronized(server.selectionMatrix)
