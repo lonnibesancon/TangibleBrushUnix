@@ -90,8 +90,8 @@ class FillVolume
 		std::vector<Vector2_f> m_scanline;
 		SelectionMode m_selectionMode=UNION;
 		uint32_t m_nbWrite=0;
-		uint64_t m_ns=0;
-		uint64_t m_initNs=0;
+		uint64_t m_ms=0;
+		uint64_t m_initMs=0;
 		uint32_t m_nbInter=0;
 		uint32_t m_nbUnion=0;
 		uint32_t m_nbDiff=0;

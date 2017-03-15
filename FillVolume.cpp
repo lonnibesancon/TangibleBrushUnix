@@ -509,8 +509,8 @@ void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint3
 	struct timespec spec;
     clock_gettime(CLOCK_REALTIME, &spec);
 
-	uint64_t diffNS = spec.tv_nsec - m_ns;
-	m_ns = spec.tv_nsec;
+	uint64_t diffMS = spec.tv_nsec/1.0e6 - m_ms;
+	m_ms = spec.tv_nsec/1.0e6;
 
 	switch(m_selectionMode)
 	{
@@ -525,8 +525,8 @@ void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint3
 			break;
 	}
 
-	fprintf(f, "UserID, modelPath, timer (ns), volumeSize(x), volumeSize(y), volumeSize(z)\n");
-	fprintf(f, "%d;%s;%lu;%lu;%lu;%lu\n", userID, modelPath.c_str(), diffNS, m_x, m_y, m_z);
+	fprintf(f, "UserID, modelPath, timer (ms), volumeSize(x), volumeSize(y), volumeSize(z)\n");
+	fprintf(f, "%d;%s;%lu;%lu;%lu;%lu\n", userID, modelPath.c_str(), diffMS, m_x, m_y, m_z);
 	fclose(f);
 	m_nbWrite++;
 }
@@ -591,15 +591,15 @@ void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, u
 	//Get the timer in Nano seconds
 	struct timespec spec;
     clock_gettime(CLOCK_REALTIME, &spec);
-	m_ns = spec.tv_nsec;
-	uint64_t diffNS = m_ns - m_initNs;
+	m_ms = spec.tv_nsec/1.0e6;
+	uint64_t diffMS = m_ms - m_initMs;
 
 	//Write statistics
 	ParticuleStats ps;
 	particuleObject->getStats(&ps, this);
 
-	fprintf(f, "UserID, modelPath, timer (ns), METRICS, volumeSize(x), volumeSize(y), volumeSize(z), nbUnion, nbIntersection, nbDiff, volume, nbParticule, nbValidSelected, nbIncorrectSelected, nbNoiseSelected\n");
-	fprintf(f, "%d;%s;%lu;%d;%lu;%lu;%lu;%d;%d;%d;%d;%d;%d;%d;%d\n", userID, modelPath.c_str(), diffNS, METRICS, m_x, m_y, m_z, m_nbUnion, m_nbInter, m_nbDiff, ps.volume, ps.nbParticule, ps.valid, ps.incorrect, ps.inNoise);
+	fprintf(f, "UserID, modelPath, timer (ms), METRICS, volumeSize(x), volumeSize(y), volumeSize(z), nbUnion, nbIntersection, nbDiff, volume, nbParticule, nbValidSelected, nbIncorrectSelected, nbNoiseSelected\n");
+	fprintf(f, "%d;%s;%lu;%d;%lu;%lu;%lu;%d;%d;%d;%d;%d;%d;%d;%d\n", userID, modelPath.c_str(), diffMS, METRICS, m_x, m_y, m_z, m_nbUnion, m_nbInter, m_nbDiff, ps.volume, ps.nbParticule, ps.valid, ps.incorrect, ps.inNoise);
 	fclose(f);
 	m_nbWrite++;
 }
@@ -609,7 +609,7 @@ void FillVolume::reinitTime()
 	//Get the timer in Nano seconds
 	struct timespec spec;
     clock_gettime(CLOCK_REALTIME, &spec);
-	m_initNs = m_ns = spec.tv_nsec;
+	m_initMs = m_ms = spec.tv_nsec/1.0e6;
 }
 
 void FillVolume::commitIntersection()
