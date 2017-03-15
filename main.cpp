@@ -163,6 +163,7 @@ int main()
 		if(server.hasChangeInTraining)
 		{
 			app->changeInTraining();
+			server.hasChangeInTraining = false;
 		}
 
 	/*  if(server.hasSelectionSet)
