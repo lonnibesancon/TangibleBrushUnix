@@ -113,7 +113,7 @@ int main()
 	        case SDL_WINDOWEVENT: // Événement de la fenêtre
 	            if ( event.window.event == SDL_WINDOWEVENT_CLOSE ) 
 	            {
-					app->saveFinalFile();
+//					app->saveFinalFile();
 	                quit = true ;
 	            }
 	            break;
