@@ -34,6 +34,8 @@ namespace
 		"  else if(status == 2){v_color = vec4(0.0, 0.0, 1.0, 0.7);}\n"
 		"  else if(status == 3){v_color = vec4(1.0, 1.0, 1.0, 1.0);}\n"
 		"  else if(status == 4){v_color = vec4(1.0, 0.0, 0.0, 1.0);}\n"
+		"  else if(status == 5){v_color = vec4(0.8, 0.8, 0.8, 0.8);}\n"
+		"  else if(status == 6){v_color = vec4(6.0, 6.0, 0.0, 0.7);}\n"
 //		"  gl_Size = 2.0;\n"
 
 		"  v_clipDist = dot(viewSpacePos.xyz, clipPlane.xyz) + clipPlane.w;\n"
@@ -220,7 +222,6 @@ void ParticuleObject::getStats(ParticuleStats* ps, FillVolume* fv)
 		}
 	}
 
-	std::cout << "getStats" << std::endl;
 	const uint64_t fvSize = fv->getMetricsSizeX()*fv->getMetricsSizeY()*fv->getMetricsSizeZ();
 	for(uint32_t i=0; i < fvSize; i++)
 		if(fv->get(i))
@@ -232,15 +233,18 @@ void ParticuleObject::updateStatus(FillVolume* fv)
 	for(uint32_t i=0; i < mNbParticules; i++)
 	{
 		Vector3 size = getSize();
-		if(fv->get((size.x/2.0 + mPoints[3*i])*METRICS, (size.y/2.0 + mPoints[3*i+1])*METRICS, (size.z/2.0 + mPoints[3*i+2])*METRICS))
+		Vector3 fvPos = Vector3((size.x/2.0 + mPoints[3*i])*METRICS, (size.y/2.0 + mPoints[3*i+1])*METRICS, (size.z/2.0 + mPoints[3*i+2])*METRICS);
+		if(fv->get(fvPos.x, fvPos.y, fvPos.z))
 		{
 			switch(mPointsStats[i])
 			{
 				case 0:
+				case 5:
 					mPointsStats[i]=3;
 					break;
 
 				case 1:
+				case 6:
 					mPointsStats[i]=4;
 					break;
 
@@ -250,16 +254,35 @@ void ParticuleObject::updateStatus(FillVolume* fv)
 		}
 		else
 		{
-			switch(mPointsStats[i])
+			if(fv->getSave(fvPos.x, fvPos.y, fvPos.z))
 			{
-				case 3:
-					mPointsStats[i]=0;
-					break;
-				case 4:
-					mPointsStats[i]=1;
-					break;
-				default:
-					break;
+				switch(mPointsStats[i])
+				{
+					case 3:
+						mPointsStats[i]=5;
+						break;
+					case 4:
+						mPointsStats[i]=6;
+						break;
+					default:
+						break;
+				}
+			}
+			else
+			{
+				switch(mPointsStats[i])
+				{
+					case 3:
+					case 5:
+						mPointsStats[i]=0;
+						break;
+					case 4:
+					case 6:
+						mPointsStats[i]=1;
+						break;
+					default:
+						break;
+				}
 			}
 		}
 	}

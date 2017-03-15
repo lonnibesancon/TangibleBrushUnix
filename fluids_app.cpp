@@ -168,6 +168,8 @@ struct FluidMechanics::Impl
 	ParticuleObject* particuleObject=NULL;
 	int interactionMode=-1;
 	long t;
+
+	bool canLog=false;
 };
 
 FluidMechanics::Impl::Impl(const std::string& baseDir)
@@ -275,6 +277,8 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 			p.valid = false;
 	}
 	*/
+
+	std::cout << "load dataset" << std::endl;
 
 	VTKOutputWindow::install();
 
@@ -448,9 +452,17 @@ Vector3 FluidMechanics::Impl::posToDataCoords(const Vector3& pos)
 
 void FluidMechanics::Impl::nextTrial()
 {
-	char nbTrialString[3];
-	sprintf(nbTrialString, "%d", nbTrial);
-	loadDataSet("data/data/"+std::string(nbTrialString));
+	if(!canLog)
+	{
+		canLog = true;
+		fillVolume->reinitTime();
+	}
+	else
+	{
+		fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject);
+		nbTrial++;
+		loadDataSet("data/data/"+std::to_string(datasetorder[nbTrial]));
+	}
 }
 
 Vector3 FluidMechanics::Impl::particleJitter()
@@ -1799,6 +1811,8 @@ void FluidMechanics::clearSelection()
 	impl->selectionPoint.clear();
 	impl->pushBackSelection();
 
+	impl->particuleObject->updateStatus(impl->fillVolume);
+
 	if(impl->volumetricRendering)
 		delete impl->volumetricRendering;
 	impl->volumetricRendering = new Volumetric(impl->fillVolume, Vector3(1.0), 1.0f);
@@ -1806,7 +1820,7 @@ void FluidMechanics::clearSelection()
 
 void FluidMechanics::pushBackSelection(SelectionMode s, const std::vector<Vector2_f>& points)
 {
-	if(impl->fillVolume)
+	if(impl->fillVolume && impl->canLog)
 	{
 		impl->fillVolume->init(points);
 		impl->fillVolume->setSelectionMode(s); 
@@ -1820,10 +1834,9 @@ void FluidMechanics::pushBackSelection(SelectionMode s, const std::vector<Vector
 
 void FluidMechanics::updateCurrentSelection(const Matrix4_f* m)
 {
-	if(!impl->fillVolume)
+	if(!impl->fillVolume || !impl->canLog)
 		return;
 
-//	Matrix4_f projMat = Matrix4::makeTransform(-impl->modelTrans, impl->modelRot.inverse(), Vector3_f(1.0, 1.0, 1.0))*(impl->tabletMatrix**m).inverse();
 	Matrix4 mm = impl->state->modelMatrix;
 
 	// Apply the zoom factor
@@ -1839,9 +1852,9 @@ void FluidMechanics::updateCurrentSelection(const Matrix4_f* m)
 
 void FluidMechanics::updateVolumetricRendering()
 {
-	if(impl->volumetricRendering)
-		delete impl->volumetricRendering;
-	impl->volumetricRendering = new Volumetric(impl->fillVolume, Vector3_f(1.0, 1.0, 0.0), 1.0);
+//	if(impl->volumetricRendering)
+//		delete impl->volumetricRendering;
+//	impl->volumetricRendering = new Volumetric(impl->fillVolume, Vector3_f(1.0, 1.0, 0.0), 1.0);
 	impl->particuleObject->updateStatus(impl->fillVolume);
 }
 
@@ -1852,8 +1865,10 @@ void FluidMechanics::setTangoMove(bool tm, int intMode)
 
 void FluidMechanics::initFromClient()
 {
+	impl->loadDataSet("data/data/" + std::to_string(datasetorder[0]));
 	if(impl->fillVolume)
 		impl->fillVolume->reinitTime();
+	impl->nbTrial = 0;
 }
 
 void FluidMechanics::saveFinalFile()
@@ -1865,4 +1880,5 @@ void FluidMechanics::saveFinalFile()
 void FluidMechanics::nextTrial()
 {
 	impl->nextTrial();
+	std::cout << "nextTrial" << std::endl;
 }

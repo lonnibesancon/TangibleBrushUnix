@@ -20,6 +20,7 @@
 #define NUMBEROFITEMSINMESSAGE 35
 
 extern uint32_t userID;
+extern int datasetorder[4];
 
 class udp_server{
 	
@@ -40,6 +41,7 @@ public:
 	bool hasSetToSelection = false;
 	bool hasSetTabletMatrix=false;
 	bool hasUpdateTangoMove=false;
+	bool hasUpdateNextTrial=false;
 	bool hasInit=false;
 
 	std::string previousMessage ;

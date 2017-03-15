@@ -9,6 +9,8 @@
 #include <string>
 #include <stdlib.h>
 
+int datasetorder[4] = {0, 0, 0, 0};
+
 udp_server::udp_server(){
 	int i ;
 	port = 8888 ;
@@ -369,6 +371,55 @@ void udp_server::listen(){
 			getline(ss, tok, ';');
 			userID = std::stoi(tok.c_str());
 			hasInit=true;
+
+			if(userID <= 2){
+				datasetorder[0] = 1 ;
+				datasetorder[1] = 2 ;
+				datasetorder[2] = 4 ;
+				datasetorder[3] = 3 ;
+			}
+			else if(userID <= 4){
+				datasetorder[0] = 2 ;
+				datasetorder[1] = 3 ;
+				datasetorder[2] = 1 ;
+				datasetorder[3] = 4 ;
+			}
+			else if(userID <= 6){
+				datasetorder[0] = 3 ;
+				datasetorder[1] = 4 ;
+				datasetorder[2] = 2 ;
+				datasetorder[3] = 1 ;
+			}
+			else if(userID <= 8){
+				datasetorder[0] = 4 ;
+				datasetorder[1] = 1 ;
+				datasetorder[2] = 3 ;
+				datasetorder[3] = 2 ;
+			}
+			else if(userID <= 10){
+				datasetorder[0] = 1 ;
+				datasetorder[1] = 4 ;
+				datasetorder[2] = 2 ;
+				datasetorder[3] = 3 ;
+			}
+			else if(userID <= 12){
+				datasetorder[0] = 2 ;
+				datasetorder[1] = 1 ;
+				datasetorder[2] = 3 ;
+				datasetorder[3] = 4 ;
+			}
+			else if(userID <= 14){
+				datasetorder[0] = 3 ;
+				datasetorder[1] = 2 ;
+				datasetorder[2] = 4 ;
+				datasetorder[3] = 1 ;
+			}
+			else if(userID <= 16){
+				datasetorder[0] = 4 ;
+				datasetorder[1] = 3 ;
+				datasetorder[2] = 1 ;
+				datasetorder[3] = 2 ;
+			}
 		}
 
 		else if(msg[0] == '8')
@@ -382,6 +433,11 @@ void udp_server::listen(){
 			getline(ss, tok, ';');
 			interactionMode = std::stoi(tok.c_str());
 			hasUpdateTangoMove = true;
+		}
+
+		else if(msg[0] == 'a')
+		{
+			hasUpdateNextTrial = true;
 		}
 
 		else if(msg[0] == '0')
@@ -460,10 +516,10 @@ void udp_server::listen(){
 			sliceMatrix = Matrix4(pMatrix) ;
 			//printAny(sliceMatrix, "sliceMatrix = ");
 			seedPoint = Vector3(seed) ;
-			if(dataset!= datast){
-				dataset = datast ;
-				hasDataSetChanged = true ;
-			}
+//			if(dataset!= datast){
+//				dataset = datast ;
+//				hasDataSetChanged = true ;
+//			}
 			
 			//Now for the display only part: constrains on axis + what to show
 			int consider = -1 ;

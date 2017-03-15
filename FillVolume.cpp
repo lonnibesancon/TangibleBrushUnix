@@ -309,15 +309,24 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 		Vector3_f pos2 = matrix*Vector3(point.x+0.015, point.y+0.010, -1.0f);
 		pos2 = pos2*METRICS;
 
-		for(int32_t z=std::max(0.0f, std::min(pos.z, pos2.z)); z <= std::max(pos.z, pos2.z)+depth; z+=1)
+		float maxZ = std::max(pos.z, pos2.z)+depth;
+		float maxY = std::max(pos.y, pos2.y);
+		float maxX = std::max(pos.x, pos2.x);
+
+		float startZ = std::max(0.0f, std::min(pos.z, pos2.z));
+		float startY = std::max(0.0f, std::min(pos.y, pos2.y));
+		float startX = std::max(0.0f, std::min(pos.x, pos2.x));
+
+
+		for(int32_t z=startZ; z <= maxZ; z+=1)
 		{
 			if(z > m_z)
 				break;
-			for(int32_t y=std::max(0.0f, std::min(pos.y, pos2.y)); y <= std::max(pos.y, pos2.y); y+=1)
+			for(int32_t y=startY; y <= maxY; y+=1)
 			{
 				if(y > m_y)
 					break;
-				for(int32_t x=std::max(0.0f, std::min(pos.x, pos2.x)); x <= std::max(pos.x, pos2.x); x+=1)
+				for(int32_t x=startX; x <= maxX; x+=1)
 				{
 					if(x > m_x)
 						break;
@@ -403,6 +412,15 @@ bool FillVolume::get(uint64_t x, uint64_t y, uint64_t z) const
 {
 	uint64_t selfShift = x + m_x*y + m_x*m_y*z;
 	uint8_t self          = *(m_fillVolume + (selfShift)/8);
+	self               = (self >> (selfShift % 8)) & 0x01;
+
+	return self;
+}
+
+bool FillVolume::getSave(uint64_t x, uint64_t y, uint64_t z) const
+{
+	uint64_t selfShift = x + m_x*y + m_x*m_y*z;
+	uint8_t self          = *(m_saveVolume + (selfShift)/8);
 	self               = (self >> (selfShift % 8)) & 0x01;
 
 	return self;

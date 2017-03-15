@@ -22,7 +22,7 @@ class Selection
 		int nextIndice(); //Return the next indice of the selection, -1 if none
 		uint32_t getNbData() const{return m_moveMatrix.size();}
 		const std::vector<Vector2_f>& getSelectionPoint() const{return m_pointSelection;}
-		const Matrix4_f* getMatrix(int i){return ((i < 0 || i >= getNbData()) ? NULL : &m_moveMatrix[i]);}
+		const Matrix4_f* getMatrix(int i){return ((i >= getNbData()) ? NULL : &m_moveMatrix[i]);}
 		const Vector2_f* getScaleFactor(int i){return ((i < 0 || i >= getNbData()) ? NULL : &m_scale[i]);}
 		SelectionMode getSelectionMode() const{return m_selectionMode;}
 	private:

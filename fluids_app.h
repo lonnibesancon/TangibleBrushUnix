@@ -6,6 +6,7 @@
 #include "Selection.h"
 
 extern uint32_t userID;
+extern int datasetorder[4];
 
 class FluidMechanics
 {

@@ -80,7 +80,7 @@ int main()
 	std::unique_ptr<FluidMechanics> app(new FluidMechanics("data"));
 	app->rebind();
 
-	app->loadDataSet("data/data/galaxy");
+	app->loadDataSet("data/data/1");
 	app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 120), Quaternion(Vector3::unitX(), -M_PI/4)),
 	                 // Matrix4::identity()
 	                 Matrix4::makeTransform(Vector3(0, 0, 120))
@@ -132,7 +132,7 @@ int main()
 	            break;
 	    }
 
-		if(server.hasDataSetChanged ){
+/*		if(server.hasDataSetChanged ){
 			int dataset = server.getDataSet();
 			if(dataset == ftle){
 				app->loadDataSet("data/hemisphere");
@@ -147,7 +147,10 @@ int main()
 //				app->loadDataSet("data/FTLE7.vtk");
 //				app->loadVelocityDataSet("data/Velocities7.vtk");
 			}
+
+			server.hasDataChanged = false;
 		}
+		*/
 
 		if(server.hasSelectionClear)
 		{
@@ -207,7 +210,15 @@ int main()
 		if(server.hasInit)
 		{
 			app->initFromClient();
+			server.hasInit = false;
 		}
+
+		if(server.hasUpdateNextTrial)
+		{
+			app->nextTrial();
+			server.hasUpdateNextTrial = false;
+		}
+
 		if(server.hasUpdateTangoMove)
 		{
 			app->setTangoMove(server.tangoMove, server.interactionMode);
