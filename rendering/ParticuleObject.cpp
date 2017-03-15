@@ -171,7 +171,7 @@ void ParticuleObject::render(const Matrix4& projectionMatrix, const Matrix4& mod
 	glUseProgram(mMaterial->getHandle());
 	glEnableVertexAttribArray(mVertexAttrib);
 	glEnableVertexAttribArray(mStatusAttrib);
-	glPointSize(1.0f);
+	glPointSize(2.5f);
 
 	//Vertices
 	glVertexAttribPointer(mVertexAttrib, 3, GL_FLOAT, false, 0, mPoints);
