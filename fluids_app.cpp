@@ -302,7 +302,7 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	//Init the fill volume.
 	if(fillVolume)
 	{
-		fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject);
+//		fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject);
 		fillVolume->lock();
 		{
 			delete fillVolume;
