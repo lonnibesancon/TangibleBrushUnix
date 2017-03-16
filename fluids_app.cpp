@@ -458,7 +458,7 @@ void FluidMechanics::Impl::nextTrial()
 	{
 		if(!inTraining)
 		{
-			fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject);
+			fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject, datasetorder[nbTrial/3]);
 			nbTrial++;
 			if(nbTrial < 12)
 				loadDataSet("data/data/"+std::to_string(datasetorder[nbTrial/3]));
@@ -469,7 +469,7 @@ void FluidMechanics::Impl::nextTrial()
 			if(nbTrial < 4)
 				loadDataSet("data/data/training"+std::to_string(datasetorder[nbTrial]));
 		}
-		canLog = false;
+		canLog = (nbTrial%3 != 0);
 	}
 }
 
@@ -1643,8 +1643,7 @@ void FluidMechanics::Impl::setTangoMove(bool tm, int intMode)
 	{
 		if(fillVolume && !inTraining)
 		{
-			fillVolume->saveToFile(modelPath, userID, nbTrial);
-			std::cout << "saving in " << tm << " " << intMode<< std::endl;
+			fillVolume->saveToFile(modelPath, userID, nbTrial, datasetorder[nbTrial/3]);
 		}
 	}
 	else if(tm == false)
@@ -1889,7 +1888,7 @@ void FluidMechanics::initFromClient()
 void FluidMechanics::saveFinalFile()
 {
 	if(impl->fillVolume)
-		impl->fillVolume->saveFinalFiles(impl->modelPath, userID, impl->nbTrial, impl->particuleObject);
+		impl->fillVolume->saveFinalFiles(impl->modelPath, userID, impl->nbTrial, impl->particuleObject, datasetorder[impl->nbTrial/3]);
 }
 
 void FluidMechanics::nextTrial()

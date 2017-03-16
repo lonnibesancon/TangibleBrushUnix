@@ -73,8 +73,8 @@ class FillVolume
 		bool isInit() const{return m_isInit;}
 		void setSelectionMode(SelectionMode s);
 
-		void saveToFile(const std::string& modelPath, uint32_t userID, uint32_t nbTrial);
-		void saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial, ParticuleObject* po);
+		void saveToFile(const std::string& modelPath, uint32_t userID, uint32_t nbTrial, uint32_t dataID);
+		void saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial, ParticuleObject* po, uint32_t dataID);
 
 		void reinitTime();
 		void commitIntersection();

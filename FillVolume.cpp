@@ -450,7 +450,7 @@ void FillVolume::setSelectionMode(SelectionMode s)
 	m_selectionMode = s;
 }
 
-void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint32_t nbTrial)
+void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint32_t nbTrial, uint32_t dataID)
 {
     char nbTrialString[4];
 	sprintf(nbTrialString, "%d", nbTrial%3);
@@ -458,13 +458,13 @@ void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint3
 	sprintf(userIDString, "%d", userID);
 
 	mkdir(userIDString, 0755);
-	mkdir((std::string(userIDString) + "/" + std::to_string(nbTrial/3)).c_str(), 0755);
-	mkdir((std::string(userIDString) + "/" + std::to_string(nbTrial/3) + "/" + std::string(nbTrialString)).c_str(), 0755);
+	mkdir((std::string(userIDString) + "/" + std::to_string(dataID)).c_str(), 0755);
+	mkdir((std::string(userIDString) + "/" + std::to_string(dataID) + "/" + std::string(nbTrialString)).c_str(), 0755);
 
 	char nbWriteString[4];
 	sprintf(nbWriteString, "%d", m_nbWrite);
 
-	std::string path = std::string(userIDString) + "/" + std::to_string(nbTrial/3) + "/"+std::string(nbTrialString) + "/" + nbWriteString;
+	std::string path = std::string(userIDString) + "/" + std::to_string(dataID) + "/"+std::string(nbTrialString) + "/" + nbWriteString;
 
 	FILE* f = fopen(path.c_str(), "w");
 /*
@@ -534,7 +534,7 @@ void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint3
 	m_nbWrite++;
 }
 
-void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial, ParticuleObject* particuleObject)
+void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial, ParticuleObject* particuleObject, uint32_t dataID)
 {
     char nbTrialString[4];
 	sprintf(nbTrialString, "%d", nbTrial%3);
@@ -542,10 +542,10 @@ void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, u
 	sprintf(userIDString, "%d", userID);
 
     mkdir(userIDString, 0755);
-	mkdir((std::string(userIDString) + "/" + std::to_string(nbTrial/3)).c_str(), 0755);
-	mkdir((std::string(userIDString) + "/" + std::to_string(nbTrial/3) + "/" + std::string(nbTrialString)).c_str(), 0755);
+	mkdir((std::string(userIDString) + "/" + std::to_string(dataID)).c_str(), 0755);
+	mkdir((std::string(userIDString) + "/" + std::to_string(dataID) + "/" + std::string(nbTrialString)).c_str(), 0755);
 
-	std::string path = std::string(userIDString) + "/" + std::to_string(nbTrial/3) + "/"+std::string(nbTrialString) + "/final";
+	std::string path = std::string(userIDString) + "/" + std::to_string(dataID) + "/"+std::string(nbTrialString) + "/final";
 
 	FILE* f = fopen(path.c_str(), "w");
 

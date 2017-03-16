@@ -270,7 +270,6 @@ int main()
 					{
 						app->updateCurrentSelection(m);
 					}
-					std::cout << "m coming" << std::endl;
 				}while(m != NULL);
 			}
 			app->updateVolumetricRendering();
