@@ -317,9 +317,9 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	fillVolumeMatrix = Matrix4_f::makeTransform(-particuleObject->getSize()/2.0, Quaternion_f::identity(), Vector3_f(1.0, 1.0, 1.0));
 	fillVolumeMatrix.rescale(particuleObject->getSize());
 
-	if(volumetricRendering)
-		delete volumetricRendering;
-	volumetricRendering = new Volumetric(fillVolume, Vector3_f(1.0, 1.0, 0.0), 1.0);
+//	if(volumetricRendering)
+//		delete volumetricRendering;
+//	volumetricRendering = new Volumetric(fillVolume, Vector3_f(1.0, 1.0, 0.0), 1.0);
 
 	// Compute a default zoom value according to the data dimensions
 	// static const float nativeSize = 128.0f;
@@ -460,8 +460,8 @@ void FluidMechanics::Impl::nextTrial()
 		{
 			fillVolume->saveFinalFiles(modelPath, userID, nbTrial, particuleObject);
 			nbTrial++;
-			if(nbTrial < 4)
-				loadDataSet("data/data/"+std::to_string(datasetorder[nbTrial]));
+			if(nbTrial < 12)
+				loadDataSet("data/data/"+std::to_string(datasetorder[nbTrial/3]));
 		}
 		else
 		{
@@ -1638,13 +1638,13 @@ void FluidMechanics::Impl::setTangoMove(bool tm, int intMode)
 	}
 
 	if((interactionMode == planeTangible ||
-		interactionMode == planeTouchTangible ||
-		interactionMode == dataPlaneTouchTangible) &&
+		interactionMode == planeTouchTangible) &&
 		tm == false)
 	{
-		if(fillVolume)
+		if(fillVolume && !inTraining)
 		{
 			fillVolume->saveToFile(modelPath, userID, nbTrial);
+			std::cout << "saving in " << tm << " " << intMode<< std::endl;
 		}
 	}
 	else if(tm == false)
@@ -1874,15 +1874,16 @@ void FluidMechanics::setTangoMove(bool tm, int intMode)
 void FluidMechanics::initFromClient()
 {
 	clearSelection();
-	if(impl->inTraining)
-		impl->loadDataSet("data/data/training" + std::to_string(datasetorder[0]));
-	else
-		impl->loadDataSet("data/data/" + std::to_string(datasetorder[0]));
 
 	if(impl->fillVolume)
 		impl->fillVolume->reinitTime();
 	impl->nbTrial = 0;
 	impl->canLog = false;
+
+	if(impl->inTraining)
+		impl->loadDataSet("data/data/training" + std::to_string(datasetorder[0]));
+	else
+		impl->loadDataSet("data/data/" + std::to_string(datasetorder[0]));
 }
 
 void FluidMechanics::saveFinalFile()

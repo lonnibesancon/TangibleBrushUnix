@@ -16,7 +16,7 @@
 #include "Selection.h"
 #include "interactionMode.h"
 
-#define BUFLEN 1024
+#define BUFLEN 65543
 #define NUMBEROFITEMSINMESSAGE 35
 
 extern uint32_t userID;

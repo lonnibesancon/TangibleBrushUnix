@@ -16,7 +16,8 @@ ARCH=$(shell uname -m | sed 's/x86_//;s/i[3-6]86/32/')
 VER=$(shell lsb_release -sr)
 $(info OS= $(OS))
 
-FLAGS = -O3 -fpermissive -Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-deprecated -pedantic #-ggdb
+#FLAGS = -O3 -fpermissive -Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-deprecated -pedantic #-ggdb
+FLAGS = -fpermissive -Wall -Wextra -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-parameter -Wno-deprecated -pedantic -ggdb
 CFLAGS = -std=c99
 CXXFLAGS = -std=c++0x
 

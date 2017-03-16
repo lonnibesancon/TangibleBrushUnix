@@ -29,13 +29,15 @@ namespace
 		"  highp vec4 viewSpacePos = modelView * vec4(vertex, 1.0);\n"
 
 		"  gl_Position = projection * viewSpacePos;\n"
-		"  if(status == 0) v_color = vec4(0.0, 1.0, 0.0, 0.7);\n"
-		"  else if(status == 1) v_color = vec4(1.0, 0.7, 0.0, 0.7);\n"
-		"  else if(status == 2){v_color = vec4(0.0, 0.0, 1.0, 0.7);}\n"
+		"  if(status == 1) v_color = vec4(1.0, 0.84, 0.19, 0.6);\n"
+	//	"  else if(status == 0) v_color = vec4(0.086, 0.31, 0.6, 0.6);\n"
+		"  else if(status == 2 || status == 0){v_color = vec4(0.77, 0.835, 0.86, 0.4);}\n"
 		"  else if(status == 3){v_color = vec4(1.0, 1.0, 1.0, 1.0);}\n"
-		"  else if(status == 4){v_color = vec4(1.0, 0.0, 0.0, 1.0);}\n"
-		"  else if(status == 5){v_color = vec4(0.8, 0.8, 0.8, 0.8);}\n"
-		"  else if(status == 6){v_color = vec4(6.0, 6.0, 0.0, 0.7);}\n"
+		"  else if(status == 4 || status == 10){v_color = vec4(1.0, 0.0, 0.0, 1.0);}\n"
+		"  else if(status == 5){v_color = vec4(0.8, 0.8, 0.8, 0.7);}\n"
+		"  else if(status == 6){v_color = vec4(1.0, 0.0, 1.0, 0.7);}\n"
+//		"  else if(status == 10){v_color = vec4(0.8, 0.3, 0.3, 1.0);}\n"
+		"  else if(status == 11){v_color = vec4(0.5, 0.1, 1.1, 0.7);}\n"
 //		"  gl_Size = 2.0;\n"
 
 		"  v_clipDist = dot(viewSpacePos.xyz, clipPlane.xyz) + clipPlane.w;\n"
@@ -79,10 +81,10 @@ ParticuleObject::ParticuleObject(const std::string& fileStats, const std::string
 
     stat(fileStats.c_str(), &st1);
 	stat(fileData.c_str(), &st2);
-	mNbParticules = fmin(st1.st_size, st2.st_size);
+	mNbParticules = fmin(st1.st_size/sizeof(int), st2.st_size/(3*sizeof(float)));
 
 	//Init the array
-	mPoints = (float*)malloc(sizeof(float)*3*mNbParticules);
+	mPoints      = (float*)malloc(sizeof(float)*3*mNbParticules);
 	mPointsStats = (int*)malloc(sizeof(int)*mNbParticules);
 
 	fread(mPoints, sizeof(float), 3*mNbParticules, fdPoints);
@@ -124,8 +126,10 @@ ParticuleObject::ParticuleObject(const std::string& fileStats, const std::string
 
 ParticuleObject::~ParticuleObject()
 {
-	free(mPoints);
-	free(mPointsStats);
+	if(mPoints)
+		free(mPoints);
+	if(mPointsStats)
+		free(mPointsStats);
 }
 
 bool ParticuleObject::hasClipPlane()
@@ -187,7 +191,7 @@ void ParticuleObject::render(const Matrix4& projectionMatrix, const Matrix4& mod
 
 	for(uint32_t i=0; i < mNbParticules; i+=1000)
 	{
-		glDrawArrays(GL_POINTS, i, fmin(1000, (mNbParticules-i)));
+		glDrawArrays(GL_POINTS, i, fmin(1000, (mNbParticules-i-1)));
 	}
 	glDisableVertexAttribArray(mVertexAttrib);
 	glDisableVertexAttribArray(mStatusAttrib);
@@ -205,20 +209,34 @@ void ParticuleObject::getStats(ParticuleStats* ps, FillVolume* fv)
 		{
 			switch(mPointsStats[i])
 			{
-				case 0:
+				case 1:
 				case 3:
 					ps->valid++;
 					break;
 
-				case 1:
+				case 0:
 				case 4:
 					ps->incorrect++;
 					break;
 
 				case 2:
+				case 10:
 					ps->inNoise++;
 					break;
 			}
+		}
+		switch(mPointsStats[i])
+		{
+			case 1:
+			case 3:
+			case 5:
+				ps->nbValide++;
+				break;
+			case 0:
+			case 4:
+			case 6:
+				ps->nbInvalide++;
+				break;
 		}
 	}
 
@@ -238,15 +256,19 @@ void ParticuleObject::updateStatus(FillVolume* fv)
 		{
 			switch(mPointsStats[i])
 			{
-				case 0:
+				case 1:
 				case 5:
 					mPointsStats[i]=3;
 					break;
 
-				case 1:
+				case 0:
 				case 6:
 					mPointsStats[i]=4;
 					break;
+
+				case 11:
+				case 2:
+					mPointsStats[i]=10;
 
 				default:
 					break;
@@ -254,7 +276,7 @@ void ParticuleObject::updateStatus(FillVolume* fv)
 		}
 		else
 		{
-			if(fv->getSave(fvPos.x, fvPos.y, fvPos.z))
+			if(fv->getSelection() == INTERSECT && fv->getSave(fvPos.x, fvPos.y, fvPos.z))
 			{
 				switch(mPointsStats[i])
 				{
@@ -264,6 +286,8 @@ void ParticuleObject::updateStatus(FillVolume* fv)
 					case 4:
 						mPointsStats[i]=6;
 						break;
+					case 10:
+						mPointsStats[i]=11;
 					default:
 						break;
 				}
@@ -274,12 +298,15 @@ void ParticuleObject::updateStatus(FillVolume* fv)
 				{
 					case 3:
 					case 5:
-						mPointsStats[i]=0;
+						mPointsStats[i]=1;
 						break;
 					case 4:
 					case 6:
-						mPointsStats[i]=1;
+						mPointsStats[i]=0;
 						break;
+					case 10:
+					case 11:
+						mPointsStats[i]=2;
 					default:
 						break;
 				}

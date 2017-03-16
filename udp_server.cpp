@@ -467,7 +467,7 @@ void udp_server::listen(){
 
 			//Then the zooming Factor
 			getline(ss, tok, ';');
-			zoomingFactor = std::stod(tok.c_str());
+			zoomingFactor = 0.75*std::stod(tok.c_str());
 
 			//Get the booleans
 			getline(ss, tok, ';');

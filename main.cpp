@@ -16,6 +16,8 @@
 
 #include <signal.h>
 
+extern uint32_t userID;
+
 
 void loadDataSet(std::unique_ptr<FluidMechanics> app, int dataset){
 	return ;
@@ -275,7 +277,7 @@ int main()
 			server.hasSetToSelection = false;
 		}
 
-		if(server.hasDataChanged)
+		if(server.hasDataChanged && userID != 0)
 		{
 			server.hasDataChanged = false;
 

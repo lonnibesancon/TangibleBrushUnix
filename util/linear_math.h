@@ -627,7 +627,10 @@ struct Matrix3
 	Matrix3 inverse() const
 	{
 		T det = determinant();
-		assert(det != 0);
+
+		//assert(det != 0);
+		if(det == 0)
+			return Matrix3::identity();
 
 		Matrix3 result(
 			data[1][1] * data[2][2] - data[2][1] * data[1][2],
@@ -967,7 +970,9 @@ struct Matrix4
 		Matrix4 result;
 
 		T det = determinant();
-		assert(det != 0);
+//		assert(det != 0);
+		if(det == 0)
+			return Matrix4::identity();
 
 		T inv[16];
 		int i;

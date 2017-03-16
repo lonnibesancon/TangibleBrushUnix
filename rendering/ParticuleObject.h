@@ -12,6 +12,8 @@ struct ParticuleStats
 	int inNoise=0;
 	int incorrect=0;
 	int nbParticule=0;
+	int nbValide = 0;
+	int nbInvalide = 0;
 	int volume=0;
 };
 
@@ -47,9 +49,9 @@ class ParticuleObject : public Renderable
 		float mClipEq[4];
 		float mColor[4];
 
-		float* mPoints;
-		int*   mPointsStats;
-		uint32_t mNbParticules;
+		float* mPoints=NULL;
+		int*   mPointsStats=NULL;
+		uint32_t mNbParticules=0;
 
 		Vector3 mMin;
 		Vector3 mMax;

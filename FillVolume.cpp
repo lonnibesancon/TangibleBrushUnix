@@ -3,6 +3,7 @@
 #include "sys/stat.h"
 #include <cstdlib>
 #include "rendering/ParticuleObject.h"
+#include <SDL2/SDL.h>
 
 Edge::Edge(const Vector2_f& a, const Vector2_f& b) : m_a(a), m_b(b)
 {
@@ -410,6 +411,8 @@ Rectangle3f computeRectangle(double x, double y, double z, const Matrix4_f& matr
 
 bool FillVolume::get(uint64_t x, uint64_t y, uint64_t z) const
 {
+	if(x >= m_x || y >= m_y || z >= m_z)
+		return false;
 	uint64_t selfShift = x + m_x*y + m_x*m_y*z;
 	uint8_t self          = *(m_fillVolume + (selfShift)/8);
 	self               = (self >> (selfShift % 8)) & 0x01;
@@ -419,6 +422,8 @@ bool FillVolume::get(uint64_t x, uint64_t y, uint64_t z) const
 
 bool FillVolume::getSave(uint64_t x, uint64_t y, uint64_t z) const
 {
+	if(x >= m_x || y >= m_y || z >= m_z)
+		return false;
 	uint64_t selfShift = x + m_x*y + m_x*m_y*z;
 	uint8_t self          = *(m_saveVolume + (selfShift)/8);
 	self               = (self >> (selfShift % 8)) & 0x01;
@@ -448,17 +453,18 @@ void FillVolume::setSelectionMode(SelectionMode s)
 void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint32_t nbTrial)
 {
     char nbTrialString[4];
-	sprintf(nbTrialString, "%d", nbTrial);
+	sprintf(nbTrialString, "%d", nbTrial%3);
 	char userIDString[3];
 	sprintf(userIDString, "%d", userID);
 
 	mkdir(userIDString, 0755);
-	mkdir((std::string(userIDString) + "/" + std::string(nbTrialString)).c_str(), 0755);
+	mkdir((std::string(userIDString) + "/" + std::to_string(nbTrial/3)).c_str(), 0755);
+	mkdir((std::string(userIDString) + "/" + std::to_string(nbTrial/3) + "/" + std::string(nbTrialString)).c_str(), 0755);
 
 	char nbWriteString[4];
 	sprintf(nbWriteString, "%d", m_nbWrite);
 
-	std::string path = std::string(userIDString) + "/" + std::string(nbTrialString) + "/" + nbWriteString;
+	std::string path = std::string(userIDString) + "/" + std::to_string(nbTrial/3) + "/"+std::string(nbTrialString) + "/" + nbWriteString;
 
 	FILE* f = fopen(path.c_str(), "w");
 /*
@@ -506,11 +512,8 @@ void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint3
 	*/
 
 	//Get the timer in Nano seconds
-	struct timespec spec;
-    clock_gettime(CLOCK_REALTIME, &spec);
-
-	uint64_t diffMS = spec.tv_nsec/1.0e6 - m_ms;
-	m_ms = spec.tv_nsec/1.0e6;
+	uint64_t diffMS = SDL_GetTicks() - m_ms;
+	m_ms = diffMS + m_ms;
 
 	switch(m_selectionMode)
 	{
@@ -534,14 +537,15 @@ void FillVolume::saveToFile(const std::string& modelPath, uint32_t userID, uint3
 void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial, ParticuleObject* particuleObject)
 {
     char nbTrialString[4];
-	sprintf(nbTrialString, "%d", nbTrial);
+	sprintf(nbTrialString, "%d", nbTrial%3);
 	char userIDString[3];
 	sprintf(userIDString, "%d", userID);
 
     mkdir(userIDString, 0755);
-	mkdir((std::string(userIDString) + "/" + std::string(nbTrialString)).c_str(), 0755);
+	mkdir((std::string(userIDString) + "/" + std::to_string(nbTrial/3)).c_str(), 0755);
+	mkdir((std::string(userIDString) + "/" + std::to_string(nbTrial/3) + "/" + std::string(nbTrialString)).c_str(), 0755);
 
-	std::string path = std::string(userIDString) + "/" + std::string(nbTrialString) + "/final";
+	std::string path = std::string(userIDString) + "/" + std::to_string(nbTrial/3) + "/"+std::string(nbTrialString) + "/final";
 
 	FILE* f = fopen(path.c_str(), "w");
 
@@ -589,17 +593,15 @@ void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, u
 	fwrite(m_fillVolume, sizeof(char), (m_x*m_y*m_z+7)/8, f);
 */
 	//Get the timer in Nano seconds
-	struct timespec spec;
-    clock_gettime(CLOCK_REALTIME, &spec);
-	m_ms = spec.tv_nsec/1.0e6;
+	m_ms = SDL_GetTicks();
 	uint64_t diffMS = m_ms - m_initMs;
 
 	//Write statistics
 	ParticuleStats ps;
 	particuleObject->getStats(&ps, this);
 
-	fprintf(f, "UserID, modelPath, timer (ms), METRICS, volumeSize(x), volumeSize(y), volumeSize(z), nbUnion, nbIntersection, nbDiff, volume, nbParticule, nbValidSelected, nbIncorrectSelected, nbNoiseSelected\n");
-	fprintf(f, "%d;%s;%lu;%d;%lu;%lu;%lu;%d;%d;%d;%d;%d;%d;%d;%d\n", userID, modelPath.c_str(), diffMS, METRICS, m_x, m_y, m_z, m_nbUnion, m_nbInter, m_nbDiff, ps.volume, ps.nbParticule, ps.valid, ps.incorrect, ps.inNoise);
+	fprintf(f, "UserID; modelPath; timer (ms); METRICS; volumeSize(x); volumeSize(y); volumeSize(z); nbUnion; nbIntersection; nbDiff; volume; nbParticule; nbValide; nbInvalide; Supposed to be selected_Selected; not supposed to be selected_Not Selected; supposed to be selected_Not selected; not supposed to be selection_Selected\n");
+	fprintf(f, "%d;%s;%lu;%d;%lu;%lu;%lu;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n", userID, modelPath.c_str(), diffMS, METRICS, m_x, m_y, m_z, m_nbUnion, m_nbInter, m_nbDiff, ps.volume, ps.nbParticule, ps.nbValide, ps.nbInvalide, ps.valid, ps.nbParticule - ps.valid - ps.incorrect - ps.inNoise, ps.nbValide - ps.valid, ps.incorrect+ps.inNoise);
 	fclose(f);
 	m_nbWrite++;
 }
@@ -607,9 +609,7 @@ void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, u
 void FillVolume::reinitTime()
 {
 	//Get the timer in Nano seconds
-	struct timespec spec;
-    clock_gettime(CLOCK_REALTIME, &spec);
-	m_initMs = m_ms = spec.tv_nsec/1.0e6;
+	m_initMs = m_ms = SDL_GetTicks();
 }
 
 void FillVolume::commitIntersection()
