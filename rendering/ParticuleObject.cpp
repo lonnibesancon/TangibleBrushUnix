@@ -29,13 +29,12 @@ namespace
 		"  highp vec4 viewSpacePos = modelView * vec4(vertex, 1.0);\n"
 
 		"  gl_Position = projection * viewSpacePos;\n"
-		"  if(status == 1) v_color = vec4(1.0, 0.84, 0.19, 0.6);\n"
-	//	"  else if(status == 0) v_color = vec4(0.086, 0.31, 0.6, 0.6);\n"
-		"  else if(status == 2 || status == 0){v_color = vec4(0.77, 0.835, 0.86, 0.4);}\n"
-		"  else if(status == 3){v_color = vec4(1.0, 1.0, 1.0, 1.0);}\n"
-		"  else if(status == 4 || status == 10){v_color = vec4(1.0, 0.0, 0.0, 1.0);}\n"
-		"  else if(status == 5){v_color = vec4(0.8, 0.8, 0.8, 0.7);}\n"
-		"  else if(status == 6){v_color = vec4(1.0, 0.0, 1.0, 0.7);}\n"
+		"  if(status == 1) v_color = vec4(0.79, 0, 0.13, 0.8);\n" //Supposed to be selected not selected
+		"  else if(status == 0 || status == 2){v_color = vec4(0.02, 0.44, 0.69, 0.8);}\n" //not Supposed to be selected not selected
+		"  else if(status == 3){v_color = vec4(0.95, 0.65, 0.51, 1.0);}\n" //Supposed to be selected selected
+		"  else if(status == 4 || status == 10){v_color = vec4(0.57, 0.77, 0.87, 1.0);}\n" //not Supposed to be selected selected
+//		"  else if(status == 5){v_color = vec4(0.8, 0.8, 0.8, 0.8);}\n"
+//		"  else if(status == 6){v_color = vec4(1.0, 0.0, 1.0, 0.8);}\n"
 //		"  else if(status == 10){v_color = vec4(0.8, 0.3, 0.3, 1.0);}\n"
 		"  else if(status == 11){v_color = vec4(0.5, 0.1, 1.1, 0.7);}\n"
 //		"  gl_Size = 2.0;\n"
@@ -126,10 +125,10 @@ ParticuleObject::ParticuleObject(const std::string& fileStats, const std::string
 
 ParticuleObject::~ParticuleObject()
 {
-	if(mPoints)
-		free(mPoints);
-	if(mPointsStats)
-		free(mPointsStats);
+//	if(mPoints)
+//		free(mPoints);
+//	if(mPointsStats)
+//		free(mPointsStats);
 }
 
 bool ParticuleObject::hasClipPlane()
@@ -175,7 +174,7 @@ void ParticuleObject::render(const Matrix4& projectionMatrix, const Matrix4& mod
 	glUseProgram(mMaterial->getHandle());
 	glEnableVertexAttribArray(mVertexAttrib);
 	glEnableVertexAttribArray(mStatusAttrib);
-	glPointSize(2.5f);
+	glPointSize(5.0f);
 
 	//Vertices
 	glVertexAttribPointer(mVertexAttrib, 3, GL_FLOAT, false, 0, mPoints);
@@ -189,10 +188,11 @@ void ParticuleObject::render(const Matrix4& projectionMatrix, const Matrix4& mod
 	glUniform3f(mDimensionsUniform, getSize().x, getSize().y, getSize().z);
 
 
-	for(uint32_t i=0; i < mNbParticules; i+=1000)
-	{
-		glDrawArrays(GL_POINTS, i, fmin(1000, (mNbParticules-i-1)));
-	}
+//	for(uint32_t i=0; i < mNbParticules; i+=1000)
+//	{
+//		glDrawArrays(GL_POINTS, i, fmin(1000, (mNbParticules-i-1)));
+//	}
+	glDrawArrays(GL_POINTS, 0, mNbParticules);
 	glDisableVertexAttribArray(mVertexAttrib);
 	glDisableVertexAttribArray(mStatusAttrib);
 	glUseProgram(0);

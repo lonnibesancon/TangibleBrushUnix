@@ -166,8 +166,8 @@ void FillVolume::init(const std::vector<Vector2_f>& p)
 
 FillVolume::~FillVolume()
 {
-	free(m_fillVolume);
-	free(m_saveVolume);
+//	free(m_fillVolume);
+//	free(m_saveVolume);
 	unlock();
 }
 
@@ -321,15 +321,15 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 
 		for(int32_t z=startZ; z <= maxZ; z+=1)
 		{
-			if(z > m_z)
+			if(z >= m_z)
 				break;
 			for(int32_t y=startY; y <= maxY; y+=1)
 			{
-				if(y > m_y)
+				if(y >= m_y)
 					break;
 				for(int32_t x=startX; x <= maxX; x+=1)
 				{
-					if(x > m_x)
+					if(x >= m_x)
 						break;
 
 					int64_t selfShift = x + m_x*y + m_x*m_y*z;

@@ -51,6 +51,8 @@ class FillVolume
 		FillVolume* createIntersection(const FillVolume& fv) const;
 		FillVolume* createExclusion(const FillVolume& fv) const;
 
+		uint32_t getNbPoints() const{return m_selectionPoints.size();}
+
 		void fillWithSurface(double depth, const Matrix4_f& matrix);
 
 		bool get(uint64_t x, uint64_t y, uint64_t z) const;

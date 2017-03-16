@@ -1641,7 +1641,7 @@ void FluidMechanics::Impl::setTangoMove(bool tm, int intMode)
 		interactionMode == planeTouchTangible) &&
 		tm == false)
 	{
-		if(fillVolume && !inTraining)
+		if(fillVolume && !inTraining && fillVolume->getNbPoints()>0)
 		{
 			fillVolume->saveToFile(modelPath, userID, nbTrial);
 			std::cout << "saving in " << tm << " " << intMode<< std::endl;
@@ -1877,13 +1877,13 @@ void FluidMechanics::initFromClient()
 
 	if(impl->fillVolume)
 		impl->fillVolume->reinitTime();
-	impl->nbTrial = 0;
-	impl->canLog = false;
-
 	if(impl->inTraining)
 		impl->loadDataSet("data/data/training" + std::to_string(datasetorder[0]));
 	else
 		impl->loadDataSet("data/data/" + std::to_string(datasetorder[0]));
+
+	impl->nbTrial = 0;
+	impl->canLog = false;
 }
 
 void FluidMechanics::saveFinalFile()
