@@ -49,7 +49,7 @@ bool compareXEdge(const Edge* a, const Edge* b)
 Rectangle3f::Rectangle3f(double a, double b, double c, double w, double h, double d) : x(a), y(b), z(c), width(w), height(h), depth(d)
 {}
 
-FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x*METRICS), m_y(y*METRICS), m_z(z*METRICS)
+FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z, bool galaxy) : m_galaxy(galaxy), m_x(x*(m_galaxy ? METRICS_GALAXY : METRICS)), m_y(y*(m_galaxy ? METRICS_GALAXY : METRICS)), m_z(z*(m_galaxy ? METRICS_GALAXY : METRICS))
 {
 	pthread_mutex_init(&m_mutex, NULL);
 	m_fillVolume = (uint8_t*)calloc((m_x*m_y*m_z+7)/8, sizeof(uint8_t));
@@ -58,7 +58,6 @@ FillVolume::FillVolume(uint64_t x, uint64_t y, uint64_t z) : m_x(x*METRICS), m_y
 //	for(uint32_t i=0; i < (m_x*m_y*m_z+7)/8; i++)
 //		m_fillVolume[i] = 0xff;
 }
-
 
 FillVolume::FillVolume(const std::string& path)
 {
@@ -112,7 +111,7 @@ void FillVolume::init(const std::vector<Vector2_f>& p)
 		uint32_t etIndice=0;
 
 		//For each scanline
-		for(double j=yMin; et.rbegin()->m_yMax >= j; j+=.010)
+		for(double j=yMin; et.rbegin()->m_yMax >= j; j+=.008)
 		{
 			//Update the Active Edge Table
 			//
@@ -145,7 +144,7 @@ void FillVolume::init(const std::vector<Vector2_f>& p)
 			uint32_t aetIndice = 0;
 
 			//Go along the scanline, don't forget that the x = startX * (y - yMin) * incr
-			for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size() && i <= (*aetSorted.rbegin())->computeX(j); i+=0.015)
+			for(double i=aetSorted[0]->computeX(j); aetIndice < aetSorted.size() && i <= (*aetSorted.rbegin())->computeX(j); i+=0.01)
 			{
 				//Make a step
 				while(aetIndice+1 < aetSorted.size() && aetSorted[aetIndice+1]->computeX(j) < i)
@@ -303,12 +302,13 @@ void FillVolume::fillWithSurface(double depth, const Matrix4_f& matrix)
 	if(!m_isInit || m_selectionPoints.size() < 2)
 		return;
 
-	for(Vector2_f& point : m_scanline)
+	uint32_t metrics = (m_galaxy ? METRICS_GALAXY : METRICS);
+	for(const Vector2_f& point : m_scanline)
 	{
 		Vector3_f pos = matrix*Vector3(point.x, point.y, -1.0f);
-		pos =  pos*METRICS;
-		Vector3_f pos2 = matrix*Vector3(point.x+0.015, point.y+0.010, -1.0f);
-		pos2 = pos2*METRICS;
+		pos =  pos*metrics;
+		Vector3_f pos2 = matrix*Vector3(point.x+0.010, point.y+0.008, -1.0f);
+		pos2 = pos2*metrics;
 
 		float maxZ = std::max(pos.z, pos2.z)+depth;
 		float maxY = std::max(pos.y, pos2.y);
@@ -601,7 +601,7 @@ void FillVolume::saveFinalFiles(const std::string& modelPath, uint32_t userID, u
 	particuleObject->getStats(&ps, this);
 
 	fprintf(f, "UserID; modelPath; timer (ms); METRICS; volumeSize(x); volumeSize(y); volumeSize(z); nbUnion; nbIntersection; nbDiff; volume; nbParticule; nbValide; nbInvalide; Supposed to be selected_Selected; not supposed to be selected_Not Selected; supposed to be selected_Not selected; not supposed to be selection_Selected\n");
-	fprintf(f, "%d;%s;%lu;%d;%lu;%lu;%lu;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n", userID, modelPath.c_str(), diffMS, METRICS, m_x, m_y, m_z, m_nbUnion, m_nbInter, m_nbDiff, ps.volume, ps.nbParticule, ps.nbValide, ps.nbInvalide, ps.valid, ps.nbParticule - ps.valid - ps.incorrect - ps.inNoise, ps.nbValide - ps.valid, ps.incorrect+ps.inNoise);
+	fprintf(f, "%d;%s;%lu;%d;%lu;%lu;%lu;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d;%d\n", userID, modelPath.c_str(), diffMS, (m_galaxy ? METRICS_GALAXY : METRICS), m_x, m_y, m_z, m_nbUnion, m_nbInter, m_nbDiff, ps.volume, ps.nbParticule, ps.nbValide, ps.nbInvalide, ps.valid, ps.nbParticule - ps.nbValide - ps.incorrect - ps.inNoise, ps.nbValide - ps.valid, ps.incorrect+ps.inNoise);
 	fclose(f);
 	m_nbWrite++;
 }

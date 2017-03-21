@@ -111,6 +111,7 @@ ParticuleObject::ParticuleObject(const std::string& fileStats, const std::string
 	}
 
 	Vector3 mid = getMiddle();
+	std::cout << "mid" << mid.x << " " << mid.y << " " << mid.z << std::endl;
 	for(uint32_t i=0; i < mNbParticules*3; i+=3)
 	{
 		mPoints[i]-=mid.x;
@@ -202,10 +203,11 @@ void ParticuleObject::getStats(ParticuleStats* ps, FillVolume* fv)
 {
 	memset(ps, 0x00, sizeof(ps));
 	ps->nbParticule = mNbParticules;
+	uint32_t metrics = (fv->isGalaxy() ? METRICS_GALAXY : METRICS);
 	for(uint32_t i=0; i < mNbParticules; i++)
 	{
 		Vector3 size = getSize();
-		if(fv->get((size.x/2.0 + mPoints[3*i])*METRICS, (size.y/2.0 + mPoints[3*i+1])*METRICS, (size.z/2.0 + mPoints[3*i+2])*METRICS))
+		if(fv->get((size.x/2.0 + mPoints[3*i])*metrics, (size.y/2.0 + mPoints[3*i+1])*metrics, (size.z/2.0 + mPoints[3*i+2])*metrics))
 		{
 			switch(mPointsStats[i])
 			{
@@ -248,10 +250,11 @@ void ParticuleObject::getStats(ParticuleStats* ps, FillVolume* fv)
 
 void ParticuleObject::updateStatus(FillVolume* fv)
 {
+	uint32_t metrics = (fv->isGalaxy() ? METRICS_GALAXY : METRICS);
 	for(uint32_t i=0; i < mNbParticules; i++)
 	{
 		Vector3 size = getSize();
-		Vector3 fvPos = Vector3((size.x/2.0 + mPoints[3*i])*METRICS, (size.y/2.0 + mPoints[3*i+1])*METRICS, (size.z/2.0 + mPoints[3*i+2])*METRICS);
+		Vector3 fvPos = Vector3((size.x/2.0 + mPoints[3*i])*metrics, (size.y/2.0 + mPoints[3*i+1])*metrics, (size.z/2.0 + mPoints[3*i+2])*metrics);
 		if(fv->get(fvPos.x, fvPos.y, fvPos.z))
 		{
 			switch(mPointsStats[i])

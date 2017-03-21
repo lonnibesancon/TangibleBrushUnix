@@ -310,7 +310,7 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 		}
 	}
 
-	fillVolume       = new FillVolume(particuleObject->getSize().x, particuleObject->getSize().y, particuleObject->getSize().z);
+	fillVolume       = new FillVolume(particuleObject->getSize().x, particuleObject->getSize().y, particuleObject->getSize().z, datasetorder[nbTrial/3] == 4);
 //	fillVolumeMatrix = Matrix4_f::makeTransform(Vector3_f(-dataDim[0]*spacing[0]/2.0, -dataDim[1]*spacing[1]/2.0, -dataDim[2]*spacing[2]/2.0), Quaternion_f::identity(), Vector3_f(1.0, 1.0, 1.0));
 
 	//TODO need to be checked
@@ -462,14 +462,18 @@ void FluidMechanics::Impl::nextTrial()
 			nbTrial++;
 			if(nbTrial < 12)
 				loadDataSet("data/data/"+std::to_string(datasetorder[nbTrial/3]));
+				
+			canLog = (nbTrial%3 != 0);
 		}
 		else
 		{
 			nbTrial++;
 			if(nbTrial < 4)
-				loadDataSet("data/data/training"+std::to_string(datasetorder[nbTrial]));
+				loadDataSet("data/data/training"+std::to_string(datasetorder[nbTrial])); 
+				std::cout <<"DATASET = " << std::to_string(datasetorder[nbTrial]) << std::endl ;
+			canLog = false ;
 		}
-		canLog = (nbTrial%3 != 0);
+		//canLog = (nbTrial%3 != 0);
 	}
 }
 
@@ -1854,7 +1858,7 @@ void FluidMechanics::updateCurrentSelection(const Matrix4_f* m)
 	);
 	Matrix4_f projMat = (impl->tabletMatrix**m*mm).inverse();
 	projMat.translate(-impl->fillVolumeMatrix.position());
-	impl->fillVolume->fillWithSurface(1.2*METRICS, projMat);
+	impl->fillVolume->fillWithSurface(6, projMat);
 }
 
 void FluidMechanics::updateVolumetricRendering()

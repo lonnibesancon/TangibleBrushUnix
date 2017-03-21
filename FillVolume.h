@@ -2,6 +2,7 @@
 #define  FILLVOLUME_INC
 
 #define METRICS 15
+#define METRICS_GALAXY 7
 
 #include "stdint.h"
 #include "stdlib.h"
@@ -41,7 +42,7 @@ struct Rectangle3f
 class FillVolume
 {
 	public:
-		FillVolume(uint64_t x, uint64_t y, uint64_t z);
+		FillVolume(uint64_t x, uint64_t y, uint64_t z, bool galaxy=false);
 		FillVolume(const std::string& filePath);
 		void init(const std::vector<Vector2_f>& p);
 		~FillVolume();
@@ -63,9 +64,9 @@ class FillVolume
 		void lock();
 		void unlock();
 
-		uint64_t getSizeX() const{return m_x/METRICS;}
-		uint64_t getSizeY() const{return m_y/METRICS;}
-		uint64_t getSizeZ() const{return m_z/METRICS;}
+		uint64_t getSizeX() const{return m_x/(m_galaxy ? METRICS_GALAXY : METRICS);}
+		uint64_t getSizeY() const{return m_y/(m_galaxy ? METRICS_GALAXY : METRICS);}
+		uint64_t getSizeZ() const{return m_z/(m_galaxy ? METRICS_GALAXY : METRICS);}
 
 		uint64_t getMetricsSizeX() const{return m_x;}
 		uint64_t getMetricsSizeY() const{return m_y;}
@@ -80,8 +81,10 @@ class FillVolume
 
 		void reinitTime();
 		void commitIntersection();
+		bool isGalaxy() const {return m_galaxy;}
 	private:
 		bool m_isInit=false;
+		bool m_galaxy=false;
 
 		uint8_t* m_fillVolume;
 		uint8_t* m_saveVolume;
