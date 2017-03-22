@@ -120,7 +120,7 @@ namespace {
 		// "  return clamp(vec3(min(a,b), min(c,d), min(e,f)), 0.0, 1.0);\n"
 		// "}\n"
 		"void main() {\n"
-		"if (v_clipDist <= 0.0) discard;\n"
+		"if (v_clipDist <= 50.0) discard;\n"
 		//Selection !
 		"  if(selectionMode)\n"
 		"  {\n"

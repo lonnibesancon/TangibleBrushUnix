@@ -282,7 +282,7 @@ bool FluidMechanics::Impl::loadDataSet(const std::string& fileName)
 	//Init the fill volume.
 	if(fillVolume)
 	{
-		fillVolume->saveFinalFiles(modelPath, userID, nbTrial);
+//		fillVolume->saveFinalFiles(modelPath, userID, nbTrial);
 		fillVolume->lock();
 		{
 			delete fillVolume;
@@ -1582,7 +1582,7 @@ void FluidMechanics::Impl::setTangoMove(bool tm)
 	{
 		if(fillVolume)
 		{
-			fillVolume->saveToFile(modelPath, userID, nbTrial);
+//			fillVolume->saveToFile(modelPath, userID, nbTrial);
 		}
 	}
 	tangoMove=tm;

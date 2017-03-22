@@ -191,16 +191,8 @@ int main()
 
 		if(server.hasSetTabletMatrix)
 		{
-			synchronized(server.tabletMatrix)
-			{
-				synchronized(server.modelTrans)
-				{
-					synchronized(server.modelRot)
-					{
-						app->setTabletMatrix(server.tabletMatrix, server.modelTrans, server.modelRot);
-					}
-				}
-			}
+			app->setTabletMatrix(server.tabletMatrix, server.modelTrans, server.modelRot);
+			server.hasSetTabletMatrix = false;
 		}
 
 /*  	if(server.hasSubDataChanged)
@@ -219,6 +211,7 @@ int main()
 		if(server.hasInit)
 		{
 			app->initFromClient();
+			server.hasInit = false;
 		}
 		if(server.hasUpdateTangoMove)
 		{
@@ -232,20 +225,14 @@ int main()
 			{
 				selectionID=0;
 				SelectionMode s;
-				synchronized(server.dataSelected)
-				{
-					s = server.dataSelected[selectionID].getSelectionMode();
-					const std::vector<Vector2_f>* points = &(server.dataSelected[selectionID].getSelectionPoint());
-					app->pushBackSelection(s, *points);
-					continue;
-				}
+				s = server.dataSelected[selectionID].getSelectionMode();
+				const std::vector<Vector2_f>* points = &(server.dataSelected[selectionID].getSelectionPoint());
+				app->pushBackSelection(s, *points);
+				continue;
 			}
 
 			int32_t dataSelectedSize=0;
-			synchronized(server.dataSelected)
-			{
-				dataSelectedSize = server.dataSelected.size();
-			}
+			dataSelectedSize = server.dataSelected.size();
 
 			for(int32_t i=selectionID; i < dataSelectedSize; i++)
 			{
@@ -254,32 +241,23 @@ int main()
 
 				do
 				{
-					synchronized(server.dataSelected)
-					{
-						int i = server.dataSelected[selectionID].nextIndice();
-						m = server.dataSelected[selectionID].getMatrix(i);
-						factor = server.dataSelected[selectionID].getScaleFactor(i);
-					}
+					int i = server.dataSelected[selectionID].nextIndice();
+					m = server.dataSelected[selectionID].getMatrix(i);
+					factor = server.dataSelected[selectionID].getScaleFactor(i);
 
 					if(m == NULL && dataSelectedSize > selectionID+1)
 					{
 						selectionID++;
 						SelectionMode s;
-						synchronized(server.dataSelected)
-						{
-							s = server.dataSelected[selectionID].getSelectionMode();
-							const std::vector<Vector2_f>* points = &(server.dataSelected[selectionID].getSelectionPoint());
-							app->pushBackSelection(s, *points);
-							continue;
-						}
+						s = server.dataSelected[selectionID].getSelectionMode();
+						const std::vector<Vector2_f>* points = &(server.dataSelected[selectionID].getSelectionPoint());
+						app->pushBackSelection(s, *points);
+						continue;
 					}
 
 					else if(m != NULL)
 					{
-						synchronized(server.dataSelected)
-						{
-							app->updateCurrentSelection(m, factor);
-						}
+						app->updateCurrentSelection(m, factor);
 					}
 				}while(m != NULL);
 			}
@@ -287,16 +265,18 @@ int main()
 			server.hasSetToSelection = false;
 		}
 
-		dataMatrix = server.getDataMatrix();
-		sliceMatrix = server.getSliceMatrix();
-		//LOGD("dataMatrix = %s", Utility::toString(dataMatrix).c_str());
-		//LOGD("sliceMatrix = %s", Utility::toString(sliceMatrix).c_str());
-		//LOGD("server.getZoomFactor() = %f", server.getZoomFactor());
+		if(server.hasDataChanged)
+		{
+			dataMatrix = server.getDataMatrix();
+			sliceMatrix = server.getSliceMatrix();
 
-		app->getSettings()->zoomFactor = server.getZoomFactor();
-		//sliceMatrix = dataMatrix * sliceMatrix ;
-		seedPoint = server.getSeedPoint();
-		app->setMatrices(dataMatrix,sliceMatrix);
+			app->getSettings()->zoomFactor = server.getZoomFactor();
+			seedPoint = server.getSeedPoint();
+			app->setMatrices(dataMatrix,sliceMatrix);
+
+			server.hasDataChanged = false;
+		}
+
 
 		/*app->setMatrices(Matrix4::makeTransform(Vector3(0, 0, 380), Quaternion(Vector3::unitX(), -M_PI/4)*Quaternion(Vector3::unitZ(), t)),
 		                 // Matrix4::identity()
