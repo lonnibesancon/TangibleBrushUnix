@@ -1,7 +1,8 @@
 #ifndef  FILLVOLUME_INC
 #define  FILLVOLUME_INC
 
-#define METRICS 1.0
+#define METRICS 15
+#define METRICS_GALAXY 7
 
 #include "stdint.h"
 #include "stdlib.h"
@@ -11,6 +12,8 @@
 #include <algorithm>
 #include "Selection.h"
 #include <cstring>
+
+class ParticuleObject;
 
 //Structure which contain a Edge
 struct Edge
@@ -39,7 +42,7 @@ struct Rectangle3f
 class FillVolume
 {
 	public:
-		FillVolume(uint64_t x, uint64_t y, uint64_t z);
+		FillVolume(uint64_t x, uint64_t y, uint64_t z, bool galaxy=false);
 		FillVolume(const std::string& filePath);
 		void init(const std::vector<Vector2_f>& p);
 		~FillVolume();
@@ -49,18 +52,21 @@ class FillVolume
 		FillVolume* createIntersection(const FillVolume& fv) const;
 		FillVolume* createExclusion(const FillVolume& fv) const;
 
-		void fillWithSurface(double depth, const Matrix4_f& matrix, const Vector2_f* factor);
+		uint32_t getNbPoints() const{return m_selectionPoints.size();}
+
+		void fillWithSurface(double depth, const Matrix4_f& matrix);
 
 		bool get(uint64_t x, uint64_t y, uint64_t z) const;
 		bool get(uint64_t v) const{return m_fillVolume[v/8] & (1 << (v%8));}
 		bool getSave(uint64_t v) const{return m_saveVolume[v/8] & (1 << (v%8));}
+		bool getSave(uint64_t x, uint64_t y, uint64_t z) const;
 		SelectionMode getSelection() const{return m_selectionMode;}
 		void lock();
 		void unlock();
 
-		uint64_t getSizeX() const{return m_x/METRICS;}
-		uint64_t getSizeY() const{return m_y/METRICS;}
-		uint64_t getSizeZ() const{return m_z/METRICS;}
+		uint64_t getSizeX() const{return m_x/(m_galaxy ? METRICS_GALAXY : METRICS);}
+		uint64_t getSizeY() const{return m_y/(m_galaxy ? METRICS_GALAXY : METRICS);}
+		uint64_t getSizeZ() const{return m_z/(m_galaxy ? METRICS_GALAXY : METRICS);}
 
 		uint64_t getMetricsSizeX() const{return m_x;}
 		uint64_t getMetricsSizeY() const{return m_y;}
@@ -70,12 +76,15 @@ class FillVolume
 		bool isInit() const{return m_isInit;}
 		void setSelectionMode(SelectionMode s);
 
-		void saveToFile(const std::string& modelPath, uint32_t userID, uint32_t nbTrial);
-		void saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial);
+		void saveToFile(const std::string& modelPath, uint32_t userID, uint32_t nbTrial, uint32_t dataID);
+		void saveFinalFiles(const std::string& modelPath, uint32_t userID, uint32_t nbTrial, ParticuleObject* po, uint32_t dataID);
 
 		void reinitTime();
+		void commitIntersection();
+		bool isGalaxy() const {return m_galaxy;}
 	private:
 		bool m_isInit=false;
+		bool m_galaxy=false;
 
 		uint8_t* m_fillVolume;
 		uint8_t* m_saveVolume;
@@ -83,10 +92,11 @@ class FillVolume
 		uint64_t m_x, m_y, m_z;
 		pthread_mutex_t m_mutex;
 		std::vector<Vector2_f> m_selectionPoints;
+		std::vector<Vector2_f> m_scanline;
 		SelectionMode m_selectionMode=UNION;
 		uint32_t m_nbWrite=0;
-		uint64_t m_ns=0;
-		uint64_t m_initNs=0;
+		uint64_t m_ms=0;
+		uint64_t m_initMs=0;
 		uint32_t m_nbInter=0;
 		uint32_t m_nbUnion=0;
 		uint32_t m_nbDiff=0;

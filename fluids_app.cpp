@@ -1791,7 +1791,7 @@ void FluidMechanics::updateCurrentSelection(const Matrix4_f* m, const Vector2_f*
 	);
 	Matrix4_f projMat = (impl->tabletMatrix**m*mm).inverse();
 	projMat.translate(-impl->fillVolumeMatrix.position());
-	impl->fillVolume->fillWithSurface(METRICS, projMat, factor);
+	impl->fillVolume->fillWithSurface(METRICS, projMat);
 	Vector3 temp(0.0, 0.0, -1.0);
 }
 
